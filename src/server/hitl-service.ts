@@ -347,8 +347,8 @@ function syncRiskPackageToCoreTables(
   const l1Raw = String(draftInput.taxonomy_l1_ar || '').trim();
   // Do not infer a category from incidental digits in Arabic risk text.
   // The source workbook uses legacy codes (_2_, _5_, _8_); preserve unknown as pending.
-  const legacyL1 = /^_([1-8])_/.exec(l1Raw);
-  const explicitL1 = /^L1-0([1-8])(?:\b|\s|$)/.exec(l1Raw);
+  const legacyL1 = /^_?([1-8])_/.exec(l1Raw);
+  const explicitL1 = /^\[?L1-0([1-8])\]?(?:\b|\s|$)/.exec(l1Raw);
   const l1Labels: Record<string, string> = {
     'احتيال داخلي': 'L1-01', 'احتيال خارجي': 'L1-02',
     'أساليب الاحتيال ببطاقات الائتمان': 'L1-03',
@@ -358,7 +358,7 @@ function syncRiskPackageToCoreTables(
     'توقف الأعمال وتعطل الأنظمة': 'L1-07',
     'تنفيذ المعاملات وتسليمها وإدارتها': 'L1-08',
   };
-  const l1Id = legacyL1 ? `L1-0${legacyL1[1]}` : explicitL1 ? `L1-0${explicitL1[1]}` : l1Labels[l1Raw] || 'L1-PENDING';
+  const l1Id = draftInput.taxonomy_l1_id || (legacyL1 ? `L1-0${legacyL1[1]}` : explicitL1 ? `L1-0${explicitL1[1]}` : l1Labels[l1Raw] || 'L1-PENDING');
 
   const finLevel = calcOutput.individual_impact_level ?? null;
   const finAmount = calcOutput.individual_financial_impact_egp ?? null;
@@ -3629,8 +3629,13 @@ export function uploadSupportingDocumentForUnit(params: {
 
   const safeName = path.basename(filename).replace(/[^a-zA-Z0-9._\u0600-\u06FF-]/g, '_');
   const ext = path.extname(safeName).toLowerCase();
-  if (!['.pdf', '.docx', '.xlsx', '.csv', '.txt', '.md', '.json'].includes(ext)) {
-    const err: any = new Error('نوع المستند غير مدعوم. الامتدادات المسموحة PDF وDOCX وXLSX وCSV والملفات النصية.');
+  const allowedExtensions = [
+    '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt',
+    '.csv', '.tsv', '.txt', '.md', '.json', '.xml', '.html', '.htm',
+    '.rtf', '.yaml', '.yml', '.log', '.ini', '.sql', '.zip',
+  ];
+  if (!allowedExtensions.includes(ext)) {
+    const err: any = new Error('نوع المستند غير مدعوم. الامتدادات المسموحة PDF وDOCX وXLSX وPPTX وCSV وJSON وXML وZIP والملفات النصية.');
     err.statusCode = 400; throw err;
   }
   if (!contentBase64 && typeof contentText !== 'string') {
@@ -3671,6 +3676,9 @@ export function uploadSupportingDocumentForUnit(params: {
   } catch (error: any) {
     extractionReason = 'تعذر تشغيل استخلاص النص؛ يرجى مراجعة المستند يدويًا.';
   }
+  if (!decodedText.trim() && typeof contentText === 'string' && contentText.trim().length > 0) {
+    decodedText = contentText.trim();
+  }
   const isTextExtractable = decodedText.trim().length > 0;
 
   const docId = `DOC-${unitId.replace('BU-', '')}-${Date.now().toString(36).toUpperCase()}`;
@@ -3684,21 +3692,59 @@ export function uploadSupportingDocumentForUnit(params: {
 
     if (isTextExtractable && decodedText.length > 0) {
       const paragraphs = decodedText
+        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
         .split(/\r?\n\s*\r?\n|\r?\n/)
         .map(p => p.trim())
         .filter(p => p.length > 2)
-        .slice(0, 250);
+        .slice(0, 350);
 
       const insertChunk = db.prepare(
         `INSERT INTO document_chunks (id, document_id, chunk_index, section_title, content_text, page_number)
-         VALUES (?, ?, ?, ?, ?, 1)`
+         VALUES (?, ?, ?, ?, ?, ?)`
       );
 
-      paragraphs.forEach((p, idx) => {
-        const chunkId = `CHK-${docId}-${idx + 1}`;
-        const title = `مقطع مستخلص رقم (${idx + 1}) — ${safeName}`;
-        insertChunk.run(chunkId, docId, idx + 1, title, p);
-        chunksInserted.push({ id: chunkId, section_title: title, content_text: p });
+      let currentSection = '';
+      let currentPage = 1;
+      let chunkSeq = 0;
+      paragraphs.forEach((p) => {
+        const pageMatch = p.match(/^\[(?:PDF page|Slide)\s+(\d+)\]\s*(.*)$/i);
+        if (pageMatch) {
+          currentPage = parseInt(pageMatch[1], 10) || currentPage;
+          if (!pageMatch[2]?.trim()) {
+            return;
+          }
+        }
+        const bracketMatch = p.match(/^\[([^\]]+)\]\s*(.*)$/);
+        if (bracketMatch && !bracketMatch[2]?.trim()) {
+          currentSection = bracketMatch[1];
+          return;
+        }
+        const cleanBody = (pageMatch?.[2] || bracketMatch?.[2] || p).trim();
+        if (cleanBody.length <= 2) return;
+
+        // Track numbered/titled section headings inside the document for clearer citations
+        const headingPrefix = cleanBody.match(
+          /^(\d+(?:\.\d+)*\.?\s+[^•:\n]{5,90})(?:\s|$)/
+        );
+        if (headingPrefix && !cleanBody.startsWith('•')) {
+          const candidateHeading = headingPrefix[1]
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 80);
+          if (candidateHeading.length >= 6) {
+            currentSection = candidateHeading;
+          }
+        }
+
+        chunkSeq += 1;
+        const chunkId = `CHK-${docId}-${chunkSeq}`;
+        const title = bracketMatch?.[1] && !pageMatch
+          ? `${bracketMatch[1]} — ${safeName}`
+          : currentSection
+            ? `${currentSection} (صفحة ${currentPage})`
+            : `صفحة ${currentPage} • مقطع (${chunkSeq})`;
+        insertChunk.run(chunkId, docId, chunkSeq, title, cleanBody, currentPage);
+        chunksInserted.push({ id: chunkId, section_title: title, content_text: cleanBody });
       });
 
       if (normalizedType === 'SOP' && chunksInserted.length > 0) {
@@ -3776,14 +3822,33 @@ function normalizeGuidedRiskItem(rawItem: any, unitId: string, index: number): {
   const rId = rawItem.risk_id || `RSK-${unitId.replace('BU-', '')}-0${index + 1}`;
   const baseDraft = rawItem.current_draft_input ? { ...rawItem.current_draft_input } : {};
 
-  const processName = rawItem.process_name_ar ?? baseDraft.process_name ?? 'العمليات المصرفية للوحدة';
-  const riskDesc = rawItem.description_ar ?? baseDraft.risk_description ?? '';
+  const processName = rawItem.process_name_ar ?? rawItem.process_name ?? baseDraft.process_name ?? 'العمليات المصرفية للوحدة';
+  const strategicObjective =
+    rawItem.strategic_objective_ar ??
+    rawItem.strategic_objective ??
+    baseDraft.strategic_objective ??
+    'التركيز على العملاء و تعظيم الأرباح';
+  const riskLibraryName =
+    rawItem.risk_library_name_ar ??
+    rawItem.risk_library_name ??
+    rawItem.risk_title_ar ??
+    baseDraft.risk_library_name ??
+    '';
+  const riskDesc = rawItem.description_ar ?? rawItem.risk_description ?? baseDraft.risk_description ?? '';
   const indImpact =
     rawItem.expected_loss_egp !== undefined
       ? rawItem.expected_loss_egp
-      : baseDraft.individual_financial_impact ?? null;
+      : rawItem.financial_impact_amount !== undefined
+        ? rawItem.financial_impact_amount
+        : rawItem.single_incident_max_loss !== undefined
+          ? rawItem.single_incident_max_loss
+          : baseDraft.individual_financial_impact ?? null;
 
-  let freqText = baseDraft.expected_frequency_text ?? null;
+  let freqText =
+    baseDraft.expected_frequency_text ??
+    rawItem.inherent_frequency_text ??
+    rawItem.expected_frequency_text ??
+    null;
   if (rawItem.frequency_score !== undefined && rawItem.frequency_score !== null && rawItem.frequency_score !== '') {
     freqText = FREQ_LEVEL_TO_TEXT_AR[Number(rawItem.frequency_score)] || freqText;
   }
@@ -3799,10 +3864,10 @@ function normalizeGuidedRiskItem(rawItem: any, unitId: string, index: number): {
     control_id: c.control_id || `CTL-${rId.replace('RSK-', '')}-0${cIdx + 1}`,
     linked_risk_id: rId,
     control_description: c.control_description ?? c.description_ar ?? '',
-    control_owner: c.control_owner || '',
+    control_owner: c.control_owner || c.owner_ar || 'السلطة الإشرافية',
     control_type_raw: c.control_type_raw ?? c.design_classification ?? null,
     control_method_raw: c.control_method_raw ?? c.automation_level ?? null,
-    control_frequency_raw: c.control_frequency_raw || '',
+    control_frequency_raw: c.control_frequency_raw || c.frequency_ar || 'Daily\nيومياً',
     effectiveness_raw:
       c.effectiveness_raw || 'PENDING_REVIEW',
     implementation_status: c.implementation_status || 'PROPOSED',
@@ -3819,6 +3884,8 @@ function normalizeGuidedRiskItem(rawItem: any, unitId: string, index: number): {
     risk_id: rId,
     unit_id: unitId,
     process_name: processName,
+    strategic_objective: strategicObjective,
+    risk_library_name: riskLibraryName,
     risk_description: riskDesc,
     individual_financial_impact: indImpact,
     financial_value_origin:
@@ -3827,6 +3894,11 @@ function normalizeGuidedRiskItem(rawItem: any, unitId: string, index: number): {
           ? baseDraft.financial_value_origin
           : 'EXPLICIT_HUMAN_ESTIMATE'
         : 'MISSING_OR_UNSUPPORTED',
+    financial_evidence_justification:
+      rawItem.financial_impact_justification ??
+      rawItem.financial_evidence_justification ??
+      baseDraft.financial_evidence_justification ??
+      '',
     expected_frequency_text: freqText,
     frequency_origin:
       freqText !== null && String(freqText).trim() !== ''
@@ -3834,6 +3906,20 @@ function normalizeGuidedRiskItem(rawItem: any, unitId: string, index: number): {
           ? baseDraft.frequency_origin
           : 'AUTHORIZED_USER_ESTIMATE'
         : 'MISSING_FREQUENCY',
+    frequency_justification:
+      rawItem.frequency_justification ??
+      baseDraft.frequency_justification ??
+      'مقدر وفق دورية تنفيذ الإجراءات وسجل الأحداث التاريخية للوحدة',
+    active_rationale_ar:
+      rawItem.acceptance_rationale_ar ??
+      rawItem.active_rationale_ar ??
+      baseDraft.active_rationale_ar ??
+      '',
+    active_corrective_action_ar:
+      rawItem.corrective_action_ar ??
+      rawItem.active_corrective_action_ar ??
+      baseDraft.active_corrective_action_ar ??
+      '',
     controls: normalizedControls,
     ...resolveTaxonomyFields(rawItem, baseDraft),
   };
@@ -3970,38 +4056,78 @@ export function createGuidedAssessmentDraft(params: {
       const draft = norm.current_draft_input;
 
       const existingPkg = db
-        .prepare('SELECT id FROM hitl_risk_packages WHERE assessment_id = ? AND risk_id = ?')
+        .prepare('SELECT id, current_draft_input_json, original_source_json FROM hitl_risk_packages WHERE assessment_id = ? AND risk_id = ?')
         .get(assessmentId, rId) as any;
 
-      if (!existingPkg) {
+      const existingControls: any[] = existingPkg
+        ? (() => {
+            try {
+              return JSON.parse(existingPkg.current_draft_input_json || '{}').controls || [];
+            } catch {
+              return [];
+            }
+          })()
+        : [];
+      const existingControlIds = new Set(existingControls.map((c: any) => c.control_id));
+      const allDraftControlsExist =
+        existingPkg &&
+        (draft.controls || []).every((c: any) => existingControlIds.has(c.control_id));
+
+      let persistedDraftInput: any = draft;
+      let persistedCalcOutput: any = null;
+
+      if (!existingPkg || !allDraftControlsExist) {
         const pyRes = invokePythonEngineBridge({
           action: 'recalculate_single_risk',
           unit_id: unitId,
           risk_id: rId,
           current_draft_input: draft,
-          preserve_custom_rationale: false,
+          preserve_custom_rationale: Boolean(draft.active_rationale_ar && String(draft.active_rationale_ar).trim().length > 10),
         });
+        persistedDraftInput = pyRes.current_draft_input;
+        persistedCalcOutput = pyRes.calculated_output;
 
-        db.prepare(
-          `INSERT INTO hitl_risk_packages (
-             id, assessment_id, risk_id, unit_id, excel_row, display_order,
-             original_source_json, current_draft_input_json, calculated_output_json,
-             previous_calculated_output_json, source_discrepancies_json, package_full_json,
-             suggestion_decisions_json, discrepancy_decisions_json, provenance_map_json,
-             is_reviewed, reviewed_by, reviewed_at, reviewer_notes_ar
-           ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, ?, ?, '{}', '{}', '{}', 0, NULL, NULL, NULL)`
-        ).run(
-          `${assessmentId}::${rId}`,
-          assessmentId,
-          rId,
-          unitId,
-          i + 1,
-          JSON.stringify({ risk_id: rId, unit_id: unitId, controls: [] }),
-          JSON.stringify(pyRes.current_draft_input),
-          JSON.stringify(pyRes.calculated_output),
-          JSON.stringify(pyRes.source_discrepancies || []),
-          JSON.stringify(pyRes.package || {})
-        );
+        if (!existingPkg) {
+          db.prepare(
+            `INSERT INTO hitl_risk_packages (
+               id, assessment_id, risk_id, unit_id, excel_row, display_order,
+               original_source_json, current_draft_input_json, calculated_output_json,
+               previous_calculated_output_json, source_discrepancies_json, package_full_json,
+               suggestion_decisions_json, discrepancy_decisions_json, provenance_map_json,
+               is_reviewed, reviewed_by, reviewed_at, reviewer_notes_ar
+             ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, ?, ?, '{}', '{}', '{}', 0, NULL, NULL, NULL)`
+          ).run(
+            `${assessmentId}::${rId}`,
+            assessmentId,
+            rId,
+            unitId,
+            i + 1,
+            JSON.stringify({ risk_id: rId, unit_id: unitId, controls: [] }),
+            JSON.stringify(pyRes.current_draft_input),
+            JSON.stringify(pyRes.calculated_output),
+            JSON.stringify(pyRes.source_discrepancies || []),
+            JSON.stringify(pyRes.package || {})
+          );
+        } else {
+          db.prepare(
+            `UPDATE hitl_risk_packages
+             SET display_order = ?,
+                 current_draft_input_json = ?,
+                 calculated_output_json = ?,
+                 source_discrepancies_json = ?,
+                 package_full_json = ?,
+                 updated_at = datetime('now')
+             WHERE assessment_id = ? AND risk_id = ?`
+          ).run(
+            i + 1,
+            JSON.stringify(pyRes.current_draft_input),
+            JSON.stringify(pyRes.calculated_output),
+            JSON.stringify(pyRes.source_discrepancies || []),
+            JSON.stringify(pyRes.package || {}),
+            assessmentId,
+            rId
+          );
+        }
 
         syncRiskPackageToCoreTables(
           assessmentId,
@@ -4014,7 +4140,7 @@ export function createGuidedAssessmentDraft(params: {
         );
       } else {
         const currentState = getAssessmentHitlFullState(assessmentId);
-        updateSingleRiskAndRecalculate({
+        const updatedState = updateSingleRiskAndRecalculate({
           assessmentId,
           riskId: rId,
           user,
@@ -4045,6 +4171,51 @@ export function createGuidedAssessmentDraft(params: {
           })),
           evidenceOrReason: 'استكمال مدخلات التقييم وإعادة الاحتساب ضمن مسار إعداد تقييم جديد الموجه',
         });
+        const matchedRisk = (updatedState?.risks || []).find((r: any) => r.risk_id === rId);
+        persistedDraftInput = matchedRisk?.current_draft_input || draft;
+        persistedCalcOutput = matchedRisk?.calculated_output || null;
+      }
+
+      // If candidate risk includes AI-populated Phase 2C inputs (NFI V-Y, ESG AE, Acceptance AA-AC),
+      // evaluate via authoritative Python Phase 2C engine and persist so all 29 columns are filled!
+      if (rawList[i]?.phase2c_inputs && typeof rawList[i].phase2c_inputs === 'object') {
+        try {
+          const p2cInputs = { ...rawList[i].phase2c_inputs };
+          // Enforce Phase 2C rule: acceptance_class === 1 must never carry a mandatory corrective action
+          if (p2cInputs.acceptance_class === 1) {
+            p2cInputs.corrective_action = '';
+          }
+          const resolvedTaxL1 =
+            persistedDraftInput?.taxonomy_l1_id ||
+            draft.taxonomy_l1_id ||
+            persistedDraftInput?.taxonomy_l1_ar ||
+            draft.taxonomy_l1_ar;
+          const p2cResult = invokePythonEngineBridge({
+            action: 'evaluate_phase2c',
+            inputs: {
+              ...p2cInputs,
+              taxonomy_l1_ar: resolvedTaxL1,
+              financial_rating: persistedCalcOutput?.annualized_financial_rating || 'M',
+            },
+          });
+          db.prepare(`
+            INSERT INTO phase2c_risk_assessments (assessment_id, risk_id, inputs_json, result_json, updated_by)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(assessment_id, risk_id) DO UPDATE SET
+              inputs_json = excluded.inputs_json,
+              result_json = excluded.result_json,
+              updated_by = excluded.updated_by,
+              updated_at = datetime('now')
+          `).run(
+            assessmentId,
+            rId,
+            JSON.stringify(p2cInputs),
+            JSON.stringify(p2cResult),
+            user.employee_id
+          );
+        } catch {
+          // Leave Phase 2C for manual review if validation fails
+        }
       }
     }
 

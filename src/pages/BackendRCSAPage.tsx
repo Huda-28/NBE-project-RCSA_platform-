@@ -2,26 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
-import { 
-  FileUp, 
-  Building2, 
-  CheckCircle, 
-  HelpCircle, 
-  Calculator, 
-  FileCheck, 
+import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
+import {
+  FileUp,
+  HelpCircle,
+  Calculator,
   ArrowRight,
   ArrowLeft,
   UploadCloud,
   FileText,
   AlertTriangle,
   Plus,
-  Play,
   TableProperties,
   CheckCircle2,
-  Database,
   ShieldCheck,
   Bot,
-  FolderOpen
 } from 'lucide-react';
 
 interface BackendRCSAPageProps {
@@ -31,17 +26,18 @@ interface BackendRCSAPageProps {
   onNavigate?: (next: Partial<AppNavigationState> & { page: PageId }, replace?: boolean) => void;
 }
 
-export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({ 
-  initialUnitId, 
-  initialSessionId, 
-  initialMode, 
-  onNavigate 
+export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
+  initialUnitId,
+  initialSessionId,
+  initialMode,
+  onNavigate,
 }) => {
   const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [units, setUnits] = useState<any[]>([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   const [selectedBU, setSelectedBU] = useState<string>(initialUnitId || '');
+  const [showAddUnitModal, setShowAddUnitModal] = useState<boolean>(false);
 
   // Unified Workflow Session State (Phase 3A)
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null);
@@ -49,7 +45,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   const [baseAssessmentId, setBaseAssessmentId] = useState<string>('');
   const [unitApprovedAssessments, setUnitApprovedAssessments] = useState<any[]>([]);
   const [activeSession, setActiveSession] = useState<any | null>(null);
-  const [sessionLoading, setSessionLoading] = useState<boolean>(false);
+  const [, setSessionLoading] = useState<boolean>(false);
 
   // Fresh assessment is the default. Historical sources are opt-in, never silently mixed.
   const [useHistoricalSources, setUseHistoricalSources] = useState(false);
@@ -57,15 +53,18 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
   // Unit context for steps 2-6
   const [unitContext, setUnitContext] = useState<any | null>(null);
-  const [contextLoading, setContextLoading] = useState(false);
-  const [contextError, setContextError] = useState<string | null>(null);
+  const [, setContextLoading] = useState(false);
+  const [, setContextError] = useState<string | null>(null);
 
   // Step 2: Document upload state
   const [docType, setDocType] = useState<string>('SOP');
   const [docTitleAr, setDocTitleAr] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-  const [uploadNotice, setUploadNotice] = useState<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null);
+  const [uploadNotice, setUploadNotice] = useState<{
+    type: 'success' | 'warning' | 'error';
+    text: string;
+  } | null>(null);
 
   // Step 4: Editable candidate risks & controls
   const [candidateRisks, setCandidateRisks] = useState<any[]>([]);
@@ -128,7 +127,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           setUnitContext(ctx);
           setDraftTitleAr(`تقييم المخاطر والرقابة الذاتية - ${ctx.unit.name_ar}`);
           if (!preserveCandidates && !sessionId) {
-            setCandidateRisks(useHistoricalSources ? JSON.parse(JSON.stringify(ctx.candidate_risks || [])) : []);
+            setCandidateRisks(
+              useHistoricalSources ? JSON.parse(JSON.stringify(ctx.candidate_risks || [])) : []
+            );
             setCalcPreview(null);
             setCreatedDraftState(null);
           }
@@ -186,7 +187,6 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
         .catch((err) => console.error('Failed to load initial session:', err))
         .finally(() => setSessionLoading(false));
     } else {
-      // Check for active session for this unit
       fetch(`/api/workflow/sessions/active?unit_id=${selectedBU}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -212,7 +212,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     if (!token || !selectedBU) return;
     setSessionLoading(true);
     try {
-      const chosenBase = mode === 'UPDATE' ? (baseId || baseAssessmentId || undefined) : undefined;
+      const chosenBase = mode === 'UPDATE' ? baseId || baseAssessmentId || undefined : undefined;
       const res = await fetch('/api/workflow/sessions', {
         method: 'POST',
         headers: {
@@ -223,7 +223,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           unit_id: selectedBU,
           workflow_mode: mode,
           base_assessment_id: chosenBase,
-          session_title: `${mode === 'NEW' ? 'تقييم جديد' : 'تحديث تقييم معتمد'} - ${unitContext?.unit?.name_ar || selectedBU}`,
+          session_title: `${mode === 'NEW' ? 'تقييم جديد' : 'تحديث تقييم معتمد'} - ${
+            unitContext?.unit?.name_ar || selectedBU
+          }`,
           use_historical_sources: mode === 'UPDATE',
         }),
       });
@@ -238,12 +240,15 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       setCalcPreview(null);
       setUploadedInSession([]);
       setUseHistoricalSources(Boolean(sess.use_historical_sources));
-      onNavigate?.({
-        page: 'backend-rcsa',
-        unitId: selectedBU,
-        sessionId: sess.id,
-        mode: sess.workflow_mode,
-      }, true);
+      onNavigate?.(
+        {
+          page: 'backend-rcsa',
+          unitId: selectedBU,
+          sessionId: sess.id,
+          mode: sess.workflow_mode,
+        },
+        true
+      );
       return sess;
     } catch (err: any) {
       setContextError(err.message);
@@ -264,12 +269,15 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     if (sess.calc_preview) setCalcPreview(sess.calc_preview);
     setUploadedInSession(sess.uploaded_document_ids || []);
     setUseHistoricalSources(Boolean(sess.use_historical_sources));
-    onNavigate?.({
-      page: 'backend-rcsa',
-      unitId: selectedBU,
-      sessionId: sess.id,
-      mode: sess.workflow_mode,
-    }, true);
+    onNavigate?.(
+      {
+        page: 'backend-rcsa',
+        unitId: selectedBU,
+        sessionId: sess.id,
+        mode: sess.workflow_mode,
+      },
+      true
+    );
   };
 
   // Auto-sync candidate risks and step to SQLite session
@@ -294,13 +302,14 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   };
 
   const currentSessionDocuments = (unitContext?.registered_documents || []).filter(
-    (d: any) => uploadedInSession.includes(d.id) || (activeSession?.uploaded_document_ids || []).includes(d.id)
+    (d: any) =>
+      uploadedInSession.includes(d.id) || (activeSession?.uploaded_document_ids || []).includes(d.id)
   );
   const visibleSourceChunks = (unitContext?.sop_chunks || []).filter(
     (c: any) => useHistoricalSources || uploadedInSession.includes(c.document_id)
   );
-  const visibleIncidents = useHistoricalSources ? (unitContext?.incidents || []) : [];
-  const visibleFindings = useHistoricalSources ? (unitContext?.audit_findings || []) : [];
+  const visibleIncidents = useHistoricalSources ? unitContext?.incidents || [] : [];
+  const visibleFindings = useHistoricalSources ? unitContext?.audit_findings || [] : [];
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -320,7 +329,8 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       let textContent: string | undefined = undefined;
       let base64Content: string | undefined = undefined;
 
-      if (selectedFile.size > 6 * 1024 * 1024) throw new Error('الحد الأقصى لحجم المستند 6 ميجابايت.');
+      if (selectedFile.size > 6 * 1024 * 1024)
+        throw new Error('الحد الأقصى لحجم المستند 6 ميجابايت.');
       if (ext === 'txt' || ext === 'csv' || selectedFile.type.startsWith('text/')) {
         textContent = await selectedFile.text();
       } else {
@@ -361,7 +371,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
         text: body.document?.extraction_notice_ar || 'تم تسجيل المستند بنجاح.',
       });
       if (body.document?.id) {
-        setUploadedInSession(prev => [...prev, body.document.id]);
+        setUploadedInSession((prev) => [...prev, body.document.id]);
       }
       setSelectedFile(null);
       setDocTitleAr('');
@@ -384,7 +394,12 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     });
   };
 
-  const handleUpdateCandidateControl = (riskIdx: number, ctrlIdx: number, field: string, value: any) => {
+  const handleUpdateCandidateControl = (
+    riskIdx: number,
+    ctrlIdx: number,
+    field: string,
+    value: any
+  ) => {
     setCandidateRisks((prev) => {
       const next = [...prev];
       const risk = { ...next[riskIdx] };
@@ -400,14 +415,26 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   const handleAddCandidateRisk = () => {
     const unitCode = unitContext?.unit?.code?.split('-')[0] || 'UNIT';
     const nextNum = candidateRisks.length + 1;
-    const nextList = [...candidateRisks, {
-      risk_id: `RSK-${unitCode}-NEW-${Date.now()}-${nextNum}`,
-      process_name_ar: '', risk_title_ar: '', description_ar: '',
-      expected_loss_egp: null, frequency_score: null,
-      loss_Notes_ar: '', frequency_notes_ar: '', controls: [], missing_fields: [
-        'risk_description', 'individual_financial_impact', 'expected_frequency', 'control_evidence',
-      ],
-    }];
+    const nextList = [
+      ...candidateRisks,
+      {
+        risk_id: `RSK-${unitCode}-NEW-${Date.now()}-${nextNum}`,
+        process_name_ar: '',
+        risk_title_ar: '',
+        description_ar: '',
+        expected_loss_egp: null,
+        frequency_score: null,
+        loss_Notes_ar: '',
+        frequency_notes_ar: '',
+        controls: [],
+        missing_fields: [
+          'risk_description',
+          'individual_financial_impact',
+          'expected_frequency',
+          'control_evidence',
+        ],
+      },
+    ];
     setCandidateRisks(nextList);
     setCalcPreview(null);
     if (sessionId) syncSessionToServer(nextList, 4, null);
@@ -499,19 +526,18 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 font-['Cairo']">
+    <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-['Cairo']">
       {/* Page Header */}
-      <div className="bg-[#ECEBE8] p-5 rounded-2xl border border-[#C6C4C1] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#DCDAD5] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#006547] text-white flex items-center justify-center shrink-0 shadow-inner">
-            <FileUp className="w-6 h-6 text-[#F79C1E]" />
+          <div className="w-11 h-11 rounded-xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center shrink-0 border border-[#006547]">
+            <FileUp className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-bold text-slate-900">إعداد تقييم جديد</h2>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold border border-emerald-300">
-                الحفظ والمراجعة متاحان
-              </span>
+              <h2 className="text-lg sm:text-xl font-extrabold text-[#09331F]">إعداد تقييم جديد</h2>
+              <span className="text-slate-300">·</span>
+              <span className="text-xs font-bold text-[#006547]">الحفظ والمراجعة متاحان</span>
             </div>
             <p className="text-xs text-slate-600 mt-1">
               ارفع مستنداتك، واستكمل المخاطر والضوابط، ثم راجع النتائج واحفظ المسودة.
@@ -521,23 +547,43 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       </div>
 
       {/* Stepper Progress Bar */}
-      <div className="bg-[#ECEBE8] p-6 rounded-2xl border border-[#C6C4C1] shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#C6C4C1] bg-[#E2E1DE] p-3 text-xs">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#DCDAD5] shadow-xs">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6] p-3 text-xs">
           <span className="font-bold text-[#09331F]">مصدر التقييم:</span>
-          <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!useHistoricalSources}
-            onChange={() => { setUseHistoricalSources(false); setCandidateRisks([]); setCalcPreview(null); setUploadedInSession([]); }} />
-            مستندات جديدة فقط</label>
-          <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={useHistoricalSources}
-            onChange={() => { setUseHistoricalSources(true); setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || []))); setCalcPreview(null); }} />
-            الاستعانة ببيانات الوحدة السابقة</label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={!useHistoricalSources}
+              onChange={() => {
+                setUseHistoricalSources(false);
+                setCandidateRisks([]);
+                setCalcPreview(null);
+                setUploadedInSession([]);
+              }}
+            />
+            مستندات جديدة فقط
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={useHistoricalSources}
+              onChange={() => {
+                setUseHistoricalSources(true);
+                setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
+                setCalcPreview(null);
+              }}
+            />
+            الاستعانة ببيانات الوحدة السابقة
+          </label>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
           {steps.map((s) => {
             const isCompleted = s.num < currentStep;
             const isCurrent = s.num === currentStep;
 
             return (
-              <div 
+              <div
                 key={s.num}
                 onClick={() => {
                   setCurrentStep(s.num);
@@ -546,20 +592,26 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   }
                 }}
                 className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                  isCurrent 
-                    ? 'border-[#006547] bg-[#E2E6E3] shadow-sm'
+                  isCurrent
+                    ? 'border-[#006547] bg-emerald-50/70 shadow-xs'
                     : isCompleted
-                      ? 'border-emerald-300 bg-[#E5E8E5] text-emerald-950'
-                      : 'border-[#C6C4C1] bg-[#E2E1DE] opacity-80 hover:opacity-100'
+                      ? 'border-emerald-200 bg-emerald-50/30 text-emerald-950'
+                      : 'border-[#E5E3DE] bg-[#F8F8F6] hover:border-[#006547]/40'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    isCurrent ? 'bg-[#006547] text-white' : isCompleted ? 'bg-emerald-600 text-white' : 'bg-[#CECCC9] text-slate-700'
-                  }`}>
+                  <div
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold tabular-nums shrink-0 ${
+                      isCurrent
+                        ? 'bg-[#006547] text-white'
+                        : isCompleted
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
                     {s.num}
                   </div>
-                  <div className="text-xs font-bold text-slate-900">{s.title}</div>
+                  <div className="text-xs font-bold text-[#09331F] truncate">{s.title}</div>
                 </div>
                 <div className="text-[10px] text-slate-600">{s.desc}</div>
               </div>
@@ -568,49 +620,78 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
         </div>
 
         {/* Step Body */}
-        <div className="mt-8 border-t border-[#CECCC9] pt-6">
+        <div className="mt-6 sm:mt-8 border-t border-[#E5E3DE] pt-5 sm:pt-6">
           {/* STEP 1: SELECT AUTHORIZED BUSINESS UNIT */}
           {currentStep === 1 && (
             <div className="space-y-4 max-w-2xl mx-auto">
-              <div className="text-center space-y-1">
-                <h3 className="text-sm font-bold text-slate-900">الخطوة 1: حدد الوحدة التنظيمية المصرفية المستهدفة</h3>
-                <p className="text-xs text-slate-600">
-                  تظهر أدناه الوحدات التنظيمية المصرح لحسابك بإعداد ومراجعة تقييماتها الرقابية.
-                </p>
+              <CreateBusinessUnitModal
+                isOpen={showAddUnitModal}
+                onClose={() => setShowAddUnitModal(false)}
+                existingUnitCodes={units.map((u) => u.code)}
+                onUnitCreated={(newUnit) => {
+                  setUnits((prev) => {
+                    if (prev.some((u) => u.id === newUnit.id)) return prev;
+                    return [...prev, newUnit];
+                  });
+                  setSelectedBU(newUnit.id);
+                }}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8F8F6] p-3.5 rounded-xl border border-[#E5E3DE]">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-extrabold text-[#09331F]">
+                    الخطوة 1: حدد الوحدة التنظيمية المصرفية المستهدفة
+                  </h3>
+                  <p className="text-xs text-slate-600">
+                    اختر من الوحدات المفعّلة أدناه أو أضف أي إدارة / وحدة تنظيمية جديدة للعمل عليها.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  data-testid="wizard-add-unit-btn"
+                  onClick={() => setShowAddUnitModal(true)}
+                  className="min-h-10 px-3.5 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4 text-[#F79C1E]" />
+                  <span>+ إضافة / اختيار وحدة تنظيمية أخرى</span>
+                </button>
               </div>
 
               {unitsLoading ? (
-                <div className="p-6 text-center text-xs text-slate-600">جارٍ تحميل الوحدات المصرح بها...</div>
+                <div className="p-6 text-center text-xs text-slate-600">
+                  جارٍ تحميل الوحدات المصرح بها...
+                </div>
               ) : (
                 <div className="space-y-2.5">
                   {units.map((bu) => (
-                    <label 
+                    <label
                       key={bu.id}
-                      className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                         selectedBU === bu.id
-                          ? 'border-[#006547] bg-[#E2E6E3] ring-1 ring-[#006547]'
-                          : 'border-[#C6C4C1] bg-[#E2E1DE] hover:bg-[#EAE9E6]'
+                          ? 'border-[#006547] bg-emerald-50/60 ring-1 ring-[#006547]/40'
+                          : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <input 
-                          type="radio" 
-                          name="bu" 
+                        <input
+                          type="radio"
+                          name="bu"
                           checked={selectedBU === bu.id}
                           onChange={() => setSelectedBU(bu.id)}
-                          className="mt-1 text-[#006547] focus:ring-[#006547]" 
+                          className="mt-1 text-[#006547] focus:ring-[#006547]"
                         />
                         <div>
-                          <div className="text-xs font-bold text-slate-900">{bu.name_ar}</div>
-                          <div className="text-[10px] text-slate-600 font-mono mt-0.5">{bu.code} • {bu.id}</div>
+                          <div className="text-xs font-extrabold text-[#09331F]">{bu.name_ar}</div>
+                          <div className="text-[10px] text-slate-500 font-mono tabular-nums mt-0.5">
+                            {bu.code} · {bu.id}
+                          </div>
                           <div className="text-[11px] text-slate-700 mt-1">{bu.description}</div>
                         </div>
                       </div>
-                      <div className="text-left shrink-0 space-y-1">
-                        <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#ECEBE8] border border-[#C6C4C1] font-bold text-slate-800">
+                      <div className="text-right sm:text-left shrink-0 space-y-0.5 tabular-nums">
+                        <span className="inline-block text-[11px] font-bold text-[#006547]">
                           المخاطر المسجلة: {bu.total_risks_count || 0}
                         </span>
-                        <div className="text-[10px] text-slate-600">
+                        <div className="text-[10px] text-slate-500">
                           {bu.latest_version_badge_ar}
                         </div>
                       </div>
@@ -620,11 +701,11 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               )}
 
               {/* Workflow Mode Selection Cards (Phase 3A) */}
-              <div className="bg-[#E2E1DE] p-5 rounded-2xl border border-[#B8B6B2] space-y-4 mt-6">
+              <div className="bg-[#F8F8F6] p-4 sm:p-5 rounded-2xl border border-[#E5E3DE] space-y-4 mt-6">
                 <div className="text-xs font-bold text-[#09331F] flex items-center justify-between flex-wrap gap-2">
                   <span>اختر نمط جلسة التقييم (Workflow Mode):</span>
                   {sessionId && (
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono">
+                    <span className="text-[11px] text-[#006547] font-mono tabular-nums">
                       جلسة جارية: {sessionId} ({workflowMode === 'NEW' ? 'تقييم جديد' : 'تحديث معتمد'})
                     </span>
                   )}
@@ -638,22 +719,26 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       setUseHistoricalSources(false);
                       handleStartSession('NEW');
                     }}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
                       workflowMode === 'NEW'
-                        ? 'border-[#006547] bg-[#E2E6E3] shadow-sm'
-                        : 'border-[#C6C4C1] bg-[#ECEBE8] hover:bg-[#E6E5E2]'
+                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {workflowMode === 'NEW' && <div className="w-2.5 h-2.5 rounded-full bg-[#006547]" />}
+                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
+                          {workflowMode === 'NEW' && (
+                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                          )}
                         </div>
-                        <span className="text-xs font-bold text-slate-900">إنشاء تقييم جديد كلياً (New RCSA)</span>
+                        <span className="text-xs font-bold text-[#09331F]">
+                          إنشاء تقييم جديد كلياً (New RCSA)
+                        </span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-bold">بداية نظيفة</span>
+                      <span className="text-[10px] text-sky-800 font-bold">بداية نظيفة</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 pr-7">
+                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
                       بدء تقييم جديد للوحدة؛ لا يتم نسخ أي مخاطر أو مستندات سابقة تلقائياً لضمان سلامة الأدلة.
                     </p>
                   </div>
@@ -665,28 +750,37 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       setUseHistoricalSources(true);
                       handleStartSession('UPDATE');
                     }}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
                       workflowMode === 'UPDATE'
-                        ? 'border-[#006547] bg-[#E2E6E3] shadow-sm'
-                        : 'border-[#C6C4C1] bg-[#ECEBE8] hover:bg-[#E6E5E2]'
+                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {workflowMode === 'UPDATE' && <div className="w-2.5 h-2.5 rounded-full bg-[#006547]" />}
+                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
+                          {workflowMode === 'UPDATE' && (
+                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                          )}
                         </div>
-                        <span className="text-xs font-bold text-slate-900">تحديث تقييم معتمد سابق (Update Existing RCSA)</span>
+                        <span className="text-xs font-bold text-[#09331F]">
+                          تحديث تقييم معتمد سابق (Update Existing RCSA)
+                        </span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold">تحديث دوري</span>
+                      <span className="text-[10px] text-[#006547] font-bold">تحديث دوري</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 pr-7">
+                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
                       استيراد مخاطر وضوابط النسخة المعتمدة كنقطة انطلاق للمراجعة مع بقاء النسخة المعتمدة الأصلية غير قابلة للتغيير.
                     </p>
 
                     {workflowMode === 'UPDATE' && unitApprovedAssessments.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-[#CECCC9] pr-7" onClick={(e) => e.stopPropagation()}>
-                        <label className="block text-[10px] font-bold text-slate-700 mb-1">حدد التقييم المعتمد المرجعي:</label>
+                      <div
+                        className="mt-3 pt-3 border-t border-[#E5E3DE] pr-6"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1">
+                          حدد التقييم المعتمد المرجعي:
+                        </label>
                         <select
                           value={baseAssessmentId}
                           onChange={(e) => {
@@ -694,11 +788,12 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                             setBaseAssessmentId(newBaseId);
                             handleStartSession('UPDATE', newBaseId);
                           }}
-                          className="w-full px-2.5 py-1.5 text-xs font-bold border border-[#B8B6B2] rounded-lg bg-[#F5F4F2] text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#006547]"
+                          className="w-full min-h-9 px-2.5 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
                         >
                           {unitApprovedAssessments.map((a: any) => (
                             <option key={a.id} value={a.id}>
-                              {a.timestamps?.primary_version_label_ar || a.title_ar || a.title} (نسخة {a.version_number})
+                              {a.timestamps?.primary_version_label_ar || a.title_ar || a.title} (نسخة{' '}
+                              {a.version_number})
                             </option>
                           ))}
                         </select>
@@ -709,15 +804,18 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                 {/* Active session resumption banner if exists and not currently selected */}
                 {activeSession && activeSession.id !== sessionId && (
-                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs flex items-center justify-between text-amber-950">
+                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-amber-950">
                     <div className="flex items-center gap-2">
                       <HelpCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                      <span>توجد جلسة عمل نشطة سابقة لهذه الوحدة: <strong>{activeSession.session_title}</strong></span>
+                      <span>
+                        توجد جلسة عمل نشطة سابقة لهذه الوحدة:{' '}
+                        <strong>{activeSession.session_title}</strong>
+                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleResumeActiveSession(activeSession)}
-                      className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold"
+                      className="min-h-8 px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold cursor-pointer"
                     >
                       استئناف الجلسة السابقة
                     </button>
@@ -732,8 +830,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    الخطوة 2: المستندات والأدلة الداعمة لوحدة ({unitContext?.unit?.name_ar || selectedBU})
+                  <h3 className="text-sm font-extrabold text-[#09331F]">
+                    الخطوة 2: المستندات والأدلة الداعمة لوحدة (
+                    {unitContext?.unit?.name_ar || selectedBU})
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
                     استعرض المستندات المرجعية المسجلة للوحدة أو ارفع ملفات داعمة جديدة (إجراءات عمل قياسية SOP، تقارير تفتيش، سجلات حوادث).
@@ -742,7 +841,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               </div>
 
               {/* AI Agent Cross-Workflow Bridge Banner (Phase 3A) */}
-              <div className="bg-[#E2E6E3] p-4 rounded-xl border border-[#006547]/30 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <div className="bg-emerald-50/70 p-4 rounded-2xl border border-[#006547]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-[#006547] text-[#F79C1E] flex items-center justify-center shrink-0">
                     <Bot className="w-5 h-5" />
@@ -769,7 +868,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       mode: workflowMode,
                     });
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#006547] text-white hover:bg-[#09331F] text-xs font-bold flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
+                  className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] text-white hover:bg-[#09331F] text-xs font-bold flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer whitespace-nowrap"
                 >
                   <span>الانتقال إلى وكيل الذكاء الاصطناعي</span>
                   <ArrowLeft className="w-3.5 h-3.5" />
@@ -777,7 +876,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               </div>
 
               {/* Upload New Supporting Document Card */}
-              <div className="bg-[#E2E1DE] p-5 rounded-2xl border border-[#B8B6B2] space-y-4">
+              <div className="bg-[#F8F8F6] p-4 sm:p-5 rounded-2xl border border-[#E5E3DE] space-y-4">
                 <div className="text-xs font-bold text-[#09331F] flex items-center gap-2">
                   <UploadCloud className="w-4 h-4 text-[#006547]" />
                   <span>رفع مستند تشغيلي أو رقابي جديد وربطه بالوحدة</span>
@@ -785,11 +884,13 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-800 mb-1">تصنيف المستند:</label>
+                    <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                      تصنيف المستند:
+                    </label>
                     <select
                       value={docType}
                       onChange={(e) => setDocType(e.target.value)}
-                      className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] px-3 py-2 text-xs font-bold text-slate-900"
+                      className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs font-bold text-slate-900"
                     >
                       <option value="SOP">إجراءات العمل القياسية (SOP)</option>
                       <option value="AUDIT_REPORT">تقرير التفتيش والمراجعة الداخلية</option>
@@ -799,23 +900,27 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-800 mb-1">عنوان المستند (بالعربية):</label>
+                    <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                      عنوان المستند (بالعربية):
+                    </label>
                     <input
                       type="text"
                       value={docTitleAr}
                       onChange={(e) => setDocTitleAr(e.target.value)}
                       placeholder="مثال: دليل إجراءات المراجعة المستندية المحدث"
-                      className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] px-3 py-2 text-xs text-slate-900"
+                      className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs text-slate-900"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-800 mb-1">اختر الملف (TXT, CSV, PDF, DOCX, XLSX):</label>
+                    <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                      اختر الملف (TXT, CSV, PDF, DOCX, XLSX):
+                    </label>
                     <input
                       type="file"
                       accept=".txt,.csv,.pdf,.docx,.xlsx"
                       onChange={handleFileSelection}
-                      className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] px-3 py-1.5 text-xs text-slate-800 file:ml-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-[#006547] file:text-white file:text-[11px] file:font-bold"
+                      className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-1.5 text-xs text-slate-800 file:ml-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-[#006547] file:text-white file:text-[11px] file:font-bold"
                     />
                   </div>
                 </div>
@@ -828,10 +933,14 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                     type="button"
                     disabled={!selectedFile || uploadingDoc}
                     onClick={handleUploadSupportingDocument}
-                    className="px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
                   >
                     <UploadCloud className="w-4 h-4 text-[#F79C1E]" />
-                    <span>{uploadingDoc ? 'جارٍ حفظ المستند...' : 'رفع وتسجيل المستند في قاعدة البيانات'}</span>
+                    <span>
+                      {uploadingDoc
+                        ? 'جارٍ حفظ المستند...'
+                        : 'رفع وتسجيل المستند في قاعدة البيانات'}
+                    </span>
                   </button>
                 </div>
 
@@ -839,10 +948,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   <div
                     className={`p-3 rounded-xl border text-xs font-bold ${
                       uploadNotice.type === 'success'
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                         : uploadNotice.type === 'warning'
-                          ? 'bg-amber-50 border-amber-300 text-amber-900'
-                          : 'bg-rose-50 border-rose-300 text-rose-900'
+                          ? 'bg-amber-50 border-amber-200 text-amber-900'
+                          : 'bg-rose-50 border-rose-200 text-rose-900'
                     }`}
                   >
                     {uploadNotice.text}
@@ -852,41 +961,44 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
               {/* Registered Documents Table */}
               <div className="space-y-2.5">
-                <div className="text-xs font-bold text-slate-900">
+                <div className="text-xs font-bold text-[#09331F] tabular-nums">
                   المستندات المرفوعة في التقييم الحالي ({currentSessionDocuments.length}):
                 </div>
                 {currentSessionDocuments.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {currentSessionDocuments.map((doc: any) => (
-                      <div key={doc.id} className="p-3.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] flex items-start justify-between gap-3">
+                      <div
+                        key={doc.id}
+                        className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] flex items-start justify-between gap-3"
+                      >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-[#006547] shrink-0" />
                             <span className="text-xs font-bold text-slate-900">{doc.title_ar}</span>
                           </div>
                           <div className="text-[10px] text-slate-600 font-mono">
-                            {doc.doc_type} • {doc.original_filename}
+                            {doc.doc_type} · {doc.original_filename}
                           </div>
-                          <div className="text-[10px] text-slate-600">
-                            تاريخ التسجيل: {doc.uploaded_at_ar} • المقاطع النصية: {doc.chunks_count}
+                          <div className="text-[10px] text-slate-600 tabular-nums">
+                            تاريخ التسجيل: {doc.uploaded_at_ar} · المقاطع النصية: {doc.chunks_count}
                           </div>
                         </div>
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
+                          className={`text-[11px] font-bold shrink-0 ${
                             doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
-                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                              ? 'text-amber-800'
+                              : 'text-[#006547]'
                           }`}
                         >
                           {doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
-                            ? 'محفوظ (يتطلب استخراج يدوي)'
+                            ? 'يتطلب استخراج يدوي'
                             : 'مستخرج ومفهرس'}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] text-xs text-slate-600">
+                  <div className="p-4 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] text-xs text-slate-600">
                     لم تُرفع ملفات لهذا التقييم بعد.
                   </div>
                 )}
@@ -899,22 +1011,28 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    الخطوة 3: معاينة المقاطع النصية المستخرجة والسجلات المرجعية ({unitContext?.unit?.name_ar})
+                  <h3 className="text-sm font-extrabold text-[#09331F]">
+                    الخطوة 3: معاينة المقاطع النصية المستخرجة والسجلات المرجعية (
+                    {unitContext?.unit?.name_ar})
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
                     تمييز واضح بين المقاطع النصية الخام المستخرجة من المستندات وبين سجلات الحوادث والتفتيش والمخاطر المهيكلة.
                   </p>
                 </div>
                 {unitContext?.source_coverage && (
-                  <span className="text-xs px-3 py-1 rounded-xl bg-[#E2E1DE] border border-[#B8B6B2] font-bold text-[#09331F]">
-                    تغطية المصادر: {unitContext.source_coverage.status === 'complete' ? 'مكتملة' : unitContext.source_coverage.status === 'partial' ? 'جزئية' : 'غير مسجلة'}
+                  <span className="text-xs font-bold text-[#006547]">
+                    تغطية المصادر:{' '}
+                    {unitContext.source_coverage.status === 'complete'
+                      ? 'مكتملة'
+                      : unitContext.source_coverage.status === 'partial'
+                        ? 'جزئية'
+                        : 'غير مسجلة'}
                   </span>
                 )}
               </div>
 
               {useHistoricalSources && unitContext?.source_coverage?.notes_ar && (
-                <div className="p-3.5 rounded-xl bg-[#E2E1DE] border border-[#B8B6B2] text-xs text-slate-800">
+                <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] text-xs text-slate-800">
                   <span className="font-bold text-[#09331F]">ملاحظة التغطية المرجعية: </span>
                   {unitContext.source_coverage.notes_ar}
                 </div>
@@ -922,69 +1040,81 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Raw Extracted SOP & Document Chunks */}
-                <div className="bg-[#E2E1DE] p-4 rounded-2xl border border-[#C6C4C1] space-y-3">
-                  <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
+                <div className="bg-[#F8F8F6] p-4 rounded-2xl border border-[#E5E3DE] space-y-3">
+                  <div className="text-xs font-bold text-[#09331F] flex items-center justify-between">
                     <span>المقاطع المستخرجة من الملفات المختارة</span>
-                    <span className="px-2 py-0.5 rounded bg-[#ECEBE8] border border-[#C6C4C1] font-mono text-[10px]">
+                    <span className="font-mono text-[11px] text-[#006547] tabular-nums">
                       {visibleSourceChunks.length} مقطع
                     </span>
                   </div>
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {visibleSourceChunks.map((chunk: any) => (
-                      <div key={chunk.chunk_id} className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1] text-xs space-y-1">
+                      <div
+                        key={chunk.chunk_id}
+                        className="p-3 rounded-xl bg-white border border-[#DCDAD5] text-xs space-y-1"
+                      >
                         <div className="flex items-center justify-between text-[10px] font-bold text-[#006547]">
-                          <span>{chunk.sop_title_ar} — ({chunk.section_ref})</span>
-                          <span className="font-mono">{chunk.chunk_id}</span>
+                          <span>
+                            {chunk.sop_title_ar} — ({chunk.section_ref})
+                          </span>
+                          <span className="font-mono tabular-nums">{chunk.chunk_id}</span>
                         </div>
                         <p className="text-slate-800 leading-relaxed">{chunk.text_ar}</p>
                       </div>
                     ))}
-                    {([] as any[]).map((chunk: any) => (
-                      <div key={chunk.id} className="p-3 rounded-xl bg-[#ECEBE8] border border-emerald-300 text-xs space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-800">
-                          <span>مقطع مستخرج من ملف مرفوع: {chunk.title_ar}</span>
-                          <span className="font-mono">{chunk.page_or_section}</span>
-                        </div>
-                        <p className="text-slate-800 leading-relaxed">{chunk.chunk_text}</p>
-                      </div>
-                    ))}
                     {visibleSourceChunks.length === 0 && (
-                      <div className="text-xs text-slate-600 p-3">لا توجد مقاطع نصية مستخرجة لهذه الوحدة حالياً.</div>
+                      <div className="text-xs text-slate-600 p-3">
+                        لا توجد مقاطع نصية مستخرجة لهذه الوحدة حالياً.
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Historical Incidents & Audit Findings */}
-                <div className="bg-[#E2E1DE] p-4 rounded-2xl border border-[#C6C4C1] space-y-3">
-                  <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
+                <div className="bg-[#F8F8F6] p-4 rounded-2xl border border-[#E5E3DE] space-y-3">
+                  <div className="text-xs font-bold text-[#09331F] flex items-center justify-between">
                     <span>سجلات الحوادث والتفتيش السابقة</span>
-                    <span className="px-2 py-0.5 rounded bg-[#ECEBE8] border border-[#C6C4C1] font-mono text-[10px]">
-                      {visibleIncidents.length} حادثة / {visibleFindings.length} ملاحظة تفتيش
+                    <span className="font-mono text-[11px] text-slate-700 tabular-nums">
+                      {visibleIncidents.length} حادثة · {visibleFindings.length} ملاحظة تفتيش
                     </span>
                   </div>
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {visibleIncidents.map((inc: any) => (
-                      <div key={inc.incident_id} className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1] text-xs space-y-1">
+                      <div
+                        key={inc.incident_id}
+                        className="p-3 rounded-xl bg-white border border-[#DCDAD5] text-xs space-y-1"
+                      >
                         <div className="flex items-center justify-between text-[10px] font-bold text-rose-800">
-                          <span>حادثة تشغيلية ({inc.incident_id}): {inc.title_ar}</span>
-                          <span className="font-mono">
-                            {inc.financial_loss_egp !== null ? `${Number(inc.financial_loss_egp).toLocaleString()} ج.م` : 'بدون خسارة مباشرة'}
+                          <span>
+                            حادثة تشغيلية ({inc.incident_id}): {inc.title_ar}
+                          </span>
+                          <span className="font-mono tabular-nums">
+                            {inc.financial_loss_egp !== null
+                              ? `${Number(inc.financial_loss_egp).toLocaleString()} ج.م`
+                              : 'بدون خسارة مباشرة'}
                           </span>
                         </div>
                         <p className="text-slate-700 text-[11px]">{inc.cause_ar}</p>
                       </div>
                     ))}
                     {visibleFindings.map((af: any) => (
-                      <div key={af.finding_id} className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1] text-xs space-y-1">
+                      <div
+                        key={af.finding_id}
+                        className="p-3 rounded-xl bg-white border border-[#DCDAD5] text-xs space-y-1"
+                      >
                         <div className="flex items-center justify-between text-[10px] font-bold text-amber-900">
-                          <span>ملاحظة تفتيش ({af.finding_id}): {af.title_ar}</span>
+                          <span>
+                            ملاحظة تفتيش ({af.finding_id}): {af.title_ar}
+                          </span>
                           <span className="font-mono">{af.severity}</span>
                         </div>
                         <p className="text-slate-700 text-[11px]">{af.finding_ar}</p>
                       </div>
                     ))}
                     {visibleIncidents.length + visibleFindings.length === 0 && (
-                      <div className="text-xs text-slate-600 p-3">لا توجد حوادث أو ملاحظات تفتيش مسجلة لهذه الوحدة.</div>
+                      <div className="text-xs text-slate-600 p-3">
+                        لا توجد حوادث أو ملاحظات تفتيش مسجلة لهذه الوحدة.
+                      </div>
                     )}
                   </div>
                 </div>
@@ -997,8 +1127,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    الخطوة 4: استيفاء المدخلات الناقصة ومراجعة المخاطر والضوابط المرشحة ({candidateRisks.length} مخاطرة)
+                  <h3 className="text-sm font-extrabold text-[#09331F] tabular-nums">
+                    الخطوة 4: استيفاء المدخلات الناقصة ومراجعة المخاطر والضوابط المرشحة (
+                    {candidateRisks.length} مخاطرة)
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
                     يتم تمييز الحقول المفقودة التي تمنع الحساب المنهجي، ويمكنك استيفاؤها أو إضافة مخاطرة جديدة قبل تشغيل محرك بايثون.
@@ -1008,7 +1139,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                 <button
                   type="button"
                   onClick={handleAddCandidateRisk}
-                  className="px-3.5 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  className="min-h-10 px-3.5 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap"
                 >
                   <Plus className="w-4 h-4 text-[#F79C1E]" />
                   <span>إضافة مخاطرة جديدة للوحدة</span>
@@ -1016,7 +1147,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               </div>
 
               {candidateRisks.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-[#E2E1DE] border border-[#C6C4C1] text-center space-y-3">
+                <div className="p-6 rounded-2xl bg-[#F8F8F6] border border-[#E5E3DE] text-center space-y-3">
                   <AlertTriangle className="w-7 h-7 text-amber-700 mx-auto" />
                   <div className="text-xs font-bold text-slate-900">
                     لا توجد مخاطر مرجعية مسجلة مسبقاً لوحدة ({unitContext?.unit?.name_ar}).
@@ -1027,7 +1158,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   <button
                     type="button"
                     onClick={handleAddCandidateRisk}
-                    className="px-4 py-2 rounded-xl bg-[#006547] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4 text-[#F79C1E]" />
                     <span>إضافة مخاطرة أولى الآن</span>
@@ -1036,24 +1167,35 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               ) : (
                 <div className="space-y-4">
                   {candidateRisks.map((risk, rIdx) => {
-                    const isLossMissing = risk.expected_loss_egp === null || risk.expected_loss_egp === undefined || risk.expected_loss_egp === '';
-                    const isFreqMissing = risk.frequency_score === null || risk.frequency_score === undefined || risk.frequency_score === '';
+                    const isLossMissing =
+                      risk.expected_loss_egp === null ||
+                      risk.expected_loss_egp === undefined ||
+                      risk.expected_loss_egp === '';
+                    const isFreqMissing =
+                      risk.frequency_score === null ||
+                      risk.frequency_score === undefined ||
+                      risk.frequency_score === '';
 
                     return (
-                      <div key={risk.risk_id} className="p-4 rounded-2xl bg-[#E2E1DE] border border-[#B8B6B2] space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#CECCC9]">
+                      <div
+                        key={risk.risk_id}
+                        className="p-4 rounded-2xl bg-[#F8F8F6] border border-[#E5E3DE] space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E3DE]">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-[#09331F] bg-[#ECEBE8] px-2.5 py-0.5 rounded border border-[#C6C4C1]">
+                            <span className="font-mono text-xs font-bold text-[#09331F] bg-white px-2.5 py-0.5 rounded border border-[#DCDAD5] tabular-nums">
                               {risk.risk_id}
                             </span>
-                            <span className="text-xs font-bold text-slate-900">{risk.process_name_ar}</span>
+                            <span className="text-xs font-bold text-slate-900">
+                              {risk.process_name_ar}
+                            </span>
                           </div>
-                          {(isLossMissing || isFreqMissing) ? (
-                            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold">
+                          {isLossMissing || isFreqMissing ? (
+                            <span className="text-xs text-amber-800 font-bold">
                               يتطلب استيفاء مدخلات مفقودة قبل اكتمال الاحتساب
                             </span>
                           ) : (
-                            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
+                            <span className="text-xs text-[#006547] font-bold">
                               المدخلات المالية للمخاطرة مستوفاة
                             </span>
                           )}
@@ -1061,12 +1203,16 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div className="md:col-span-1">
-                            <label className="block text-[11px] font-bold text-slate-800 mb-1">وصف المخاطرة (بالعربية):</label>
+                            <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                              وصف المخاطرة (بالعربية):
+                            </label>
                             <textarea
                               rows={2}
                               value={risk.description_ar || ''}
-                              onChange={(e) => handleUpdateCandidateRisk(rIdx, 'description_ar', e.target.value)}
-                              className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] p-2 text-xs text-slate-900"
+                              onChange={(e) =>
+                                handleUpdateCandidateRisk(rIdx, 'description_ar', e.target.value)
+                              }
+                              className="w-full rounded-xl bg-white border border-[#DCDAD5] p-2 text-xs text-slate-900"
                             />
                           </div>
 
@@ -1074,7 +1220,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                             <label className="block text-[11px] font-bold text-slate-800 mb-1">
                               الخسارة الفردية المتوقعة (ج.م):
                               {isLossMissing && (
-                                <span className="text-rose-700 mr-1">(مفقود — يمنع احتساب الخسارة السنوية والخطر المتبقي)</span>
+                                <span className="text-rose-700 mr-1">
+                                  (مفقود — يمنع احتساب الخسارة السنوية والخطر المتبقي)
+                                </span>
                               )}
                             </label>
                             <input
@@ -1090,14 +1238,16 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                   e.target.value === '' ? null : Number(e.target.value)
                                 )
                               }
-                              className={`w-full rounded-xl px-3 py-2 text-xs font-mono font-bold ${
+                              className={`w-full min-h-10 rounded-xl px-3 py-2 text-xs font-mono font-bold tabular-nums ${
                                 isLossMissing
                                   ? 'bg-amber-50 border-2 border-amber-500 text-amber-950'
-                                  : 'bg-[#F5F4F2] border border-[#B8B6B2] text-slate-900'
+                                  : 'bg-white border border-[#DCDAD5] text-slate-900'
                               }`}
                             />
                             {risk.loss_Notes_ar && (
-                              <div className="text-[10px] text-slate-600 mt-1">{risk.loss_Notes_ar}</div>
+                              <div className="text-[10px] text-slate-600 mt-1">
+                                {risk.loss_Notes_ar}
+                              </div>
                             )}
                           </div>
 
@@ -1105,7 +1255,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                             <label className="block text-[11px] font-bold text-slate-800 mb-1">
                               درجة التكرار (1 إلى 5):
                               {isFreqMissing && (
-                                <span className="text-rose-700 mr-1">(مفقود — يمنع احتساب الخسارة السنوية)</span>
+                                <span className="text-rose-700 mr-1">
+                                  (مفقود — يمنع احتساب الخسارة السنوية)
+                                </span>
                               )}
                             </label>
                             <select
@@ -1117,7 +1269,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                   e.target.value === '' ? null : Number(e.target.value)
                                 )
                               }
-                              className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] px-3 py-2 text-xs font-bold text-slate-900"
+                              className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs font-bold text-slate-900"
                             >
                               <option value="">-- اختر درجة التكرار --</option>
                               <option value={1}>1 — نادر جداً (معامل 0.5 سنوياً)</option>
@@ -1130,9 +1282,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                         </div>
 
                         {/* Controls for this candidate risk */}
-                        <div className="pt-2 border-t border-[#CECCC9] space-y-2">
+                        <div className="pt-2 border-t border-[#E5E3DE] space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-800">
+                            <span className="text-[11px] font-bold text-slate-800 tabular-nums">
                               الضوابط الرقابية المرتبطة ({risk.controls?.length || 0}):
                             </span>
                             <button
@@ -1150,20 +1302,35 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                             const missingAuto = !ctrl.automation_level;
 
                             return (
-                              <div key={ctrl.control_id} className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1] grid grid-cols-1 md:grid-cols-4 gap-2.5 text-xs">
+                              <div
+                                key={ctrl.control_id}
+                                className="p-3 rounded-xl bg-white border border-[#DCDAD5] grid grid-cols-1 md:grid-cols-4 gap-2.5 text-xs"
+                              >
                                 <div className="md:col-span-2">
-                                  <div className="font-mono text-[10px] font-bold text-[#09331F]">{ctrl.control_id}</div>
+                                  <div className="font-mono text-[10px] font-bold text-[#09331F] tabular-nums">
+                                    {ctrl.control_id}
+                                  </div>
                                   <input
                                     type="text"
                                     value={ctrl.description_ar || ''}
-                                    onChange={(e) => handleUpdateCandidateControl(rIdx, cIdx, 'description_ar', e.target.value)}
-                                    className="w-full mt-1 rounded-lg bg-[#F5F4F2] border border-[#B8B6B2] px-2.5 py-1.5 text-xs text-slate-900"
+                                    onChange={(e) =>
+                                      handleUpdateCandidateControl(
+                                        rIdx,
+                                        cIdx,
+                                        'description_ar',
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full min-h-9 mt-1 rounded-lg bg-[#F8F8F6] border border-[#DCDAD5] px-2.5 py-1.5 text-xs text-slate-900"
                                   />
                                 </div>
 
                                 <div>
                                   <label className="block text-[10px] font-bold text-slate-700">
-                                    تصنيف التصميم: {missingDesign && <span className="text-rose-700">(مفقود — يمنع RRF)</span>}
+                                    تصنيف التصميم:{' '}
+                                    {missingDesign && (
+                                      <span className="text-rose-700">(مفقود — يمنع RRF)</span>
+                                    )}
                                   </label>
                                   <select
                                     value={ctrl.design_classification || ''}
@@ -1175,10 +1342,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                         e.target.value || null
                                       )
                                     }
-                                    className={`w-full mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
+                                    className={`w-full min-h-9 mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
                                       missingDesign
                                         ? 'bg-amber-50 border-2 border-amber-500 text-amber-950'
-                                        : 'bg-[#F5F4F2] border border-[#B8B6B2] text-slate-900'
+                                        : 'bg-[#F8F8F6] border border-[#DCDAD5] text-slate-900'
                                     }`}
                                   >
                                     <option value="">-- غير محدد (معلق) --</option>
@@ -1190,7 +1357,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                                 <div>
                                   <label className="block text-[10px] font-bold text-slate-700">
-                                    مستوى الأتمتة: {missingAuto && <span className="text-rose-700">(مفقود — يمنع RRF)</span>}
+                                    مستوى الأتمتة:{' '}
+                                    {missingAuto && (
+                                      <span className="text-rose-700">(مفقود — يمنع RRF)</span>
+                                    )}
                                   </label>
                                   <select
                                     value={ctrl.automation_level || ''}
@@ -1202,10 +1372,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                         e.target.value || null
                                       )
                                     }
-                                    className={`w-full mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
+                                    className={`w-full min-h-9 mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
                                       missingAuto
                                         ? 'bg-amber-50 border-2 border-amber-500 text-amber-950'
-                                        : 'bg-[#F5F4F2] border border-[#B8B6B2] text-slate-900'
+                                        : 'bg-[#F8F8F6] border border-[#DCDAD5] text-slate-900'
                                     }`}
                                   >
                                     <option value="">-- غير محدد (معلق) --</option>
@@ -1231,7 +1401,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-extrabold text-[#09331F]">
                     الخطوة 5: نتائج الحساب المنهجي عبر محرك بايثون المعتمد
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
@@ -1243,15 +1413,17 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   type="button"
                   disabled={calcLoading}
                   onClick={handleRunPythonPreview}
-                  className="px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 whitespace-nowrap"
                 >
                   <Calculator className="w-4 h-4 text-[#F79C1E]" />
-                  <span>{calcLoading ? 'جارٍ تشغيل محرك بايثون...' : 'إعادة تشغيل الحساب المنهجي'}</span>
+                  <span>
+                    {calcLoading ? 'جارٍ تشغيل محرك بايثون...' : 'إعادة تشغيل الحساب المنهجي'}
+                  </span>
                 </button>
               </div>
 
               {calcError && (
-                <div className="p-4 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs font-bold">
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold">
                   {calcError}
                 </div>
               )}
@@ -1264,17 +1436,29 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
               ) : calcPreview ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
-                      <div className="text-[11px] font-bold text-slate-600">إجمالي المخاطر المحسوبة:</div>
-                      <div className="text-xl font-black text-slate-900 font-mono mt-1">{calcPreview.summary.total_risks}</div>
+                    <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE]">
+                      <div className="text-[11px] font-bold text-slate-600">
+                        إجمالي المخاطر المحسوبة:
+                      </div>
+                      <div className="text-xl font-black text-[#09331F] font-mono tabular-nums mt-1">
+                        {calcPreview.summary.total_risks}
+                      </div>
                     </div>
-                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300">
-                      <div className="text-[11px] font-bold text-emerald-800">مخاطر مكتملة الاحتساب:</div>
-                      <div className="text-xl font-black text-emerald-900 font-mono mt-1">{calcPreview.summary.complete_risks}</div>
+                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="text-[11px] font-bold text-emerald-800">
+                        مخاطر مكتملة الاحتساب:
+                      </div>
+                      <div className="text-xl font-black text-[#006547] font-mono tabular-nums mt-1">
+                        {calcPreview.summary.complete_risks}
+                      </div>
                     </div>
-                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300">
-                      <div className="text-[11px] font-bold text-amber-800">مخاطر بانتظار استيفاء مدخلات:</div>
-                      <div className="text-xl font-black text-amber-900 font-mono mt-1">{calcPreview.summary.pending_risks}</div>
+                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+                      <div className="text-[11px] font-bold text-amber-800">
+                        مخاطر بانتظار استيفاء مدخلات:
+                      </div>
+                      <div className="text-xl font-black text-amber-900 font-mono tabular-nums mt-1">
+                        {calcPreview.summary.pending_risks}
+                      </div>
                     </div>
                   </div>
 
@@ -1283,65 +1467,85 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       const out = item.calculated_output || {};
                       const isComplete = out.status === 'COMPLETE';
                       return (
-                        <div key={item.risk_id} className="p-4 rounded-2xl bg-[#E2E1DE] border border-[#B8B6B2] space-y-2 text-xs">
-                          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#CECCC9]">
+                        <div
+                          key={item.risk_id}
+                          className="p-4 rounded-2xl bg-[#F8F8F6] border border-[#E5E3DE] space-y-2.5 text-xs"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E3DE]">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-[#09331F] bg-[#ECEBE8] px-2 py-0.5 rounded border border-[#C6C4C1]">
+                              <span className="font-mono font-bold text-[#09331F] bg-white px-2 py-0.5 rounded border border-[#DCDAD5] tabular-nums">
                                 {item.risk_id}
                               </span>
-                              <span className="font-bold text-slate-900">{item.draft_input.description_ar}</span>
+                              <span className="font-bold text-slate-900">
+                                {item.draft_input.description_ar}
+                              </span>
                             </div>
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                                isComplete
-                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-300'
+                              className={`text-xs font-bold ${
+                                isComplete ? 'text-[#006547]' : 'text-amber-800'
                               }`}
                             >
-                              {isComplete ? 'مكتمل الاحتساب (COMPLETE)' : 'معلق لاستيفاء المدخلات (PENDING_INPUT)'}
+                              {isComplete
+                                ? 'مكتمل الاحتساب (COMPLETE)'
+                                : 'معلق لاستيفاء المدخلات (PENDING_INPUT)'}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                            <div className="p-2.5 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
-                              <div className="text-[10px] text-slate-600 font-bold">الخسارة السنوية المتوقعة:</div>
-                              <div className="font-mono font-bold text-slate-900 mt-1">
-                                {out.annual_expected_loss_egp !== null && out.annual_expected_loss_egp !== undefined
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <div className="p-2.5 rounded-xl bg-white border border-[#DCDAD5]">
+                              <div className="text-[10px] text-slate-600 font-bold">
+                                الخسارة السنوية المتوقعة:
+                              </div>
+                              <div className="font-mono font-bold text-slate-900 mt-1 tabular-nums">
+                                {out.annual_expected_loss_egp !== null &&
+                                out.annual_expected_loss_egp !== undefined
                                   ? `${Number(out.annual_expected_loss_egp).toLocaleString()} ج.م`
                                   : 'معلق'}
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
-                              <div className="text-[10px] text-slate-600 font-bold">تصنيف الخطر الكامن (5×5):</div>
-                              <div className="font-mono font-bold text-slate-900 mt-1">
+                            <div className="p-2.5 rounded-xl bg-white border border-[#DCDAD5]">
+                              <div className="text-[10px] text-slate-600 font-bold">
+                                تصنيف الخطر الكامن (5×5):
+                              </div>
+                              <div className="font-mono font-bold text-slate-900 mt-1 tabular-nums">
                                 {out.inherent_rating || 'معلق'} ({out.inherent_level_ar || '-'})
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
-                              <div className="text-[10px] text-slate-600 font-bold">أعلى معامل خفض مؤهل (MAX RRF):</div>
-                              <div className="font-mono font-bold text-[#006547] mt-1">
-                                {out.max_eligible_rrf !== null && out.max_eligible_rrf !== undefined
-                                  ? `${(Number(out.max_eligible_rrf) * 100).toFixed(0)}% (${out.winning_control_id || 'بدون'})`
+                            <div className="p-2.5 rounded-xl bg-white border border-[#DCDAD5]">
+                              <div className="text-[10px] text-slate-600 font-bold">
+                                أعلى معامل خفض مؤهل (MAX RRF):
+                              </div>
+                              <div className="font-mono font-bold text-[#006547] mt-1 tabular-nums">
+                                {out.max_eligible_rrf !== null &&
+                                out.max_eligible_rrf !== undefined
+                                  ? `${(Number(out.max_eligible_rrf) * 100).toFixed(0)}% (${
+                                      out.winning_control_id || 'بدون'
+                                    })`
                                   : 'معلق'}
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
-                              <div className="text-[10px] text-slate-600 font-bold">الخطر المتبقي وتصنيفه:</div>
-                              <div className="font-mono font-bold text-slate-900 mt-1">
-                                {out.residual_value_egp !== null && out.residual_value_egp !== undefined
-                                  ? `${Number(out.residual_value_egp).toLocaleString()} ج.م (${out.residual_rating})`
+                            <div className="p-2.5 rounded-xl bg-white border border-[#DCDAD5]">
+                              <div className="text-[10px] text-slate-600 font-bold">
+                                الخطر المتبقي وتصنيفه:
+                              </div>
+                              <div className="font-mono font-bold text-slate-900 mt-1 tabular-nums">
+                                {out.residual_value_egp !== null &&
+                                out.residual_value_egp !== undefined
+                                  ? `${Number(out.residual_value_egp).toLocaleString()} ج.م (${
+                                      out.residual_rating
+                                    })`
                                   : 'معلق'}
                               </div>
                             </div>
                           </div>
 
                           {out.pending_reasons && out.pending_reasons.length > 0 && (
-                            <div className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-300">
+                            <div className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
                               <span className="font-bold">أسباب التعليق: </span>
-                              {out.pending_reasons.join(' | ')}
+                              {out.pending_reasons.join(' · ')}
                             </div>
                           )}
                         </div>
@@ -1357,15 +1561,16 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           {currentStep === 6 && (
             <div className="space-y-5 max-w-2xl mx-auto">
               <div className="text-center space-y-1">
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-extrabold text-[#09331F]">
                   الخطوة 6: حفظ مسودة التقييم في قاعدة البيانات وفتحها في مساحة المراجعة
                 </h3>
                 <p className="text-xs text-slate-600">
-                  سيتم إنشاء سجل تقييم جديد في قاعدة البيانات (SQLite) لوحدة ({unitContext?.unit?.name_ar}) بجميع المخاطر والضوابط والحسابات، وفتحه مباشرة في صفحة مصفوفة المخاطر RCSA للمراجعة والاعتماد.
+                  سيتم إنشاء سجل تقييم جديد في قاعدة البيانات (SQLite) لوحدة (
+                  {unitContext?.unit?.name_ar}) بجميع المخاطر والضوابط والحسابات، وفتحه مباشرة في صفحة مصفوفة المخاطر RCSA للمراجعة والاعتماد.
                 </p>
               </div>
 
-              <div className="bg-[#E2E1DE] p-5 rounded-2xl border border-[#B8B6B2] space-y-4">
+              <div className="bg-[#F8F8F6] p-4 sm:p-5 rounded-2xl border border-[#E5E3DE] space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 mb-1.5">
                     عنوان التقييم:
@@ -1374,31 +1579,37 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                     type="text"
                     value={draftTitleAr}
                     onChange={(e) => setDraftTitleAr(e.target.value)}
-                    className="w-full rounded-xl bg-[#F5F4F2] border border-[#B8B6B2] px-3.5 py-2.5 text-xs font-bold text-slate-900"
+                    className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3.5 py-2.5 text-xs font-bold text-slate-900"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-white border border-[#DCDAD5]">
                     <div className="text-[10px] text-slate-600 font-bold">الوحدة التنظيمية:</div>
-                    <div className="font-bold text-slate-900 mt-0.5">{unitContext?.unit?.name_ar}</div>
+                    <div className="font-bold text-slate-900 mt-0.5">
+                      {unitContext?.unit?.name_ar}
+                    </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#ECEBE8] border border-[#C6C4C1]">
-                    <div className="text-[10px] text-slate-600 font-bold">عدد المخاطر المدرجة في المسودة:</div>
-                    <div className="font-bold text-slate-900 font-mono mt-0.5">{candidateRisks.length} مخاطرة</div>
+                  <div className="p-3 rounded-xl bg-white border border-[#DCDAD5]">
+                    <div className="text-[10px] text-slate-600 font-bold">
+                      عدد المخاطر المدرجة في المسودة:
+                    </div>
+                    <div className="font-bold text-[#09331F] font-mono tabular-nums mt-0.5">
+                      {candidateRisks.length} مخاطرة
+                    </div>
                   </div>
                 </div>
 
                 {saveError && (
-                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs font-bold">
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold">
                     {saveError}
                   </div>
                 )}
 
                 {createdDraftState ? (
-                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 space-y-3">
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                      <CheckCircle2 className="w-4 h-4 text-[#006547]" />
                       <span>تم حفظ المسودة بنجاح في قاعدة البيانات!</span>
                     </div>
                     <button
@@ -1410,7 +1621,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                           assessmentId: createdDraftState.assessment.id,
                         })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full min-h-11 px-4 py-2.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <TableProperties className="w-4 h-4 text-[#F79C1E]" />
                       <span>فتح المسودة الآن في مساحة المراجعة والتعديل (RCSA)</span>
@@ -1421,7 +1632,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                     type="button"
                     disabled={savingDraft || candidateRisks.length === 0}
                     onClick={() => handleSaveGuidedDraft(true)}
-                    className="w-full px-5 py-3 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-40"
+                    className="w-full min-h-11 px-5 py-3 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-40"
                   >
                     <ShieldCheck className="w-4 h-4 text-[#F79C1E]" />
                     <span>
@@ -1436,12 +1647,12 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           )}
 
           {/* Stepper Navigation Buttons */}
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#CECCC9]">
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#E5E3DE]">
             <button
               type="button"
               disabled={currentStep === 1}
               onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-              className="px-4 py-2 rounded-xl border border-[#B8B6B2] bg-[#E2E1DE] text-xs font-semibold text-slate-800 hover:bg-[#F0EFED] disabled:opacity-30 flex items-center gap-1.5 cursor-pointer"
+              className="min-h-10 px-4 py-2 rounded-xl border border-[#DCDAD5] bg-[#F8F8F6] text-xs font-bold text-slate-800 hover:bg-[#EFECE6] disabled:opacity-30 flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowRight className="w-3.5 h-3.5" />
               <span>الخطوة السابقة</span>
@@ -1460,7 +1671,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   handleRunPythonPreview();
                 }
               }}
-              className="px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold disabled:opacity-30 flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold disabled:opacity-30 flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <span>الخطوة التالية</span>
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -1471,4 +1682,3 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     </div>
   );
 };
-

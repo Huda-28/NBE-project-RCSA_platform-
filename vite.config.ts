@@ -3,19 +3,38 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
+function disableHmrWsClientPlugin() {
+  return {
+    name: 'disable-hmr-ws-client',
+    enforce: 'post' as const,
+    transform(code: string, id: string) {
+      if (id.includes('vite/dist/client/client.mjs')) {
+        return code
+          .replace(
+            /const createWebSocketModuleRunnerTransport = \(options\) => \{[\s\S]*?\n\};/,
+            `const createWebSocketModuleRunnerTransport = () => ({ async connect() {}, async disconnect() {}, send() {}, invoke: async () => ({ result: undefined }) });`
+          )
+          .replace('console.debug("[vite] connecting...");', '');
+      }
+      return null;
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), disableHmrWsClientPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      sourcemap: false,
+    },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
+      hmr: false as const,
+      ws: false as const,
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

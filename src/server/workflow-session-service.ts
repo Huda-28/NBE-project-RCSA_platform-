@@ -17,6 +17,7 @@ export interface WorkflowSessionRecord {
   uploaded_document_ids_json: string;
   candidate_risks_json: string;
   calc_preview_json: string | null;
+  selected_model_profile?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ export interface EnrichedWorkflowSession {
   uploaded_document_ids: string[];
   candidate_risks: any[];
   calc_preview: any | null;
+  selected_model_profile: 'qwen-0.5b' | 'qwen-4b';
   created_by: string;
   created_at: string;
   created_at_ar: string;
@@ -251,13 +253,26 @@ export function getWorkflowSession(sessionId: string, user: User): EnrichedWorkf
       ORDER BY d.uploaded_at DESC
     `).all(...uploadedDocIds) as any[];
 
-    sessionDocs = sessionDocs.map(d => ({
-      ...d,
-      title_ar: d.filename ? d.filename.split('/').pop()?.split('\\').pop() : d.id,
-      doc_type: d.file_type,
-      uploaded_at_ar: formatArabicDateTime(d.uploaded_at),
-      chunks_count: Number(d.chunks_count || 0),
-    }));
+    sessionDocs = sessionDocs.map(d => {
+      const docChunks = db.prepare(`
+        SELECT id, chunk_index, section_title, content_text, page_number
+        FROM document_chunks
+        WHERE document_id = ?
+        ORDER BY chunk_index ASC
+      `).all(d.id) as any[];
+      const rawName = d.filename ? d.filename.split('/').pop()?.split('\\').pop() || d.id : d.id;
+      const cleanTitle = rawName.replace(/^\d+_/, '');
+      const totalChars = docChunks.reduce((sum, ch) => sum + (ch.content_text?.length || 0), 0);
+      return {
+        ...d,
+        title_ar: cleanTitle,
+        doc_type: d.file_type,
+        uploaded_at_ar: formatArabicDateTime(d.uploaded_at),
+        chunks_count: Number(d.chunks_count || docChunks.length || 0),
+        total_chars: totalChars,
+        chunks: docChunks,
+      };
+    });
   }
 
   let candidateRisks: any[] = [];
@@ -286,6 +301,7 @@ export function getWorkflowSession(sessionId: string, user: User): EnrichedWorkf
     uploaded_document_ids: uploadedDocIds,
     candidate_risks: candidateRisks,
     calc_preview: calcPreview,
+    selected_model_profile: row.selected_model_profile === 'qwen-0.5b' ? 'qwen-0.5b' : 'qwen-4b',
     created_by: row.created_by,
     created_at: row.created_at,
     created_at_ar: formatArabicDateTime(row.created_at),
@@ -335,6 +351,7 @@ export function updateWorkflowSession(
     draft_assessment_id?: string;
     uploaded_document_ids?: string[];
     use_historical_sources?: boolean;
+    selected_model_profile?: 'qwen-0.5b' | 'qwen-4b' | string;
   }
 ): EnrichedWorkflowSession {
   const session = db.prepare('SELECT * FROM rcsa_workflow_sessions WHERE id = ?').get(sessionId) as WorkflowSessionRecord | undefined;
@@ -354,6 +371,10 @@ export function updateWorkflowSession(
   const sessionTitle = patch.session_title !== undefined ? patch.session_title.trim() : session.session_title;
   const draftAssessmentId = patch.draft_assessment_id !== undefined ? patch.draft_assessment_id : session.draft_assessment_id;
   const useHistorical = patch.use_historical_sources !== undefined ? (patch.use_historical_sources ? 1 : 0) : session.use_historical_sources;
+  const selectedModelProfile =
+    patch.selected_model_profile !== undefined
+      ? (patch.selected_model_profile === 'qwen-0.5b' ? 'qwen-0.5b' : 'qwen-4b')
+      : (session.selected_model_profile === 'qwen-0.5b' ? 'qwen-0.5b' : 'qwen-4b');
 
   let candRisksJson = session.candidate_risks_json;
   if (patch.candidate_risks !== undefined) {
@@ -379,6 +400,7 @@ export function updateWorkflowSession(
         candidate_risks_json = ?,
         calc_preview_json = ?,
         uploaded_document_ids_json = ?,
+        selected_model_profile = ?,
         updated_at = datetime('now')
     WHERE id = ?
   `).run(
@@ -389,6 +411,7 @@ export function updateWorkflowSession(
     candRisksJson,
     calcPreviewJson,
     uploadedDocIdsJson,
+    selectedModelProfile,
     sessionId
   );
 

@@ -375,6 +375,18 @@ export function initDatabase() {
     // Column already exists
   }
 
+  try {
+    db.exec("ALTER TABLE rcsa_workflow_sessions ADD COLUMN selected_model_profile TEXT DEFAULT 'qwen-4b'");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE rcsa_agent_conversations ADD COLUMN model_profile TEXT DEFAULT 'qwen-4b'");
+  } catch {
+    // Column already exists
+  }
+
   runInTransaction(() => {
     seedInitialData();
     ensureAllBusinessUnitsAndPermissions();

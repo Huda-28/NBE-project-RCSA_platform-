@@ -51,14 +51,14 @@ def normalize_l1_id(value: Any) -> str | None:
         return None
     if text in TAXONOMY_L1_LABELS:
         return text
-    legacy = re.match(r'^_([1-8])_', text)
+    legacy = re.match(r'^_?([1-8])_', text)
     if legacy:
         return f'L1-0{legacy.group(1)}'
-    embedded = re.match(r'^(L1-0[1-8])(?:\b|\s|\s*[-–—:])', text)
+    embedded = re.match(r'^\[?(L1-0[1-8])\]?(?:\b|\s|\s*[-–—:])', text)
     if embedded:
         return embedded.group(1)
     for code, label in TAXONOMY_L1_LABELS.items():
-        if text == label:
+        if text == label or label in text:
             return code
     return CBE_L1_TO_TAXONOMY_ID.get(text)
 

@@ -255,6 +255,11 @@ class TestPhase2AFinancialInherent(unittest.TestCase):
             ("Quarterly", 4, Decimal("4")),
             ("مرة كل شهر ", 5, Decimal("12")),
             ("Monthly", 5, Decimal("12")),
+            ("Annually\nسنوياً", 2, Decimal("1")),
+            ("Quarterly\nربع سنوي", 4, Decimal("4")),
+            ("Semi-Annually\nنصف سنوي", 3, Decimal("2")),
+            ("Once Every Two Years\nمرة كل سنتين", 1, Decimal("0.5")),
+            ("Monthly / شهرياً", 5, Decimal("12")),
         ]
         for raw, exp_lvl, exp_mult in cases:
             norm = normalize_frequency(freq_text=raw)
@@ -264,6 +269,11 @@ class TestPhase2AFinancialInherent(unittest.TestCase):
             self.assertEqual(lvl, exp_lvl)
             self.assertEqual(mult, exp_mult)
             self.assertIsInstance(mult, Decimal)
+
+        # Verify 250,000 EGP falls strictly in M (150,001 - 500,000), never H
+        lvl_250k, code_250k, _, _, _ = classify_financial_amount(Decimal("250000"))
+        self.assertEqual(lvl_250k, 2)
+        self.assertEqual(code_250k, SeverityCode.M)
 
         self.assertIsNone(normalize_frequency(freq_text=""))
         self.assertIsNone(normalize_frequency(freq_text="غير معروف"))

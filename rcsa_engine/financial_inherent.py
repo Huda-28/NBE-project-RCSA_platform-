@@ -303,6 +303,11 @@ FREQUENCY_TABLE: Dict[int, Dict[str, Any]] = {
             "سنتان فاكثر",
             "سنتان فأكثر",
             "once per 2 years",
+            "once every two years",
+            "once every 2 years",
+            "once every two years مرة كل سنتين",
+            "once per 2 years مرة كل سنتان",
+            "once per 2 years مرة كل سنتين",
         ],
     },
     2: {
@@ -317,7 +322,15 @@ FREQUENCY_TABLE: Dict[int, Dict[str, Any]] = {
             "مرة واحدة كل سنه",
             "سنة",
             "سنوي",
+            "سنوياً",
+            "سنويا",
             "annually",
+            "annual",
+            "annually سنوياً",
+            "annually سنويا",
+            "annually سنوي",
+            "annually مرة واحدة كل سنة",
+            "annually مرة كل سنة",
         ],
     },
     3: {
@@ -334,11 +347,19 @@ FREQUENCY_TABLE: Dict[int, Dict[str, Any]] = {
             "مرة كل ٦ شهور",
             "6 شهور",
             "نصف سنوي",
+            "نصف سنوياً",
             "مرتين في العام",
             "مرتين كل سنة",
             "مرتين سنويا",
             "مرتين سنوياً",
             "half yearly",
+            "semi-annually",
+            "semi annually",
+            "semiannually",
+            "semi-annually نصف سنوي",
+            "semi-annually مرة كل نصف سنة",
+            "half yearly مرة واحدة كل نصف سنة",
+            "half yearly مرة كل نصف سنة",
         ],
     },
     4: {
@@ -355,7 +376,11 @@ FREQUENCY_TABLE: Dict[int, Dict[str, Any]] = {
             "مرة كل ٣ شهور",
             "3 شهور",
             "ربع سنوي",
+            "ربع سنوياً",
             "quarterly",
+            "quarterly ربع سنوي",
+            "quarterly مرة واحدة كل ربع سنة",
+            "quarterly مرة كل ربع سنة",
         ],
     },
     5: {
@@ -370,7 +395,13 @@ FREQUENCY_TABLE: Dict[int, Dict[str, Any]] = {
             "شهر أو أقل",
             "شهري",
             "شهرياً",
+            "شهريا",
             "monthly",
+            "monthly شهرياً",
+            "monthly شهريا",
+            "monthly شهري",
+            "monthly مرة واحدة كل شهر",
+            "monthly مرة كل شهر",
         ],
     },
 }
@@ -904,6 +935,15 @@ def normalize_frequency(
         for alias in entry["aliases"]:
             if normalized == alias.lower():
                 return (lvl, entry["ar"], entry["en"], entry["multiplier"])
+
+    # Fallback: handle bilingual newline/slash-separated labels like "Annually\nسنوياً" or "Quarterly / ربع سنوي"
+    parts = [p.strip().lower() for line in freq_text.splitlines() for p in line.split("/") if p.strip()]
+    for part in parts:
+        part_norm = " ".join(part.split())
+        for lvl, entry in FREQUENCY_TABLE.items():
+            for alias in entry["aliases"]:
+                if part_norm == alias.lower():
+                    return (lvl, entry["ar"], entry["en"], entry["multiplier"])
 
     return None
 

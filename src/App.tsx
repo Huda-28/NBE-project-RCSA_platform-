@@ -63,6 +63,7 @@ function buildUrlSearch(state: AppNavigationState): string {
 const MainAppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [navState, setNavState] = useState<AppNavigationState>(() => readNavStateFromUrl());
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -73,15 +74,36 @@ const MainAppContent: React.FC = () => {
   }, []);
 
   const navigateTo = useCallback((next: Partial<AppNavigationState> & { page: PageId }, replace = false) => {
+    const unitChanged = next.unitId !== undefined && next.unitId !== navState.unitId;
+    const resolvedAssessmentId =
+      next.assessmentId !== undefined
+        ? next.assessmentId || undefined
+        : unitChanged
+          ? undefined
+          : navState.assessmentId;
+    const resolvedRiskId =
+      next.riskId !== undefined
+        ? next.riskId || undefined
+        : unitChanged || next.assessmentId !== undefined
+          ? undefined
+          : navState.riskId;
+    const resolvedSessionId =
+      next.sessionId !== undefined
+        ? next.sessionId || undefined
+        : unitChanged
+          ? undefined
+          : navState.sessionId;
+
     const fullNext: AppNavigationState = {
       page: next.page,
-      unitId: next.unitId !== undefined ? next.unitId : navState.unitId,
-      assessmentId: next.assessmentId !== undefined ? next.assessmentId : navState.assessmentId,
-      riskId: next.riskId !== undefined ? next.riskId : navState.riskId,
-      sessionId: next.sessionId !== undefined ? next.sessionId : navState.sessionId,
+      unitId: next.unitId !== undefined ? next.unitId || undefined : navState.unitId,
+      assessmentId: resolvedAssessmentId,
+      riskId: resolvedRiskId,
+      sessionId: resolvedSessionId,
       mode: next.mode !== undefined ? next.mode : navState.mode,
     };
     setNavState(fullNext);
+    setIsMobileNavOpen(false);
     if (typeof window !== 'undefined') {
       const nextSearch = buildUrlSearch(fullNext);
       if (window.location.search !== nextSearch) {
@@ -102,7 +124,7 @@ const MainAppContent: React.FC = () => {
       unitId: isWorkflowPage ? navState.unitId : undefined,
       sessionId: isWorkflowPage ? navState.sessionId : undefined,
       mode: isWorkflowPage ? navState.mode : undefined,
-      assessmentId: page === 'rcsa-table' ? navState.assessmentId : undefined,
+      assessmentId: page === 'rcsa-table' ? navState.assessmentId : '',
     });
   }, [navigateTo, navState.unitId, navState.sessionId, navState.mode, navState.assessmentId]);
 
@@ -111,10 +133,10 @@ const MainAppContent: React.FC = () => {
       <div className="min-h-screen nbe-login-surface flex items-center justify-center p-4 font-['Cairo'] relative isolate overflow-hidden">
         <div className="pointer-events-none absolute inset-0 nbe-login-brushed -z-10" />
         <div className="pointer-events-none absolute inset-0 nbe-login-grain mix-blend-multiply -z-10" />
-        <div className="text-center text-[#09331F] space-y-3 bg-[#ECEBE8] px-8 py-6 rounded-2xl border border-[#C6C4C1] shadow-lg">
+        <div className="text-center text-[#09331F] space-y-3 bg-white px-8 py-6 rounded-2xl border border-[#DCDAD5] shadow-lg">
           <div className="w-10 h-10 border-4 border-[#006547] border-t-[#F79C1E] rounded-full animate-spin mx-auto" />
           <div className="text-sm font-bold">منصة RCSA - البنك الأهلي المصري</div>
-          <div className="text-xs text-slate-700">جارٍ تهيئة الجلسة المصرفية والتحقق من الصلاحيات...</div>
+          <div className="text-xs text-slate-600">جارٍ تهيئة الجلسة المصرفية والتحقق من الصلاحيات...</div>
         </div>
       </div>
     );
@@ -170,23 +192,33 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen nbe-app-shell flex flex-col font-['Cairo'] text-right relative isolate" dir="rtl">
+    <div className="min-h-screen nbe-app-shell flex flex-col font-['Cairo'] text-right relative isolate overflow-x-hidden" dir="rtl">
       <div className="pointer-events-none fixed inset-0 nbe-login-brushed -z-10" />
       <div className="pointer-events-none fixed inset-0 nbe-login-grain mix-blend-multiply -z-10" />
 
-      {/* Executive Header */}
-      <Header />
+      {/* Executive Header with Breadcrumb & Mobile Navigation Trigger */}
+      <Header
+        currentPage={navState.page}
+        onSelectPage={handleSelectSidebarPage}
+        onToggleMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
+        isMobileNavOpen={isMobileNavOpen}
+      />
 
       {/* Mandatory Password Reset Modal (Appears when must_reset_password === true) */}
       <PasswordResetModal />
 
-      {/* Main Content Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        {/* Navigation Sidebar */}
-        <Sidebar currentPage={navState.page} onSelectPage={handleSelectSidebarPage} />
+      {/* Main Content Layout — Full-Width Executive Workspace */}
+      <div className="flex-1 flex w-full max-w-[1680px] mx-auto relative">
+        {/* Navigation Sidebar (Desktop Rail + Mobile Slide-Out Drawer) */}
+        <Sidebar
+          currentPage={navState.page}
+          onSelectPage={handleSelectSidebarPage}
+          isMobileOpen={isMobileNavOpen}
+          onCloseMobile={() => setIsMobileNavOpen(false)}
+        />
 
         {/* Page Content Viewport */}
-        <main className="flex-1 min-w-0 p-6 overflow-y-auto">
+        <main className="flex-1 min-w-0 p-3.5 sm:p-5 lg:p-6 overflow-y-auto overflow-x-hidden">
           {renderCurrentPage()}
         </main>
       </div>
@@ -201,4 +233,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-

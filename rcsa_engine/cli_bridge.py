@@ -546,8 +546,8 @@ def initialize_unit_packages(
             "package": to_serializable(pkg1),
         })
 
-    elif unit_id in ("BU-POS", "BU-BRANCHES", "BU-TRADING"):
-        # Partial-data / missing-document candidate risk so authorized users can complete missing inputs
+    else:
+        # Partial-data / missing-document candidate risk for BU-POS, BU-BRANCHES, BU-TRADING, or any newly created Business Unit
         r_id = f"RSK-{unit_id.replace('BU-', '')}-01"
         proc_default = (
             bundle.sop_procedures[0].section_title_ar

@@ -65,6 +65,8 @@ def export(payload: dict) -> bytes:
             raise ValueError("Unsupported exported cell value")
         changed_cells[address] = value
 
+    write_cell("AA6", "التقدير النهائي للمخاطرة ومدى فاعلية الإجراءات الرقابية المطبقة ككل")
+
     for risk in risks:
         row = risk.get("excel_row")
         if not isinstance(row, int) or row < 8 or row > 27 or row in rows_used:

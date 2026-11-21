@@ -4,6 +4,8 @@ import { RCSAssessment } from '../types/index.js';
 import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
 import { Phase2CReviewPanel } from '../components/Phase2CReviewPanel.js';
+import { OfficialRcsaReportModal } from '../components/OfficialRcsaReportModal.js';
+import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
 import { getAssessmentTimestampDetails, formatWorkflowStatusAr } from '../utils/dateFormat.js';
 import {
   Search,
@@ -111,6 +113,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
     'inputs_and_calc' | 'controls' | 'ai_suggestions' | 'evidence_and_audit'
   >('inputs_and_calc');
   const [showOfficialPreview, setShowOfficialPreview] = useState<boolean>(false);
+  const [showOfficialReportModal, setShowOfficialReportModal] = useState<boolean>(false);
+  const [showAddUnitModal, setShowAddUnitModal] = useState<boolean>(false);
 
   // Filters & search
   const [searchQuery, setSearchQuery] = useState('');
@@ -202,7 +206,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
   const [reviewerNoteInput, setReviewerNoteInput] = useState('');
 
   // Load Business Units & Assessments
-  const loadAssessmentsList = async (preferredAssessmentId?: string, unitFilter?: string) => {
+  const loadAssessmentsList = async (preferredAssessmentId?: string, unitFilter?: string, clearSession?: boolean) => {
     setIsLoading(true);
     try {
       const [buRes, asmRes] = await Promise.all([
@@ -218,30 +222,31 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
       const list: any[] = asmData.assessments || [];
       setAssessments(list);
 
-      // If preferredAssessmentId exists in list, honor its unit_id and id directly
+      // If unitFilter was explicitly requested, honor it strictly; otherwise match preferredAssessmentId
       const matchedPreferred = preferredAssessmentId
-        ? list.find((a) => a.id === preferredAssessmentId)
+        ? list.find((a) => a.id === preferredAssessmentId && (!unitFilter || a.unit_id === unitFilter))
         : undefined;
 
-      let targetUnit = matchedPreferred?.unit_id || unitFilter || initialUnitId || selectedUnitId;
+      let targetUnit = unitFilter || matchedPreferred?.unit_id || initialUnitId || selectedUnitId;
       if (allBus.length > 0 && !allBus.some((b: any) => b.id === targetUnit)) {
         targetUnit = allBus[0].id;
       }
       setSelectedUnitId(targetUnit);
 
       const unitAssessments = list.filter((a) => a.unit_id === targetUnit);
+      const navSessionOverride = clearSession ? { sessionId: '' } : {};
 
       if (matchedPreferred) {
         setSelectedAssessmentId(matchedPreferred.id);
-        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit, assessmentId: matchedPreferred.id }, true);
+        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit, assessmentId: matchedPreferred.id, ...navSessionOverride }, true);
       } else if (unitAssessments.length > 0) {
         const draftAsm = unitAssessments.find((a) => a.status !== 'APPROVED') || unitAssessments[0];
         setSelectedAssessmentId(draftAsm.id);
-        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit, assessmentId: draftAsm.id }, true);
+        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit, assessmentId: draftAsm.id, ...navSessionOverride }, true);
       } else {
         setSelectedAssessmentId('');
         setHitlState(null);
-        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit }, true);
+        onNavigate?.({ page: 'rcsa-table', unitId: targetUnit, assessmentId: '', ...navSessionOverride }, true);
       }
     } catch (err: any) {
       console.error(err);
@@ -271,17 +276,22 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data.session) {
+          if (data.session && (!initialUnitId || data.session.unit_id === initialUnitId)) {
             setSessionInfo(data.session);
             const targetAsm = initialAssessmentId || data.session.draft_assessment_id || undefined;
             const targetUnit = initialUnitId || data.session.unit_id || undefined;
             loadAssessmentsList(targetAsm, targetUnit);
           } else {
+            setSessionInfo(null);
             loadAssessmentsList(initialAssessmentId, initialUnitId);
           }
         })
-        .catch(() => loadAssessmentsList(initialAssessmentId, initialUnitId));
+        .catch(() => {
+          setSessionInfo(null);
+          loadAssessmentsList(initialAssessmentId, initialUnitId);
+        });
     } else {
+      setSessionInfo(null);
       loadAssessmentsList(initialAssessmentId, initialUnitId);
     }
   }, [token, initialUnitId, initialAssessmentId, initialSessionId]);
@@ -790,6 +800,52 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
     }
   };
 
+  const handleOfficialPdfExport = async () => {
+    if (!token || !selectedAssessmentId) return;
+    setBannerMsg(null);
+    setIsSavingOrRecalculating(true);
+    try {
+      const response = await fetch(
+        `/api/hitl/assessments/${encodeURIComponent(selectedAssessmentId)}/export-pdf`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || 'تعذر تصدير ملف PDF الرسمي.');
+      }
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const plainFilename = disposition.match(/filename="([^"]+)"/i)?.[1];
+      let exportedName = plainFilename || `RCSA_${selectedUnitId}_Official_Report.pdf`;
+      if (encodedFilename) {
+        try {
+          exportedName = decodeURIComponent(encodedFilename);
+        } catch {
+          // keep fallback
+        }
+      }
+      link.download = exportedName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+      setBannerMsg({
+        type: 'success',
+        text: `تم تصدير وتنزيل تقرير PDF الرسمي بنجاح (${exportedName}).`,
+      });
+    } catch (error: any) {
+      setBannerMsg({ type: 'error', text: error.message });
+    } finally {
+      setIsSavingOrRecalculating(false);
+    }
+  };
+
   const renderSeverityBadge = (rating?: string | null) => {
     const clean = rating ? String(rating).trim().replace('اً', '') : '';
     switch (clean) {
@@ -852,6 +908,33 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-300 font-['Cairo'] text-right" dir="rtl">
+      {/* Official RCSA Report Preview & Export Modal (PDF / Excel / A3 Print) */}
+      <OfficialRcsaReportModal
+        assessmentId={selectedAssessmentId}
+        unitId={selectedUnitId}
+        token={token}
+        isOpen={showOfficialReportModal}
+        onClose={() => setShowOfficialReportModal(false)}
+        onExportExcel={handleOfficialExport}
+      />
+
+      <CreateBusinessUnitModal
+        isOpen={showAddUnitModal}
+        onClose={() => setShowAddUnitModal(false)}
+        existingUnitCodes={businessUnits.map((b) => b.code)}
+        onUnitCreated={(newUnit) => {
+          setBusinessUnits((prev) => {
+            if (prev.some((b) => b.id === newUnit.id)) return prev;
+            return [...prev, newUnit];
+          });
+          setSessionInfo(null);
+          setSelectedAssessmentId('');
+          setHitlState(null);
+          setSelectedUnitId(newUnit.id);
+          loadAssessmentsList(undefined, newUnit.id, true);
+        }}
+      />
+
       {/* Unified Workflow Session Breadcrumb & Navigation Banner (Phase 3A) */}
       {sessionInfo && (
         <div className="bg-[#09331F] text-white p-3.5 rounded-2xl border-2 border-[#F79C1E] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -883,8 +966,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
       )}
 
       {/* 1. Top Header: Business Unit, Assessment Version & Maker-Checker Workflow Controls */}
-      <div className="bg-[#ECEBE8] p-5 rounded-2xl border border-[#C6C4C1] shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#CECCC9] pb-4">
+      <div className="bg-white p-5 rounded-xl border border-[#DCDAD5] shadow-sm space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-bold text-slate-900">
@@ -937,7 +1020,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             <button
               type="button"
               onClick={() => onNavigate?.({ page: 'business-units', unitId: selectedUnitId })}
-              className="px-3 py-1.5 rounded-xl bg-[#E2E1DE] hover:bg-[#D5D3CF] text-[#09331F] border border-[#B8B6B2] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="min-h-9 px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <History className="w-3.5 h-3.5 text-[#006547]" />
               <span>سجل التقييمات والمقارنة للوحدة</span>
@@ -947,7 +1030,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               type="button"
               onClick={() => setShowOfficialPreview(prev => !prev)}
               data-testid="toggle-readiness-preview-btn"
-              className="px-3 py-1.5 rounded-xl bg-[#DFDEDB] hover:bg-[#D5D4D0] text-slate-900 border border-[#B8B6B2] text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="min-h-9 px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-slate-900 border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-[#006547]" />
               <span>{showOfficialPreview ? 'إخفاء معاينة النموذج الرسمي' : 'ملخص الجاهزية ومعاينة الأعمدة الرسمية'}</span>
@@ -1004,10 +1087,40 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             )}
 
             {selectedAssessmentId && (
-              <button type="button" disabled={isSavingOrRecalculating} onClick={handleOfficialExport}
-                className="px-3 py-1.5 rounded-xl bg-[#DFDEDB] hover:bg-[#D5D4D0] text-[#09331F] border border-[#B8B6B2] text-xs font-bold flex items-center gap-1.5 disabled:opacity-60">
-                <FileSpreadsheet className="w-4 h-4 text-[#006547]" /> {workflowStatus === 'APPROVED' ? 'تصدير Excel المعتمد' : 'تنزيل Excel للمراجعة (مسودة)'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={isSavingOrRecalculating}
+                  onClick={() => setShowOfficialReportModal(true)}
+                  data-testid="open-official-report-modal-btn"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#7A1C1C] hover:bg-[#5E1414] text-white border border-[#F79C1E]/50 text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 text-[#F79C1E]" />
+                  <span>معاينة التقرير الرسمي (PDF / Excel)</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSavingOrRecalculating}
+                  onClick={handleOfficialPdfExport}
+                  data-testid="export-pdf-btn"
+                  className="px-3 py-1.5 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#006547] text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#F79C1E]" />
+                  <span>{workflowStatus === 'APPROVED' ? 'تصدير PDF المعتمد' : 'تصدير PDF (مسودة)'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSavingOrRecalculating}
+                  onClick={handleOfficialExport}
+                  data-testid="export-excel-btn"
+                  className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-[#006547]" />{' '}
+                  {workflowStatus === 'APPROVED' ? 'تصدير Excel المعتمد' : 'تنزيل Excel للمراجعة (مسودة)'}
+                </button>
+              </>
             )}
 
             {workflowStatus === 'APPROVED' && isMakerOrAdmin && (
@@ -1027,7 +1140,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
         {/* Selectors Row: Business Unit & Assessment Selector */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-4 flex items-center gap-2">
+          <div className="md:col-span-5 flex items-center gap-2">
             <Building2 className="w-4 h-4 text-[#006547] shrink-0" />
             <label className="text-xs font-bold text-slate-700 shrink-0">الوحدة التنظيمية:</label>
             <select
@@ -1035,20 +1148,32 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               value={selectedUnitId}
               onChange={e => {
                 const newBu = e.target.value;
+                setSessionInfo(null);
+                setSelectedAssessmentId('');
+                setHitlState(null);
                 setSelectedUnitId(newBu);
-                loadAssessmentsList(undefined, newBu);
+                loadAssessmentsList(undefined, newBu, true);
               }}
-              className="w-full px-3 py-1.5 text-xs font-bold border border-[#B8B6B2] rounded-xl bg-[#F4F3F0] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
+              className="w-full px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
-              {businessUnits.map(b => (
-                <option key={b.id} value={b.id}>
+              {businessUnits.map((b, idx) => (
+                <option key={`bu-${b.id || idx}`} value={b.id}>
                   {b.name_ar} ({b.code})
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              data-testid="table-add-unit-btn"
+              onClick={() => setShowAddUnitModal(true)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#F79C1E]" />
+              <span>وحدة أخرى</span>
+            </button>
           </div>
 
-          <div className="md:col-span-6 flex items-center gap-2">
+          <div className="md:col-span-5 flex items-center gap-2">
             <Layers className="w-4 h-4 text-[#006547] shrink-0" />
             <label className="text-xs font-bold text-slate-700 shrink-0">التقييم / المسودة:</label>
             <select
@@ -1059,15 +1184,15 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 setSelectedAssessmentId(nextId);
                 onNavigate?.({ page: 'rcsa-table', unitId: selectedUnitId, assessmentId: nextId }, true);
               }}
-              className="w-full px-3 py-1.5 text-xs font-bold border border-[#B8B6B2] rounded-xl bg-[#F4F3F0] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
+              className="w-full px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
-              {unitAssessments.map((a: any) => (
-                <option key={a.id} value={a.id}>
+              {unitAssessments.map((a: any, idx: number) => (
+                <option key={`asm-${a.id || idx}`} value={a.id}>
                   {a.timestamps?.primary_version_label_ar ||
                     `${a.clean_title_ar || a.title_ar || a.title} — [${formatWorkflowStatusAr(a.workflow_status, a.status)}]`}
                 </option>
               ))}
-              {unitAssessments.length === 0 && <option value="">لم يتم إنشاء تقييم لهذه الوحدة بعد</option>}
+              {unitAssessments.length === 0 && <option key="asm-empty" value="">لم يتم إنشاء تقييم لهذه الوحدة بعد</option>}
             </select>
           </div>
 
@@ -1100,7 +1225,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
       {/* Checker Return Reason Modal */}
       {showReturnModal && (
-        <div className="bg-[#EAE5D9] border-2 border-rose-400 p-4 rounded-2xl text-rose-950 space-y-3 shadow-md">
+        <div className="bg-rose-50 border border-rose-300 p-4 rounded-2xl text-rose-950 space-y-3 shadow-xs">
           <div className="text-xs font-bold flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-700" />
             <span>إعادة التقييم إلى معد التقييم (Maker) مع تسجيل الملاحظات الرقابية الإلزامية:</span>
@@ -1111,13 +1236,13 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             value={returnReasonText}
             onChange={e => setReturnReasonText(e.target.value)}
             placeholder="اذكر سبب الإعادة أو التعديلات المطلوبة..."
-            className="w-full p-2.5 text-xs bg-[#F4F3F0] border border-[#B8B6B2] rounded-xl text-slate-900"
+            className="w-full p-2.5 text-xs bg-white border border-rose-200 rounded-xl text-slate-900"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setShowReturnModal(false)}
-              className="px-3 py-1.5 rounded-lg bg-[#E2E1DE] border border-[#B8B6B2] text-xs font-bold text-slate-800"
+              className="px-3 py-1.5 rounded-lg bg-white border border-[#DCDAD5] text-xs font-bold text-slate-800 cursor-pointer"
             >
               إلغاء
             </button>
@@ -1125,7 +1250,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               type="button"
               data-testid="confirm-checker-return-btn"
               onClick={handleCheckerReturn}
-              className="px-4 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold"
+              className="px-4 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
             >
               تأكيد الإعادة للتعديل
             </button>
@@ -1161,57 +1286,57 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
       {/* 2. Pre-Export Review Readiness Summary Strip (Phase 2D Section 9) */}
       {readiness && (
-        <div className="bg-[#ECEBE8] p-4 rounded-2xl border border-[#C6C4C1] shadow-sm space-y-4">
+        <div className="bg-white p-4 rounded-xl border border-[#DCDAD5] shadow-sm space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-center">
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">إجمالي المخاطر</div>
-              <div className="text-base font-bold font-mono text-slate-900" data-testid="readiness-total-risks">
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900" data-testid="readiness-total-risks">
                 {readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E6E3] border border-[#006547]/30">
+            <div className="p-2.5 rounded-lg bg-[#006547]/10 border border-[#006547]/30">
               <div className="text-[10px] text-slate-700 font-semibold">المخاطر المراجعة</div>
-              <div className="text-base font-bold font-mono text-[#006547]" data-testid="readiness-reviewed-risks">
+              <div className="text-base font-bold font-mono tabular-nums text-[#006547]" data-testid="readiness-reviewed-risks">
                 {readiness.reviewed_risks} / {readiness.total_risks}
               </div>
             </div>
             <div
-              className={`p-2.5 rounded-xl border ${
+              className={`p-2.5 rounded-lg border ${
                 readiness.risks_with_missing_inputs > 0
-                  ? 'bg-amber-100/80 border-amber-300 text-amber-950'
-                  : 'bg-[#E2E1DE] border-[#C6C4C1]'
+                  ? 'bg-amber-50 border-amber-300 text-amber-950'
+                  : 'bg-[#F8F8F6] border-slate-200'
               }`}
             >
               <div className="text-[10px] font-semibold">مدخلات قيد الاستيفاء</div>
-              <div className="text-base font-bold font-mono" data-testid="readiness-missing-inputs">
+              <div className="text-base font-bold font-mono tabular-nums" data-testid="readiness-missing-inputs">
                 {readiness.risks_with_missing_inputs}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">قرارات بشرية مطلوبة</div>
-              <div className="text-base font-bold font-mono text-amber-800">
+              <div className="text-base font-bold font-mono tabular-nums text-amber-800">
                 {readiness.risks_requiring_human_decisions}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">اكتمال الحساب المالي</div>
-              <div className="text-base font-bold font-mono text-slate-900">
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
                 {readiness.financial_calculation_completeness.completed}/{readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">اكتمال تقييم الضوابط</div>
-              <div className="text-base font-bold font-mono text-slate-900">
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
                 {readiness.control_assessment_completeness.completed}/{readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">مقترحات الذكاء المعلقة</div>
-              <div className="text-base font-bold font-mono text-slate-900">
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
                 {readiness.pending_ai_suggestions_count}
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1]">
+            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
               <div className="text-[10px] text-slate-600 font-semibold">جاهزية الاعتماد</div>
               <div className="text-xs font-bold mt-1">
                 {readiness.is_ready_for_final_approval ? (
@@ -1227,7 +1352,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
           {showOfficialPreview && (
             <div
               data-testid="official-column-preview-panel"
-              className="p-4 rounded-xl bg-[#E2E1DE] border border-[#B8B6B2] space-y-3"
+              className="p-4 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] space-y-3"
             >
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
@@ -1239,20 +1364,20 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-1.5 flex-wrap text-[10px]">
-                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-mono">
+                  <span className="px-2 py-0.5 rounded bg-white border border-[#DCDAD5] text-slate-800 font-mono">
                     NFI: يُستكمل بالمراجعة
                   </span>
-                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-mono">
+                  <span className="px-2 py-0.5 rounded bg-white border border-[#DCDAD5] text-slate-800 font-mono">
                     قرار القبول (AA): مراجعة بشرية
                   </span>
-                  <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-mono">
+                  <span className="px-2 py-0.5 rounded bg-white border border-[#DCDAD5] text-slate-800 font-mono">
                     ESG: طبقًا للكتالوج المرجعي
                   </span>
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[#B8B6B2]">
-                <table className="w-full text-right text-[11px] bg-[#ECEBE8]">
+              <div className="overflow-x-auto rounded-xl border border-[#DCDAD5]">
+                <table className="w-full text-right text-[11px] bg-white">
                   <thead className="bg-[#09331F] text-white">
                     <tr>
                       <th className="p-2">م (C)</th>
@@ -1284,7 +1409,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                           key={pr.risk_id}
                           onClick={() => setSelectedRiskId(pr.risk_id)}
                           className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-[#006547]/20 font-semibold' : 'hover:bg-[#DFDEDB]'
+                            isSelected ? 'bg-emerald-50/90 font-semibold' : 'hover:bg-[#F8F8F6]'
                           }`}
                           title="انقر لتعديل ومراجعة هذه المخاطرة وضوابطها في مساحة العمل بالأسفل"
                         >
@@ -1331,8 +1456,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
       )}
 
       {/* 3. RCSA Risk Register Table with Search & Review Filters */}
-      <div className="bg-[#ECEBE8] rounded-2xl border border-[#C6C4C1] shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-[#CECCC9] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white rounded-xl border border-[#DCDAD5] shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-[#F8F8F6] flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-slate-500 absolute right-3 top-2.5" />
             <input
@@ -1340,7 +1465,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="بحث بمعرف المخاطرة، النشاط، أو الوصف..."
-              className="w-full pr-9 pl-3 py-1.5 text-xs bg-[#F4F3F0] border border-[#B8B6B2] rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
+              className="w-full pr-9 pl-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             />
           </div>
 
@@ -1357,10 +1482,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 key={f.id}
                 type="button"
                 onClick={() => setListFilter(f.id as any)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
                   listFilter === f.id
                     ? 'bg-[#006547] text-white'
-                    : 'bg-[#E2E1DE] border border-[#C6C4C1] text-slate-700 hover:bg-[#D8D7D6]'
+                    : 'bg-white border border-[#DCDAD5] text-slate-700 hover:bg-[#EFECE6]'
                 }`}
               >
                 {f.label}
@@ -1410,8 +1535,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                     onClick={() => setSelectedRiskId(r.risk_id)}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-[#D5DFD9] border-r-4 border-[#006547]'
-                        : 'hover:bg-[#E2E1DE]'
+                        ? 'bg-emerald-50/90 font-semibold'
+                        : 'hover:bg-[#F8F8F6]'
                     }`}
                   >
                     <td className="px-2 py-2 font-mono font-bold text-slate-900 whitespace-nowrap">
@@ -1489,6 +1614,41 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </tr>
                 );
               })}
+              {!isLoading && unitAssessments.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="p-8 text-center bg-[#F8F8F6]">
+                    <div className="max-w-lg mx-auto space-y-3">
+                      <div className="text-sm font-bold text-[#09331F]">
+                        لا توجد مسودة تقييم RCSA منشأة لهذه الوحدة التنظيمية بعد
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        يمكنك إنشاء مسودة تقييم يدوية مباشرة للوحدة المختارة، أو الانتقال إلى الوكيل الذكي لرفع أدلة العمل واستخلاص مصفوفة المخاطر والضوابط تلقائياً.
+                      </p>
+                      <div className="flex items-center justify-center gap-2.5 flex-wrap pt-1">
+                        {isMakerOrAdmin && (
+                          <button
+                            type="button"
+                            onClick={handleCreateManualDraft}
+                            data-testid="empty-unit-create-draft-btn"
+                            className="px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <Plus className="w-4 h-4 text-[#F79C1E]" />
+                            <span>إنشاء مسودة RCSA لهذه الوحدة الآن</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onNavigate?.({ page: 'agent', unitId: selectedUnitId, sessionId: '' })}
+                          className="px-4 py-2 rounded-xl bg-white hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Sparkles className="w-4 h-4 text-[#006547]" />
+                          <span>استنباط المصفوفة من المستندات بالوكيل الذكي</span>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -1498,7 +1658,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
       {currentRiskObj && (
         <div
           data-testid="risk-review-workspace"
-          className="bg-[#ECEBE8] rounded-2xl border-2 border-[#006547]/40 shadow-md overflow-hidden"
+          className="bg-white rounded-xl border-2 border-[#006547]/40 shadow-md overflow-hidden"
         >
           <Phase2CReviewPanel
             assessmentId={selectedAssessmentId || ''}
@@ -1578,7 +1738,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
           </div>
 
           {/* Quick Risk Selector Bar */}
-          <div className="bg-[#DFDEDB] px-4 py-2 border-b border-[#C6C4C1] flex items-center gap-1.5 overflow-x-auto">
+          <div className="bg-[#F8F8F6] px-4 py-2 border-b border-[#E5E3DE] flex items-center gap-1.5 overflow-x-auto">
             <span className="text-[11px] font-bold text-slate-700 ml-2 shrink-0">انتقال سريع:</span>
             {allRisks.map(r => (
               <button
@@ -1586,10 +1746,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 type="button"
                 data-testid={`quick-risk-pill-${r.risk_id}`}
                 onClick={() => setSelectedRiskId(r.risk_id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold shrink-0 transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold shrink-0 transition-all cursor-pointer tabular-nums ${
                   r.risk_id === currentRiskObj.risk_id
-                    ? 'bg-[#006547] text-white shadow-sm'
-                    : 'bg-[#ECEBE8] text-slate-800 border border-[#C6C4C1] hover:bg-[#E2E1DE]'
+                    ? 'bg-[#006547] text-white shadow-xs'
+                    : 'bg-white text-slate-800 border border-[#DCDAD5] hover:bg-[#EFECE6]'
                 }`}
               >
                 {r.risk_id} {r.is_reviewed ? '✓' : ''}
@@ -1839,7 +1999,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             )}
 
             {/* Workspace Sub-Navigation Tabs */}
-            <div className="flex bg-[#DFDEDB] p-1 rounded-xl border border-[#C6C4C1] gap-1 flex-wrap">
+            <div className="flex bg-[#F8F8F6] p-1 rounded-xl border border-[#E5E3DE] gap-1 flex-wrap">
               {[
                 {
                   id: 'inputs_and_calc',
@@ -1863,10 +2023,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   type="button"
                   data-testid={`workspace-tab-${t.id}`}
                   onClick={() => setActiveWorkspaceTab(t.id as any)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeWorkspaceTab === t.id
-                      ? 'bg-[#006547] text-white shadow-sm'
-                      : 'text-slate-700 hover:text-slate-950'
+                      ? 'bg-[#006547] text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-[#EFECE6] hover:text-slate-950'
                   }`}
                 >
                   {t.label}
@@ -1878,8 +2038,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             {activeWorkspaceTab === 'inputs_and_calc' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {/* Right Column (7 cols): Editable Risk Inputs */}
-                <div className="lg:col-span-7 bg-[#E2E1DE] p-4 rounded-xl border border-[#C6C4C1] space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#CECCC9] pb-2">
+                <div className="lg:col-span-7 bg-[#F8F8F6] p-4 rounded-xl border border-[#E5E3DE] space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#E5E3DE] pb-2">
                     <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                       <Edit3 className="w-4 h-4 text-[#006547]" />
                       <span>المدخلات القابلة للتعديل للمخاطرة ({currentRiskObj.risk_id})</span>
@@ -1938,7 +2098,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </div>
 
                   {/* Dynamic Cascading Risk Taxonomy L1, L2 & L3 Section */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#ECEBE8] p-3.5 rounded-xl border border-[#C6C4C1] text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#F8F8F6] p-3.5 rounded-xl border border-[#DCDAD5] text-xs">
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="font-bold text-slate-900">
@@ -1952,9 +2112,13 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l1_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
-                          const matchedL1 = taxonomyL1s.find(l1 => l1.taxonomy_id === selectedId);
-                          const newL1Ar = matchedL1 ? matchedL1.category_ar : '';
-                          
+                          const matchedL1 = taxonomyL1s.find(
+                            l1 => (l1.taxonomy_id || l1.id) === selectedId
+                          );
+                          const newL1Ar = matchedL1
+                            ? matchedL1.category_ar || matchedL1.name_ar
+                            : '';
+
                           // Requirement 1: Clear L2 and L3 when L1 changes. Do NOT auto-select first child.
                           setRiskForm(prev => ({
                             ...prev,
@@ -1966,19 +2130,27 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                             taxonomy_l3_ar: '',
                           }));
                         }}
-                        className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
+                        className="w-full px-3 py-1.5 bg-white border border-[#DCDAD5] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
                       >
-                        <option value="">-- اختر التصنيف الرئيسي L1 --</option>
-                        {taxonomyL1s.map(l1 => (
-                          <option key={l1.taxonomy_id} value={l1.taxonomy_id}>
-                            {l1.taxonomy_id}: {l1.category_ar} ({l1.category_en})
-                          </option>
-                        ))}
-                        {!taxonomyL1s.some(l1 => l1.taxonomy_id === riskForm.taxonomy_l1_id) && riskForm.taxonomy_l1_ar && (
-                          <option value={riskForm.taxonomy_l1_id || 'CUSTOM'}>
-                            {riskForm.taxonomy_l1_ar}
-                          </option>
-                        )}
+                        <option key="l1-empty" value="">-- اختر التصنيف الرئيسي L1 --</option>
+                        {taxonomyL1s.map((l1, idx) => {
+                          const tId = l1.taxonomy_id || l1.id || `L1-${idx}`;
+                          const catAr = l1.category_ar || l1.name_ar || '';
+                          const catEn = l1.category_en || l1.name_en || '';
+                          return (
+                            <option key={`l1-${tId}-${idx}`} value={tId}>
+                              {tId}: {catAr} ({catEn})
+                            </option>
+                          );
+                        })}
+                        {!taxonomyL1s.some(
+                          l1 => (l1.taxonomy_id || l1.id) === riskForm.taxonomy_l1_id
+                        ) &&
+                          riskForm.taxonomy_l1_ar && (
+                            <option key="l1-custom" value={riskForm.taxonomy_l1_id || 'CUSTOM'}>
+                              {riskForm.taxonomy_l1_ar}
+                            </option>
+                          )}
                       </select>
                     </div>
 
@@ -1994,32 +2166,47 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l2_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
-                          const matchedL2 = taxonomyL2s.find(l2 => l2.taxonomy_id === selectedId);
-                          
+                          const matchedL2 = taxonomyL2s.find(
+                            l2 => (l2.taxonomy_id || l2.id) === selectedId
+                          );
+
                           // Requirement 2: Clear L3 when L2 changes.
                           setRiskForm(prev => ({
                             ...prev,
                             taxonomy_l2_id: selectedId,
-                            taxonomy_l2_ar: matchedL2 ? matchedL2.category_ar : '',
+                            taxonomy_l2_ar: matchedL2
+                              ? matchedL2.category_ar || matchedL2.name_ar
+                              : '',
                             taxonomy_l3_id: '',
                             taxonomy_l3_ar: '',
                           }));
                         }}
-                        className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
+                        className="w-full px-3 py-1.5 bg-white border border-[#DCDAD5] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
                       >
-                        <option value="">-- اختر التصنيف الفرعي L2 --</option>
+                        <option key="l2-empty" value="">-- اختر التصنيف الفرعي L2 --</option>
                         {taxonomyL2s
-                          .filter(l2 => l2.parent_taxonomy_id === riskForm.taxonomy_l1_id)
-                          .map(l2 => (
-                            <option key={l2.taxonomy_id} value={l2.taxonomy_id}>
-                              {l2.taxonomy_id}: {l2.category_ar} ({l2.category_en})
+                          .filter(
+                            l2 =>
+                              (l2.parent_taxonomy_id || l2.parent_id) === riskForm.taxonomy_l1_id
+                          )
+                          .map((l2, idx) => {
+                            const tId = l2.taxonomy_id || l2.id || `L2-${idx}`;
+                            const catAr = l2.category_ar || l2.name_ar || '';
+                            const catEn = l2.category_en || l2.name_en || '';
+                            return (
+                              <option key={`l2-${tId}-${idx}`} value={tId}>
+                                {tId}: {catAr} ({catEn})
+                              </option>
+                            );
+                          })}
+                        {!taxonomyL2s.some(
+                          l2 => (l2.taxonomy_id || l2.id) === riskForm.taxonomy_l2_id
+                        ) &&
+                          riskForm.taxonomy_l2_ar && (
+                            <option key="l2-custom" value={riskForm.taxonomy_l2_id || 'CUSTOM'}>
+                              {riskForm.taxonomy_l2_ar}
                             </option>
-                          ))}
-                        {!taxonomyL2s.some(l2 => l2.taxonomy_id === riskForm.taxonomy_l2_id) && riskForm.taxonomy_l2_ar && (
-                          <option value={riskForm.taxonomy_l2_id || 'CUSTOM'}>
-                            {riskForm.taxonomy_l2_ar}
-                          </option>
-                        )}
+                          )}
                       </select>
                     </div>
 
@@ -2035,28 +2222,43 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l3_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
-                          const matchedL3 = taxonomyL3s.find(l3 => l3.taxonomy_id === selectedId);
+                          const matchedL3 = taxonomyL3s.find(
+                            l3 => (l3.taxonomy_id || l3.id) === selectedId
+                          );
                           setRiskForm(prev => ({
                             ...prev,
                             taxonomy_l3_id: selectedId,
-                            taxonomy_l3_ar: matchedL3 ? matchedL3.category_ar : '',
+                            taxonomy_l3_ar: matchedL3
+                              ? matchedL3.category_ar || matchedL3.name_ar
+                              : '',
                           }));
                         }}
-                        className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
+                        className="w-full px-3 py-1.5 bg-white border border-[#DCDAD5] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
                       >
-                        <option value="">-- اختر التصنيف التفصيلي L3 --</option>
+                        <option key="l3-empty" value="">-- اختر التصنيف التفصيلي L3 --</option>
                         {taxonomyL3s
-                          .filter(l3 => l3.parent_taxonomy_id === riskForm.taxonomy_l2_id)
-                          .map(l3 => (
-                            <option key={l3.taxonomy_id} value={l3.taxonomy_id}>
-                              {l3.taxonomy_id}: {l3.category_ar} ({l3.category_en})
+                          .filter(
+                            l3 =>
+                              (l3.parent_taxonomy_id || l3.parent_id) === riskForm.taxonomy_l2_id
+                          )
+                          .map((l3, idx) => {
+                            const tId = l3.taxonomy_id || l3.id || `L3-${idx}`;
+                            const catAr = l3.category_ar || l3.name_ar || '';
+                            const catEn = l3.category_en || l3.name_en || '';
+                            return (
+                              <option key={`l3-${tId}-${idx}`} value={tId}>
+                                {tId}: {catAr} ({catEn})
+                              </option>
+                            );
+                          })}
+                        {!taxonomyL3s.some(
+                          l3 => (l3.taxonomy_id || l3.id) === riskForm.taxonomy_l3_id
+                        ) &&
+                          riskForm.taxonomy_l3_ar && (
+                            <option key="l3-custom" value={riskForm.taxonomy_l3_id || 'CUSTOM'}>
+                              {riskForm.taxonomy_l3_ar}
                             </option>
-                          ))}
-                        {!taxonomyL3s.some(l3 => l3.taxonomy_id === riskForm.taxonomy_l3_id) && riskForm.taxonomy_l3_ar && (
-                          <option value={riskForm.taxonomy_l3_id || 'CUSTOM'}>
-                            {riskForm.taxonomy_l3_ar}
-                          </option>
-                        )}
+                          )}
                       </select>
                     </div>
                   </div>
@@ -2125,15 +2327,15 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         }
                         className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
                       >
-                        <option value="">-- اختر التكرار المعتمد (PENDING_INPUT) --</option>
-                        {FREQUENCY_OPTIONS.map(fo => (
-                          <option key={fo.value} value={fo.value}>
+                        <option key="freq-empty" value="">-- اختر التكرار المعتمد (PENDING_INPUT) --</option>
+                        {FREQUENCY_OPTIONS.map((fo, idx) => (
+                          <option key={`freq-${fo.value || idx}`} value={fo.value}>
                             {fo.label}
                           </option>
                         ))}
                         {riskForm.expected_frequency_text &&
                           !FREQUENCY_OPTIONS.some(fo => fo.value === riskForm.expected_frequency_text) && (
-                            <option value={riskForm.expected_frequency_text}>
+                            <option key="freq-custom" value={riskForm.expected_frequency_text}>
                               {riskForm.expected_frequency_text} (قيمة المصدر الحالي)
                             </option>
                           )}
@@ -2230,8 +2432,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 </div>
 
                 {/* Left Column (5 cols): Protected Read-Only Calculated Outputs */}
-                <div className="lg:col-span-5 bg-[#E2E6E3] p-4 rounded-xl border border-[#006547]/40 space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#006547]/25 pb-2">
+                <div className="lg:col-span-5 bg-emerald-50/50 p-4 rounded-xl border border-[#006547]/30 space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#006547]/20 pb-2">
                     <h4 className="text-sm font-bold text-[#09331F] flex items-center gap-1.5">
                       <Lock className="w-4 h-4 text-[#006547]" />
                       <span>المخرجات المحسوبة آلياً (للقراءة فقط — محرك بايثون)</span>
@@ -2240,8 +2442,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </div>
 
                   {/* 1. Phase 2A Financial & Inherent Outputs */}
-                  <div className="p-3.5 rounded-xl bg-[#F0EFED] border border-[#C6C4C1] space-y-2.5 text-xs">
-                    <div className="font-bold text-slate-900 border-b border-[#CECCC9] pb-1">
+                  <div className="p-3.5 rounded-xl bg-white border border-[#DCDAD5] space-y-2.5 text-xs">
+                    <div className="font-bold text-slate-900 border-b border-[#E5E3DE] pb-1">
                       أولاً: مخرجات الأثر المالي والخطر المتلازم (Phase 2A Engine)
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -2296,8 +2498,8 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </div>
 
                   {/* 2. Phase 2B MAX RRF & Residual Risk Outputs (with Workbook Reference Comparison!) */}
-                  <div className="p-3.5 rounded-xl bg-[#F0EFED] border border-[#C6C4C1] space-y-2.5 text-xs">
-                    <div className="font-bold text-slate-900 border-b border-[#CECCC9] pb-1">
+                  <div className="p-3.5 rounded-xl bg-white border border-[#DCDAD5] space-y-2.5 text-xs">
+                    <div className="font-bold text-slate-900 border-b border-[#E5E3DE] pb-1">
                       ثانياً: معامل الخفض الأقصى والخطر المتبقي (Phase 2B Engine)
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -2601,14 +2803,14 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               }
                               className="w-full px-2.5 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg font-semibold disabled:opacity-60"
                             >
-                              {CONTROL_TYPE_OPTIONS.map(o => (
-                                <option key={o.value} value={o.value}>
+                              {CONTROL_TYPE_OPTIONS.map((o, idx) => (
+                                <option key={`ctype-${o.value || idx}`} value={o.value}>
                                   {o.label}
                                 </option>
                               ))}
                               {cf.control_type_raw &&
                                 !CONTROL_TYPE_OPTIONS.some(o => o.value === cf.control_type_raw) && (
-                                  <option value={cf.control_type_raw}>{cf.control_type_raw}</option>
+                                  <option key="ctype-custom" value={cf.control_type_raw}>{cf.control_type_raw}</option>
                                 )}
                             </select>
                           </div>
@@ -2630,14 +2832,14 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               }
                               className="w-full px-2.5 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg font-semibold disabled:opacity-60"
                             >
-                              {CONTROL_METHOD_OPTIONS.map(o => (
-                                <option key={o.value} value={o.value}>
+                              {CONTROL_METHOD_OPTIONS.map((o, idx) => (
+                                <option key={`cmethod-${o.value || idx}`} value={o.value}>
                                   {o.label}
                                 </option>
                               ))}
                               {cf.control_method_raw &&
                                 !CONTROL_METHOD_OPTIONS.some(o => o.value === cf.control_method_raw) && (
-                                  <option value={cf.control_method_raw}>{cf.control_method_raw}</option>
+                                  <option key="cmethod-custom" value={cf.control_method_raw}>{cf.control_method_raw}</option>
                                 )}
                             </select>
                           </div>

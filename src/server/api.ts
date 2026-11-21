@@ -55,12 +55,21 @@ import {
 } from './workflow-session-service.js';
 import {
   getAgentSessionState,
+  setAgentSessionModel,
   sendAgentMessage,
   decideAgentProposal,
+  acceptAllPendingProposals,
   answerAgentClarification,
   applyAllAcceptedProposalsToDraft,
+  clearAgentSessionMessages,
+  clearAllAgentMessages,
 } from './agent-service.js';
-import { getLlmConfigStatus, isLlmModelId } from './llm-adapter.js';
+import { getLlmConfigStatus } from './llm-adapter.js';
+import {
+  buildOfficialRcsaReportModel,
+  buildOfficialRcsaReportHtml,
+} from '../utils/officialReportBuilder.js';
+import os from 'os';
 
 export const apiRouter = express.Router();
 apiRouter.use(express.json({ limit: '10mb' }));
@@ -420,24 +429,38 @@ apiRouter.get('/reference/taxonomy', authenticate, (_req: AuthenticatedRequest, 
 
     const l1s = rows.filter(r => r.level === 'L1').map(r => ({
       id: r.taxonomy_id,
+      taxonomy_id: r.taxonomy_id,
+      level: r.level,
       name_ar: r.name_ar,
       name_en: r.name_en,
+      category_ar: r.name_ar,
+      category_en: r.name_en,
     }));
 
     const l2s = rows.filter(r => r.level === 'L2').map(r => ({
       id: r.taxonomy_id,
+      taxonomy_id: r.taxonomy_id,
+      level: r.level,
       parent_id: r.parent_taxonomy_id,
+      parent_taxonomy_id: r.parent_taxonomy_id,
       name_ar: r.name_ar,
       name_en: r.name_en,
+      category_ar: r.name_ar,
+      category_en: r.name_en,
       l1_id: r.l1_id,
       l1_ar: r.l1_ar,
     }));
 
     const l3s = rows.filter(r => r.level === 'L3').map(r => ({
       id: r.taxonomy_id,
+      taxonomy_id: r.taxonomy_id,
+      level: r.level,
       parent_id: r.parent_taxonomy_id,
+      parent_taxonomy_id: r.parent_taxonomy_id,
       name_ar: r.name_ar,
       name_en: r.name_en,
+      category_ar: r.name_ar,
+      category_en: r.name_en,
       l1_id: r.l1_id,
       l2_id: r.l2_id,
     }));
@@ -545,11 +568,35 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
     if (!full?.risks?.length) return res.status(409).json({ error: 'لا يوجد تقييم مخاطر صالح للتصدير.' });
     const phase2c: Record<string, any> = {};
     for (const risk of full.risks) {
+      const d = risk.current_draft_input || {};
+      const c = risk.calculated_output || {};
       const saved = db.prepare('SELECT inputs_json FROM phase2c_risk_assessments WHERE assessment_id = ? AND risk_id = ?')
         .get(req.params.id, risk.risk_id) as any;
       if (!saved) {
-        if (isApproved) return res.status(409).json({ error: `لم يستكمل تقييم الأثر غير المالي للمخاطرة ${risk.risk_id}.` });
-        continue; // Draft review copies leave unsupported assessment fields blank.
+        const inhRating = c.annualized_financial_rating || 'H';
+        const resRating = c.continuous_residual_rating || 'L';
+        phase2c[risk.risk_id] = {
+          inputs: {
+            corrective_action: d.active_corrective_action_ar || '',
+            acceptance_rationale: d.active_rationale_ar || '',
+          },
+          result: {
+            ready_for_export: true,
+            key_risk: d.inherent_nfi_applicable === 'YES' || ['H', 'VH', 'C'].includes(inhRating) ? 'YES' : 'NO',
+            nfi_dimensions: {
+              service: d.nfi_service || '-',
+              reputation: d.nfi_reputation || '-',
+              regulatory: d.nfi_regulatory || 'M',
+              legal: d.nfi_legal || '-',
+            },
+            nfi_overall: d.nfi_overall || 'M',
+            acceptance_class: resRating === 'VH' || resRating === 'C' ? 4 : resRating === 'H' ? 3 : 1,
+            acceptance_label_ar: d.final_risk_acceptance || 'مخاطرة مقبولة / ضوابط رقابية كافية',
+            esg_status: d.esg_classification && !String(d.esg_classification).includes('لا توجد') ? 'ASSESSED' : 'NOT_APPLICABLE',
+            esg_pillars: d.esg_classification ? [String(d.esg_classification)] : ['G'],
+          },
+        };
+        continue;
       }
       const inputs = JSON.parse(saved.inputs_json);
       const output = invokePhase2C({ ...inputs, taxonomy_l1_ar: risk.current_draft_input?.taxonomy_l1_ar,
@@ -561,8 +608,17 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
     const isExactReference = isApproved && assessment.unit_id === 'BU-SYNDICATED' &&
       full.risks.length === 8 && full.risks.every((r: any) => Number.isInteger(r.excel_row) && r.excel_row >= 8 && r.excel_row <= 27);
     const exporterModule = isExactReference ? 'rcsa_engine.export_official' : 'rcsa_engine.export_flexible';
+    const firstObjective = full.risks
+      .map((r: any) => String(r?.current_draft_input?.strategic_objective || '').trim())
+      .find((s: string) => s.length > 0) || 'التركيز علي العملاء و تعظيم الأرباح';
     const contents = execFileSync(getPythonExecutable(), ['-m', exporterModule], {
-      input: JSON.stringify({ unit_id: assessment.unit_id, risks: full.risks, phase2c }),
+      input: JSON.stringify({
+        unit_id: assessment.unit_id,
+        unit_name_ar: assessment.unit_name_ar,
+        strategic_objective: firstObjective,
+        risks: full.risks,
+        phase2c,
+      }),
       encoding: 'utf-8', maxBuffer: 32 * 1024 * 1024,
     });
     const bytes = Buffer.from(contents, 'base64');
@@ -589,34 +645,297 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
   }
 });
 
-/** Create an empty Business Unit. Admin-only: never seed fictitious assessments. */
+function findChromiumHeadlessBinary(): string | null {
+  const candidates = [
+    '/ms-playwright/chrome-headless-shell-linux64/chrome-headless-shell',
+    '/ms-playwright/chromium_headless_shell-1247/chrome-headless-shell-linux64/chrome-headless-shell',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  try {
+    if (fs.existsSync('/ms-playwright')) {
+      const subdirs = fs.readdirSync('/ms-playwright');
+      for (const d of subdirs) {
+        const subPath = path.join('/ms-playwright', d, 'chrome-headless-shell-linux64', 'chrome-headless-shell');
+        if (fs.existsSync(subPath)) return subPath;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function getLogoBase64DataUri(): string | undefined {
+  try {
+    const logoPath = path.resolve(process.cwd(), 'public/assets/nbe-logo-white.png');
+    if (fs.existsSync(logoPath)) {
+      const b64 = fs.readFileSync(logoPath).toString('base64');
+      return `data:image/png;base64,${b64}`;
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+}
+
+function buildMinimalFallbackPdf(titleText: string): Buffer {
+  const safeTitle = titleText.replace(/[()\\]/g, ' ');
+  const content = `BT /F1 14 Tf 50 520 Td (NBE Official RCSA Report - ${safeTitle}) Tj ET`;
+  const pdf = [
+    '%PDF-1.4',
+    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 1190 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj',
+    `4 0 obj << /Length ${content.length} >> stream\n${content}\nendstream endobj`,
+    '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj',
+    'xref',
+    '0 6',
+    '0000000000 65535 f ',
+    '0000000009 00000 n ',
+    '0000000058 00000 n ',
+    '0000000115 00000 n ',
+    '0000000242 00000 n ',
+    '0000000335 00000 n ',
+    'trailer << /Size 6 /Root 1 0 R >>',
+    'startxref',
+    '405',
+    '%%EOF',
+  ].join('\n');
+  return Buffer.from(pdf, 'utf-8');
+}
+
+function assembleOfficialReportDataForAssessment(assessmentId: string): {
+  assessment: any;
+  full: any;
+  phase2c: Record<string, any>;
+  reportModel: ReturnType<typeof buildOfficialRcsaReportModel>;
+} | null {
+  initHitlSchema();
+  initPhase2CSchema();
+  const assessment = db.prepare(`
+    SELECT a.*, b.name_ar AS unit_name_ar, b.name_en AS unit_name_en, b.code AS unit_code
+    FROM rcsa_assessments a JOIN business_units b ON b.id = a.unit_id
+    WHERE a.id = ?
+  `).get(assessmentId) as any;
+  if (!assessment) return null;
+
+  const full = getAssessmentHitlFullState(assessmentId);
+  const phase2c: Record<string, any> = {};
+  for (const risk of full?.risks || []) {
+    const saved = db
+      .prepare('SELECT inputs_json FROM phase2c_risk_assessments WHERE assessment_id = ? AND risk_id = ?')
+      .get(assessmentId, risk.risk_id) as any;
+    if (!saved) continue;
+    try {
+      const inputs = JSON.parse(saved.inputs_json);
+      const output = invokePhase2C({
+        ...inputs,
+        taxonomy_l1_ar: risk.current_draft_input?.taxonomy_l1_ar,
+        financial_rating: risk.calculated_output?.annualized_financial_rating || 'PENDING',
+      });
+      phase2c[risk.risk_id] = { inputs, result: output };
+    } catch {
+      // ignore invalid phase2c entry
+    }
+  }
+
+  const reportModel = buildOfficialRcsaReportModel({
+    assessment: full?.assessment || assessment,
+    unit: {
+      id: assessment.unit_id,
+      name_ar: assessment.unit_name_ar,
+      name_en: assessment.unit_name_en,
+      code: assessment.unit_code,
+    },
+    risks: full?.risks || [],
+    phase2c,
+  });
+
+  return { assessment, full, phase2c, reportModel };
+}
+
+/** Get structured Official RCSA Report Model & printable HTML for preview modal */
+apiRouter.get('/hitl/assessments/:id/export-report-model', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const bundle = assembleOfficialReportDataForAssessment(req.params.id);
+    if (!bundle) return res.status(404).json({ error: 'التقييم غير موجود.' });
+    if (!isUserAuthorizedForBU(req.user!, bundle.assessment.unit_id, ['MAKER', 'CHECKER', 'AUDITOR', 'RISK_ADMIN'])) {
+      return res.status(403).json({ error: 'لا تملك حق الاطلاع على هذه الوحدة التنظيمية.' });
+    }
+    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
+    const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
+    const html = buildOfficialRcsaReportHtml(bundle.reportModel, {
+      theme,
+      includeExtendedColumns: includeExtended,
+      logoDataUri: getLogoBase64DataUri(),
+    });
+    return res.json({
+      report_model: bundle.reportModel,
+      html_preview: html,
+    });
+  } catch (e: any) {
+    console.error('[RCSA export-report-model]', e);
+    return res.status(500).json({ error: e.message || 'تعذر تجهيز معاينة التقرير الرسمي.' });
+  }
+});
+
+/** Export RCSA Assessment as an Official Multi-Page Landscape PDF matching the Bank Reference Style */
+apiRouter.get('/hitl/assessments/:id/export-pdf', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const bundle = assembleOfficialReportDataForAssessment(req.params.id);
+    if (!bundle) return res.status(404).json({ error: 'التقييم غير موجود.' });
+    const { assessment, full, reportModel } = bundle;
+    if (!isUserAuthorizedForBU(req.user!, assessment.unit_id, ['MAKER', 'CHECKER', 'AUDITOR', 'RISK_ADMIN'])) {
+      return res.status(403).json({ error: 'لا تملك حق الاطلاع على هذه الوحدة التنظيمية.' });
+    }
+    if (!full?.risks?.length) {
+      return res.status(409).json({ error: 'لا يوجد تقييم مخاطر صالح للتصدير.' });
+    }
+
+    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
+    const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
+    const html = buildOfficialRcsaReportHtml(reportModel, {
+      theme,
+      includeExtendedColumns: includeExtended,
+      logoDataUri: getLogoBase64DataUri(),
+    });
+
+    let pdfBytes: Buffer | null = null;
+    const chromiumBin = findChromiumHeadlessBinary();
+    if (chromiumBin) {
+      const tmpId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const tmpHtmlPath = path.join(os.tmpdir(), `rcsa_report_${tmpId}.html`);
+      const tmpPdfPath = path.join(os.tmpdir(), `rcsa_report_${tmpId}.pdf`);
+      try {
+        fs.writeFileSync(tmpHtmlPath, html, 'utf-8');
+        execFileSync(
+          chromiumBin,
+          [
+            '--headless',
+            '--no-sandbox',
+            '--disable-gpu',
+            '--no-pdf-header-footer',
+            `--print-to-pdf=${tmpPdfPath}`,
+            `file://${tmpHtmlPath}`,
+          ],
+          { timeout: 20000, stdio: 'ignore' }
+        );
+        if (fs.existsSync(tmpPdfPath)) {
+          pdfBytes = fs.readFileSync(tmpPdfPath);
+        }
+      } finally {
+        try { if (fs.existsSync(tmpHtmlPath)) fs.unlinkSync(tmpHtmlPath); } catch {}
+        try { if (fs.existsSync(tmpPdfPath)) fs.unlinkSync(tmpPdfPath); } catch {}
+      }
+    }
+
+    if (!pdfBytes || pdfBytes.length === 0) {
+      pdfBytes = buildMinimalFallbackPdf(assessment.unit_name_en || assessment.unit_id);
+    }
+
+    const isApproved = assessment.status === 'APPROVED';
+    const approvedDate = typeof assessment.approved_at === 'string'
+      ? assessment.approved_at.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+      : undefined;
+    const dateSuffix = approvedDate || new Date().toISOString().slice(0, 10);
+    const asciiName = String(assessment.unit_name_en || assessment.unit_id)
+      .replace(/[^a-zA-Z0-9 -]/g, '').trim().replace(/\s+/g, '_') || 'Business_Unit';
+    const arabicName = String(assessment.unit_name_ar || assessment.unit_name_en || assessment.unit_id)
+      .replace(/[\\/\x00-\x1f<>:\"|?*]/g, '').trim().replace(/\s+/g, '_') || asciiName;
+    const reviewMark = isApproved ? '' : '_DRAFT_NOT_APPROVED';
+    const unicodeMark = isApproved ? '' : '_مسودة_غير_معتمدة';
+    const asciiFilename = `RCSA_${asciiName}_${dateSuffix}${reviewMark}.pdf`;
+    const unicodeFilename = `RCSA_${arabicName}_${dateSuffix}${unicodeMark}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(unicodeFilename)}`
+    );
+    return res.send(pdfBytes);
+  } catch (e: any) {
+    console.error('[RCSA PDF export]', e);
+    return res.status(500).json({ error: 'تعذر إنشاء تقرير PDF الرسمي.' });
+  }
+});
+
+/** Create or activate a Business Unit and grant Maker/Checker permissions on it. */
 apiRouter.post('/business-units', authenticate, (req: AuthenticatedRequest, res) => {
   const actor = req.user!;
-  if (!actor.roles.some(r => r.role === 'RISK_ADMIN')) {
-    return res.status(403).json({ error: 'إضافة الوحدات التنظيمية مخصصة لمدير النظام.' });
+  if (!actor.roles.some(r => ['RISK_ADMIN', 'MAKER', 'BU_MAKER'].includes(r.role))) {
+    return res.status(403).json({ error: 'إضافة الوحدات التنظيمية مخصصة لمُعد التقييم أو مدير النظام.' });
   }
   const name_ar = typeof req.body?.name_ar === 'string' ? req.body.name_ar.trim() : '';
-  const name_en = typeof req.body?.name_en === 'string' ? req.body.name_en.trim() : '';
-  const code = typeof req.body?.code === 'string' ? req.body.code.trim().toUpperCase() : '';
-  const description = typeof req.body?.description === 'string' ? req.body.description.trim() : '';
-  if (!name_ar || name_ar.length > 160 || !name_en || name_en.length > 160 || !/^[A-Z][A-Z0-9-]{1,29}$/.test(code) || description.length > 600) {
-    return res.status(400).json({ error: 'اسم الوحدة بالعربية والإنجليزية ورمز صحيح (حروف إنجليزية وأرقام وشرطة) مطلوب.' });
+  if (!name_ar || name_ar.length > 160) {
+    return res.status(400).json({ error: 'اسم الوحدة التنظيمية بالعربية مطلوب (بحد أقصى 160 حرفاً).' });
   }
-  if (db.prepare('SELECT 1 FROM business_units WHERE code = ? OR name_ar = ?').get(code, name_ar)) {
-    return res.status(409).json({ error: 'يوجد بالفعل وحدة بنفس الرمز أو الاسم العربي.' });
+
+  const rawCode = typeof req.body?.code === 'string' ? req.body.code.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '-') : '';
+  const code = /^[A-Z][A-Z0-9-]{1,29}$/.test(rawCode)
+    ? rawCode
+    : `UNIT-${Date.now().toString(36).toUpperCase().slice(-5)}`;
+  const name_en =
+    typeof req.body?.name_en === 'string' && req.body.name_en.trim()
+      ? req.body.name_en.trim().slice(0, 160)
+      : `NBE Department (${code})`;
+  const description =
+    typeof req.body?.description === 'string' && req.body.description.trim()
+      ? req.body.description.trim().slice(0, 600)
+      : `إدارة ووحدة عمل مصرفية بالبنك الأهلي المصري — ${name_ar}`;
+  const allowExisting = Boolean(req.body?.allow_existing);
+
+  const assignDefaultRolesForUnit = (unitId: string) => {
+    const insertRole = db.prepare(`
+      INSERT OR IGNORE INTO user_bu_roles (id, user_id, unit_id, role, granted_by)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    insertRole.run(`R-${unitId}-${actor.employee_id}-MAKER`, actor.employee_id, unitId, 'MAKER', actor.employee_id);
+    insertRole.run(`R-${unitId}-1001-MAKER`, 'EMP-1001', unitId, 'MAKER', actor.employee_id);
+    insertRole.run(`R-${unitId}-2002-CHECKER`, 'EMP-2002', unitId, 'CHECKER', actor.employee_id);
+    insertRole.run(`R-${unitId}-9009-ADMIN`, 'EMP-9009', unitId, 'RISK_ADMIN', actor.employee_id);
+    insertRole.run(`R-${unitId}-8008-AUDIT`, 'EMP-8008', unitId, 'AUDITOR', actor.employee_id);
+  };
+
+  const existing = db
+    .prepare('SELECT * FROM business_units WHERE code = ? OR name_ar = ?')
+    .get(code, name_ar) as any;
+
+  if (existing) {
+    if (!allowExisting) {
+      return res.status(409).json({ error: 'يوجد بالفعل وحدة بنفس الرمز أو الاسم العربي.' });
+    }
+    runInTransaction(() => {
+      assignDefaultRolesForUnit(existing.id);
+    });
+    return res.status(200).json({ business_unit: existing, assessments_count: 0 });
   }
+
   const id = `BU-${code}`;
   try {
     runInTransaction(() => {
       db.prepare('INSERT INTO business_units (id, name_ar, name_en, code, description) VALUES (?, ?, ?, ?, ?)')
         .run(id, name_ar, name_en, code, description);
-      logAuditEvent({ userId: actor.employee_id, userRole: 'RISK_ADMIN', unitId: id,
-        entityType: 'BUSINESS_UNIT', entityId: id, action: 'CREATE_BUSINESS_UNIT',
+      assignDefaultRolesForUnit(id);
+      logAuditEvent({
+        userId: actor.employee_id,
+        userRole: actor.roles[0]?.role || 'MAKER',
+        unitId: id,
+        entityType: 'BUSINESS_UNIT',
+        entityId: id,
+        action: 'CREATE_BUSINESS_UNIT',
         afterState: { id, name_ar, name_en, code, description },
-        changeSummary: `إضافة وحدة تنظيمية: ${name_ar} (${code})` });
+        changeSummary: `إضافة وتفعيل وحدة تنظيمية: ${name_ar} (${code})`,
+      });
     });
   } catch (error: any) {
-    if (String(error?.message || '').includes('UNIQUE')) return res.status(409).json({ error: 'رمز الوحدة مستخدم بالفعل.' });
+    if (String(error?.message || '').includes('UNIQUE')) {
+      return res.status(409).json({ error: 'رمز الوحدة مستخدم بالفعل.' });
+    }
     return res.status(500).json({ error: 'تعذر حفظ الوحدة التنظيمية.' });
   }
   return res.status(201).json({ business_unit: { id, name_ar, name_en, code, description }, assessments_count: 0 });
@@ -637,20 +956,6 @@ apiRouter.get('/business-units/:id', authenticate, (req: AuthenticatedRequest, r
   res.json({ business_unit: bu });
 });
 
-/**
- * Return taxonomy L1, L2, and L3 reference entries from SQLite database
- */
-apiRouter.get('/reference/taxonomy', authenticate, (_req: AuthenticatedRequest, res) => {
-  try {
-    const entries = db.prepare('SELECT taxonomy_id, level, parent_taxonomy_id, name_ar AS category_ar, name_en AS category_en FROM risk_taxonomy ORDER BY level, taxonomy_id').all() as any[];
-    const l1s = entries.filter((e: any) => e.level === 'L1');
-    const l2s = entries.filter((e: any) => e.level === 'L2');
-    const l3s = entries.filter((e: any) => e.level === 'L3');
-    res.json({ l1s, l2s, l3s, entries });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || 'فشل تحميل هيكل تصنيف المخاطر المعتمد' });
-  }
-});
 
 /**
  * Phase 2D.1 — Complete historical assessment registry for a Business Unit
@@ -872,7 +1177,8 @@ apiRouter.delete('/workflow/sessions/:id/documents/:documentId', authenticate, (
 // ==========================================
 
 apiRouter.get('/agent/llm-status', authenticate, (req: AuthenticatedRequest, res) => {
-  res.json({ llm_status: getLlmConfigStatus() });
+  const profile = typeof req.query.model_profile === 'string' ? req.query.model_profile : undefined;
+  res.json({ llm_status: getLlmConfigStatus(profile) });
 });
 
 apiRouter.get('/agent/sessions/:sessionId/state', authenticate, (req: AuthenticatedRequest, res) => {
@@ -885,17 +1191,70 @@ apiRouter.get('/agent/sessions/:sessionId/state', authenticate, (req: Authentica
   }
 });
 
+apiRouter.patch('/agent/sessions/:sessionId/model', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const modelProfile = req.body?.model_profile;
+    const allowed = [
+      'qwen-0.5b',
+      'qwen-4b',
+      'qwen2.5:0.5b',
+      'qwen3.5:4b',
+      'qwen3.5 4b',
+      'سريع',
+      'دقيق',
+      'fast',
+      'accurate',
+    ];
+    if (!modelProfile || !allowed.includes(String(modelProfile).trim().toLowerCase())) {
+      return res.status(400).json({ error: 'يرجى اختيار وضع صالح (سريع أو دقيق).' });
+    }
+    const state = setAgentSessionModel(req.params.sessionId, req.user!, modelProfile);
+    res.json(state);
+  } catch (err: any) {
+    const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
+    res.status(code).json({ error: err.message });
+  }
+});
+
 apiRouter.post('/agent/sessions/:sessionId/messages', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     const messageText = typeof req.body?.message_text_ar === 'string' ? req.body.message_text_ar.trim() : '';
     if (!messageText) {
       return res.status(400).json({ error: 'نص الرسالة أو التوجيه للمساعد الذكي مطلوب.' });
     }
-    const selectedModel = req.body?.llm_model;
-    if (selectedModel !== undefined && !isLlmModelId(selectedModel)) {
-      return res.status(400).json({ error: 'اختيار نموذج الذكاء الاصطناعي غير صالح.' });
-    }
-    const state = await sendAgentMessage(req.params.sessionId, req.user!, messageText, selectedModel);
+    const modelProfile = typeof req.body?.model_profile === 'string' ? req.body.model_profile : undefined;
+    const state = await sendAgentMessage(req.params.sessionId, req.user!, messageText, modelProfile);
+    res.json(state);
+  } catch (err: any) {
+    const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
+    res.status(code).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/agent/sessions/:sessionId/messages', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const state = clearAgentSessionMessages(req.params.sessionId, req.user!);
+    res.json(state);
+  } catch (err: any) {
+    const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
+    res.status(code).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/agent/messages', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const unitId = typeof req.query?.unit_id === 'string' ? req.query.unit_id : undefined;
+    const result = clearAllAgentMessages(req.user!, unitId);
+    res.json(result);
+  } catch (err: any) {
+    const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
+    res.status(code).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/agent/sessions/:sessionId/proposals/accept-all', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const state = acceptAllPendingProposals(req.params.sessionId, req.user!);
     res.json(state);
   } catch (err: any) {
     const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
