@@ -1,0 +1,5380 @@
+{
+  "sheet_name": "Risk Taxonomy L1-L3",
+  "sheet_index": 0,
+  "dimension": null,
+  "merged_ranges": [],
+  "formula_count": 0,
+  "formula_cells": [],
+  "cells": [
+    {
+      "cell": "A1",
+      "value": "Taxonomy ID",
+      "style_index": "5"
+    },
+    {
+      "cell": "B1",
+      "value": "Parent Taxonomy ID",
+      "style_index": "5"
+    },
+    {
+      "cell": "C1",
+      "value": "Level",
+      "style_index": "5"
+    },
+    {
+      "cell": "D1",
+      "value": "Classification (English)",
+      "style_index": "5"
+    },
+    {
+      "cell": "E1",
+      "value": "التصنيف (عربي)",
+      "style_index": "5"
+    },
+    {
+      "cell": "F1",
+      "value": "L1 ID",
+      "style_index": "5"
+    },
+    {
+      "cell": "G1",
+      "value": "L1 English",
+      "style_index": "5"
+    },
+    {
+      "cell": "H1",
+      "value": "L1 عربي",
+      "style_index": "5"
+    },
+    {
+      "cell": "I1",
+      "value": "L2 ID",
+      "style_index": "5"
+    },
+    {
+      "cell": "J1",
+      "value": "L2 English",
+      "style_index": "5"
+    },
+    {
+      "cell": "K1",
+      "value": "L2 عربي",
+      "style_index": "5"
+    },
+    {
+      "cell": "L1",
+      "value": "L3 ID",
+      "style_index": "5"
+    },
+    {
+      "cell": "M1",
+      "value": "L3 English",
+      "style_index": "5"
+    },
+    {
+      "cell": "N1",
+      "value": "L3 عربي",
+      "style_index": "5"
+    },
+    {
+      "cell": "A2",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C2",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D2",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "E2",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "F2",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G2",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H2",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "A3",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C3",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D3",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "E3",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "F3",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G3",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H3",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "A4",
+      "value": "L1-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "C4",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D4",
+      "value": "Means of Credit Card Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "E4",
+      "value": "أساليب الاحتيال ببطاقات الائتمان",
+      "style_index": "10"
+    },
+    {
+      "cell": "F4",
+      "value": "L1-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "G4",
+      "value": "Means of Credit Card Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H4",
+      "value": "أساليب الاحتيال ببطاقات الائتمان",
+      "style_index": "10"
+    },
+    {
+      "cell": "A5",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C5",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D5",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "E5",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F5",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G5",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H5",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A6",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C6",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D6",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "E6",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "F6",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G6",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H6",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "A7",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "C7",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D7",
+      "value": "Damages to Physical Assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "E7",
+      "value": "الأضرار التي تلحق بالأصول المادية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F7",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "G7",
+      "value": "Damages to Physical Assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "H7",
+      "value": "الأضرار التي تلحق بالأصول المادية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A8",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "C8",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D8",
+      "value": "Business Interruption and System Failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "E8",
+      "value": "توقف الأعمال وتعطل الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F8",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "G8",
+      "value": "Business Interruption and System Failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "H8",
+      "value": "توقف الأعمال وتعطل الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A9",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C9",
+      "value": "L1",
+      "style_index": "10"
+    },
+    {
+      "cell": "D9",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "E9",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "F9",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G9",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H9",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "A10",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B10",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C10",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D10",
+      "value": "Unauthorized Activity",
+      "style_index": "10"
+    },
+    {
+      "cell": "E10",
+      "value": "أنشطة غير مصرح بها",
+      "style_index": "10"
+    },
+    {
+      "cell": "F10",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G10",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H10",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I10",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J10",
+      "value": "Unauthorized Activity",
+      "style_index": "10"
+    },
+    {
+      "cell": "K10",
+      "value": "أنشطة غير مصرح بها",
+      "style_index": "10"
+    },
+    {
+      "cell": "A11",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B11",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C11",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D11",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "E11",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F11",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G11",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H11",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I11",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J11",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K11",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A12",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B12",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C12",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D12",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "E12",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F12",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G12",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H12",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I12",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J12",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K12",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A13",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B13",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C13",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D13",
+      "value": "System Security",
+      "style_index": "10"
+    },
+    {
+      "cell": "E13",
+      "value": "أمن الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F13",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G13",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H13",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I13",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J13",
+      "value": "System Security",
+      "style_index": "10"
+    },
+    {
+      "cell": "K13",
+      "value": "أمن الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A14",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B14",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C14",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D14",
+      "value": "Employee Relations",
+      "style_index": "10"
+    },
+    {
+      "cell": "E14",
+      "value": "علاقات الموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "F14",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G14",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H14",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I14",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J14",
+      "value": "Employee Relations",
+      "style_index": "10"
+    },
+    {
+      "cell": "K14",
+      "value": "علاقات الموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "A15",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B15",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C15",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D15",
+      "value": "Workplace Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "E15",
+      "value": "السلامة في مكان العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "F15",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G15",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H15",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I15",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J15",
+      "value": "Workplace Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "K15",
+      "value": "السلامة في مكان العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "A16",
+      "value": "L2-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B16",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C16",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D16",
+      "value": "Discrimination",
+      "style_index": "10"
+    },
+    {
+      "cell": "E16",
+      "value": "التمييز",
+      "style_index": "10"
+    },
+    {
+      "cell": "F16",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G16",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H16",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I16",
+      "value": "L2-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J16",
+      "value": "Discrimination",
+      "style_index": "10"
+    },
+    {
+      "cell": "K16",
+      "value": "التمييز",
+      "style_index": "10"
+    },
+    {
+      "cell": "A17",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B17",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C17",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D17",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "E17",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F17",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G17",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H17",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I17",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J17",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "K17",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A18",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B18",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C18",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D18",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "E18",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F18",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G18",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H18",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I18",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J18",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "K18",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A19",
+      "value": "L2-05-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B19",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C19",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D19",
+      "value": "Product Defects or Problems",
+      "style_index": "10"
+    },
+    {
+      "cell": "E19",
+      "value": "عيوب المنتجات أو مشكلاتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "F19",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G19",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H19",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I19",
+      "value": "L2-05-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J19",
+      "value": "Product Defects or Problems",
+      "style_index": "10"
+    },
+    {
+      "cell": "K19",
+      "value": "عيوب المنتجات أو مشكلاتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "A20",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B20",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C20",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D20",
+      "value": "Selection, Sponsorship and Exposure",
+      "style_index": "10"
+    },
+    {
+      "cell": "E20",
+      "value": "الاختيار والرعاية والتعرض للمخاطر",
+      "style_index": "10"
+    },
+    {
+      "cell": "F20",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G20",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H20",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I20",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J20",
+      "value": "Selection, Sponsorship and Exposure",
+      "style_index": "10"
+    },
+    {
+      "cell": "K20",
+      "value": "الاختيار والرعاية والتعرض للمخاطر",
+      "style_index": "10"
+    },
+    {
+      "cell": "A21",
+      "value": "L2-05-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "B21",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C21",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D21",
+      "value": "Advisory Services",
+      "style_index": "10"
+    },
+    {
+      "cell": "E21",
+      "value": "الخدمات الاستشارية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F21",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G21",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H21",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I21",
+      "value": "L2-05-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "J21",
+      "value": "Advisory Services",
+      "style_index": "10"
+    },
+    {
+      "cell": "K21",
+      "value": "الخدمات الاستشارية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A22",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B22",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "C22",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D22",
+      "value": "Natural Disasters and Other Events",
+      "style_index": "10"
+    },
+    {
+      "cell": "E22",
+      "value": "الكوارث الطبيعية والأحداث الأخرى",
+      "style_index": "10"
+    },
+    {
+      "cell": "F22",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "G22",
+      "value": "Damages to Physical Assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "H22",
+      "value": "الأضرار التي تلحق بالأصول المادية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I22",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J22",
+      "value": "Natural Disasters and Other Events",
+      "style_index": "10"
+    },
+    {
+      "cell": "K22",
+      "value": "الكوارث الطبيعية والأحداث الأخرى",
+      "style_index": "10"
+    },
+    {
+      "cell": "A23",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B23",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "C23",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D23",
+      "value": "Systems",
+      "style_index": "10"
+    },
+    {
+      "cell": "E23",
+      "value": "الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F23",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "G23",
+      "value": "Business Interruption and System Failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "H23",
+      "value": "توقف الأعمال وتعطل الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "I23",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J23",
+      "value": "Systems",
+      "style_index": "10"
+    },
+    {
+      "cell": "K23",
+      "value": "الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A24",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B24",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C24",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D24",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "E24",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "F24",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G24",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H24",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I24",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J24",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K24",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "A25",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B25",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C25",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D25",
+      "value": "Monitoring and Reporting",
+      "style_index": "10"
+    },
+    {
+      "cell": "E25",
+      "value": "المراقبة وإعداد التقارير",
+      "style_index": "10"
+    },
+    {
+      "cell": "F25",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G25",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H25",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I25",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J25",
+      "value": "Monitoring and Reporting",
+      "style_index": "10"
+    },
+    {
+      "cell": "K25",
+      "value": "المراقبة وإعداد التقارير",
+      "style_index": "10"
+    },
+    {
+      "cell": "A26",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B26",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C26",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D26",
+      "value": "Customer Documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "E26",
+      "value": "مستندات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F26",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G26",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H26",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I26",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J26",
+      "value": "Customer Documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "K26",
+      "value": "مستندات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A27",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B27",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C27",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D27",
+      "value": "Customer Account Management",
+      "style_index": "10"
+    },
+    {
+      "cell": "E27",
+      "value": "إدارة حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F27",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G27",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H27",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I27",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J27",
+      "value": "Customer Account Management",
+      "style_index": "10"
+    },
+    {
+      "cell": "K27",
+      "value": "إدارة حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A28",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "B28",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C28",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D28",
+      "value": "Trade Counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "E28",
+      "value": "أطراف التعامل المقابلة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F28",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G28",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H28",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I28",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "J28",
+      "value": "Trade Counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "K28",
+      "value": "أطراف التعامل المقابلة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A29",
+      "value": "L2-08-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "B29",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "C29",
+      "value": "L2",
+      "style_index": "10"
+    },
+    {
+      "cell": "D29",
+      "value": "Vendors and Suppliers",
+      "style_index": "10"
+    },
+    {
+      "cell": "E29",
+      "value": "الموردون ومقدمو الخدمات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F29",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G29",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H29",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I29",
+      "value": "L2-08-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "J29",
+      "value": "Vendors and Suppliers",
+      "style_index": "10"
+    },
+    {
+      "cell": "K29",
+      "value": "الموردون ومقدمو الخدمات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A30",
+      "value": "L3-01-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B30",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C30",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D30",
+      "value": "Deliberately unreported transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "E30",
+      "value": "معاملات لم يتم الإبلاغ عنها عمدًا",
+      "style_index": "10"
+    },
+    {
+      "cell": "F30",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G30",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H30",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I30",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J30",
+      "value": "Unauthorized Activity",
+      "style_index": "10"
+    },
+    {
+      "cell": "K30",
+      "value": "أنشطة غير مصرح بها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L30",
+      "value": "L3-01-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M30",
+      "value": "Deliberately unreported transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "N30",
+      "value": "معاملات لم يتم الإبلاغ عنها عمدًا",
+      "style_index": "10"
+    },
+    {
+      "cell": "A31",
+      "value": "L3-01-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B31",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C31",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D31",
+      "value": "Unauthorized transactions causing financial loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "E31",
+      "value": "معاملات غير مصرح بها تسببت في خسارة مالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F31",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G31",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H31",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I31",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J31",
+      "value": "Unauthorized Activity",
+      "style_index": "10"
+    },
+    {
+      "cell": "K31",
+      "value": "أنشطة غير مصرح بها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L31",
+      "value": "L3-01-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M31",
+      "value": "Unauthorized transactions causing financial loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "N31",
+      "value": "معاملات غير مصرح بها تسببت في خسارة مالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A32",
+      "value": "L3-01-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B32",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C32",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D32",
+      "value": "Deliberate misstatement of financial positions",
+      "style_index": "10"
+    },
+    {
+      "cell": "E32",
+      "value": "عرض متعمد وغير صحيح للمراكز المالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F32",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G32",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H32",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I32",
+      "value": "L2-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J32",
+      "value": "Unauthorized Activity",
+      "style_index": "10"
+    },
+    {
+      "cell": "K32",
+      "value": "أنشطة غير مصرح بها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L32",
+      "value": "L3-01-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M32",
+      "value": "Deliberate misstatement of financial positions",
+      "style_index": "10"
+    },
+    {
+      "cell": "N32",
+      "value": "عرض متعمد وغير صحيح للمراكز المالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A33",
+      "value": "L3-01-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B33",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C33",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D33",
+      "value": "Fraud, theft, extortion, scams or embezzlement",
+      "style_index": "10"
+    },
+    {
+      "cell": "E33",
+      "value": "الاحتيال أو السرقة أو الابتزاز أو النصب أو الاختلاس",
+      "style_index": "10"
+    },
+    {
+      "cell": "F33",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G33",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H33",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I33",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J33",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K33",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L33",
+      "value": "L3-01-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M33",
+      "value": "Fraud, theft, extortion, scams or embezzlement",
+      "style_index": "10"
+    },
+    {
+      "cell": "N33",
+      "value": "الاحتيال أو السرقة أو الابتزاز أو النصب أو الاختلاس",
+      "style_index": "10"
+    },
+    {
+      "cell": "A34",
+      "value": "L3-01-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B34",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C34",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D34",
+      "value": "Forgery",
+      "style_index": "10"
+    },
+    {
+      "cell": "E34",
+      "value": "التزوير",
+      "style_index": "10"
+    },
+    {
+      "cell": "F34",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G34",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H34",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I34",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J34",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K34",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L34",
+      "value": "L3-01-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M34",
+      "value": "Forgery",
+      "style_index": "10"
+    },
+    {
+      "cell": "N34",
+      "value": "التزوير",
+      "style_index": "10"
+    },
+    {
+      "cell": "A35",
+      "value": "L3-01-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B35",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C35",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D35",
+      "value": "Intentional damage to assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "E35",
+      "value": "الإضرار المتعمد بالأصول",
+      "style_index": "10"
+    },
+    {
+      "cell": "F35",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G35",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H35",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I35",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J35",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K35",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L35",
+      "value": "L3-01-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M35",
+      "value": "Intentional damage to assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "N35",
+      "value": "الإضرار المتعمد بالأصول",
+      "style_index": "10"
+    },
+    {
+      "cell": "A36",
+      "value": "L3-01-02-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B36",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C36",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D36",
+      "value": "Smuggling of funds",
+      "style_index": "10"
+    },
+    {
+      "cell": "E36",
+      "value": "تهريب الأموال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F36",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G36",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H36",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I36",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J36",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K36",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L36",
+      "value": "L3-01-02-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "M36",
+      "value": "Smuggling of funds",
+      "style_index": "10"
+    },
+    {
+      "cell": "N36",
+      "value": "تهريب الأموال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A37",
+      "value": "L3-01-02-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "B37",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C37",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D37",
+      "value": "Customer account takeover",
+      "style_index": "10"
+    },
+    {
+      "cell": "E37",
+      "value": "الاستيلاء على حساب العميل",
+      "style_index": "10"
+    },
+    {
+      "cell": "F37",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G37",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H37",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I37",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J37",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K37",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L37",
+      "value": "L3-01-02-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "M37",
+      "value": "Customer account takeover",
+      "style_index": "10"
+    },
+    {
+      "cell": "N37",
+      "value": "الاستيلاء على حساب العميل",
+      "style_index": "10"
+    },
+    {
+      "cell": "A38",
+      "value": "L3-01-02-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "B38",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C38",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D38",
+      "value": "Deliberate tax evasion",
+      "style_index": "10"
+    },
+    {
+      "cell": "E38",
+      "value": "التهرب الضريبي المتعمد",
+      "style_index": "10"
+    },
+    {
+      "cell": "F38",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G38",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H38",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I38",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J38",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K38",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L38",
+      "value": "L3-01-02-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "M38",
+      "value": "Deliberate tax evasion",
+      "style_index": "10"
+    },
+    {
+      "cell": "N38",
+      "value": "التهرب الضريبي المتعمد",
+      "style_index": "10"
+    },
+    {
+      "cell": "A39",
+      "value": "L3-01-02-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "B39",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C39",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D39",
+      "value": "Bribery and gratuities",
+      "style_index": "10"
+    },
+    {
+      "cell": "E39",
+      "value": "الرشوة والإكراميات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F39",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G39",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H39",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I39",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J39",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K39",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L39",
+      "value": "L3-01-02-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "M39",
+      "value": "Bribery and gratuities",
+      "style_index": "10"
+    },
+    {
+      "cell": "N39",
+      "value": "الرشوة والإكراميات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A40",
+      "value": "L3-01-02-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "B40",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C40",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D40",
+      "value": "Insider trading not conducted for the bank's benefit",
+      "style_index": "10"
+    },
+    {
+      "cell": "E40",
+      "value": "التداول بناءً على معلومات داخلية دون تحقيق منفعة للبنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "F40",
+      "value": "L1-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "G40",
+      "value": "Internal Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H40",
+      "value": "احتيال داخلي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I40",
+      "value": "L2-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J40",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K40",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L40",
+      "value": "L3-01-02-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "M40",
+      "value": "Insider trading not conducted for the bank's benefit",
+      "style_index": "10"
+    },
+    {
+      "cell": "N40",
+      "value": "التداول بناءً على معلومات داخلية دون تحقيق منفعة للبنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "A41",
+      "value": "L3-02-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B41",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C41",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D41",
+      "value": "Theft",
+      "style_index": "10"
+    },
+    {
+      "cell": "E41",
+      "value": "السرقة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F41",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G41",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H41",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I41",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J41",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K41",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L41",
+      "value": "L3-02-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M41",
+      "value": "Theft",
+      "style_index": "10"
+    },
+    {
+      "cell": "N41",
+      "value": "السرقة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A42",
+      "value": "L3-02-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B42",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C42",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D42",
+      "value": "Forgery",
+      "style_index": "10"
+    },
+    {
+      "cell": "E42",
+      "value": "التزوير",
+      "style_index": "10"
+    },
+    {
+      "cell": "F42",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G42",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H42",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I42",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J42",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K42",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L42",
+      "value": "L3-02-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M42",
+      "value": "Forgery",
+      "style_index": "10"
+    },
+    {
+      "cell": "N42",
+      "value": "التزوير",
+      "style_index": "10"
+    },
+    {
+      "cell": "A43",
+      "value": "L3-02-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B43",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C43",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D43",
+      "value": "Cheque theft",
+      "style_index": "10"
+    },
+    {
+      "cell": "E43",
+      "value": "سرقة الشيكات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F43",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G43",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H43",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I43",
+      "value": "L2-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J43",
+      "value": "Theft and Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "K43",
+      "value": "السرقة والاحتيال",
+      "style_index": "10"
+    },
+    {
+      "cell": "L43",
+      "value": "L3-02-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M43",
+      "value": "Cheque theft",
+      "style_index": "10"
+    },
+    {
+      "cell": "N43",
+      "value": "سرقة الشيكات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A44",
+      "value": "L3-02-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B44",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C44",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D44",
+      "value": "Damage caused by system intrusion",
+      "style_index": "10"
+    },
+    {
+      "cell": "E44",
+      "value": "أضرار ناتجة عن اختراق الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F44",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G44",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H44",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I44",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J44",
+      "value": "System Security",
+      "style_index": "10"
+    },
+    {
+      "cell": "K44",
+      "value": "أمن الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L44",
+      "value": "L3-02-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M44",
+      "value": "Damage caused by system intrusion",
+      "style_index": "10"
+    },
+    {
+      "cell": "N44",
+      "value": "أضرار ناتجة عن اختراق الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A45",
+      "value": "L3-02-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B45",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C45",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D45",
+      "value": "Theft of information resulting in financial loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "E45",
+      "value": "سرقة معلومات ترتب عليها خسارة مالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F45",
+      "value": "L1-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "G45",
+      "value": "External Fraud",
+      "style_index": "10"
+    },
+    {
+      "cell": "H45",
+      "value": "احتيال خارجي",
+      "style_index": "10"
+    },
+    {
+      "cell": "I45",
+      "value": "L2-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J45",
+      "value": "System Security",
+      "style_index": "10"
+    },
+    {
+      "cell": "K45",
+      "value": "أمن الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L45",
+      "value": "L3-02-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M45",
+      "value": "Theft of information resulting in financial loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "N45",
+      "value": "سرقة معلومات ترتب عليها خسارة مالية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A46",
+      "value": "L3-04-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B46",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C46",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D46",
+      "value": "Compensation, benefits and termination matters",
+      "style_index": "10"
+    },
+    {
+      "cell": "E46",
+      "value": "مسائل التعويضات والمزايا وإنهاء الخدمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F46",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G46",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H46",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I46",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J46",
+      "value": "Employee Relations",
+      "style_index": "10"
+    },
+    {
+      "cell": "K46",
+      "value": "علاقات الموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "L46",
+      "value": "L3-04-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M46",
+      "value": "Compensation, benefits and termination matters",
+      "style_index": "10"
+    },
+    {
+      "cell": "N46",
+      "value": "مسائل التعويضات والمزايا وإنهاء الخدمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A47",
+      "value": "L3-04-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B47",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C47",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D47",
+      "value": "Organized employee activities such as strikes or sit-ins",
+      "style_index": "10"
+    },
+    {
+      "cell": "E47",
+      "value": "أنشطة الموظفين المنظمة مثل الإضرابات أو الاعتصامات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F47",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G47",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H47",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I47",
+      "value": "L2-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J47",
+      "value": "Employee Relations",
+      "style_index": "10"
+    },
+    {
+      "cell": "K47",
+      "value": "علاقات الموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "L47",
+      "value": "L3-04-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M47",
+      "value": "Organized employee activities such as strikes or sit-ins",
+      "style_index": "10"
+    },
+    {
+      "cell": "N47",
+      "value": "أنشطة الموظفين المنظمة مثل الإضرابات أو الاعتصامات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A48",
+      "value": "L3-04-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B48",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C48",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D48",
+      "value": "Employer liability insurance",
+      "style_index": "10"
+    },
+    {
+      "cell": "E48",
+      "value": "تأمين مسؤولية صاحب العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "F48",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G48",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H48",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I48",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J48",
+      "value": "Workplace Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "K48",
+      "value": "السلامة في مكان العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "L48",
+      "value": "L3-04-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M48",
+      "value": "Employer liability insurance",
+      "style_index": "10"
+    },
+    {
+      "cell": "N48",
+      "value": "تأمين مسؤولية صاحب العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "A49",
+      "value": "L3-04-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B49",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C49",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D49",
+      "value": "Employee health and safety rules",
+      "style_index": "10"
+    },
+    {
+      "cell": "E49",
+      "value": "قواعد صحة الموظفين وسلامتهم",
+      "style_index": "10"
+    },
+    {
+      "cell": "F49",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G49",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H49",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I49",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J49",
+      "value": "Workplace Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "K49",
+      "value": "السلامة في مكان العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "L49",
+      "value": "L3-04-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M49",
+      "value": "Employee health and safety rules",
+      "style_index": "10"
+    },
+    {
+      "cell": "N49",
+      "value": "قواعد صحة الموظفين وسلامتهم",
+      "style_index": "10"
+    },
+    {
+      "cell": "A50",
+      "value": "L3-04-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B50",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C50",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D50",
+      "value": "Compensation paid to employees",
+      "style_index": "10"
+    },
+    {
+      "cell": "E50",
+      "value": "التعويضات المدفوعة للموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "F50",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G50",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H50",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I50",
+      "value": "L2-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J50",
+      "value": "Workplace Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "K50",
+      "value": "السلامة في مكان العمل",
+      "style_index": "10"
+    },
+    {
+      "cell": "L50",
+      "value": "L3-04-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M50",
+      "value": "Compensation paid to employees",
+      "style_index": "10"
+    },
+    {
+      "cell": "N50",
+      "value": "التعويضات المدفوعة للموظفين",
+      "style_index": "10"
+    },
+    {
+      "cell": "A51",
+      "value": "L3-04-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B51",
+      "value": "L2-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "C51",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D51",
+      "value": "All forms of discrimination and unequal treatment",
+      "style_index": "10"
+    },
+    {
+      "cell": "E51",
+      "value": "جميع أشكال التمييز والمعاملة غير المتساوية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F51",
+      "value": "L1-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "G51",
+      "value": "Violating Labor Laws and Occupational Safety",
+      "style_index": "10"
+    },
+    {
+      "cell": "H51",
+      "value": "مخالفة قوانين العمل والسلامة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I51",
+      "value": "L2-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J51",
+      "value": "Discrimination",
+      "style_index": "10"
+    },
+    {
+      "cell": "K51",
+      "value": "التمييز",
+      "style_index": "10"
+    },
+    {
+      "cell": "L51",
+      "value": "L3-04-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M51",
+      "value": "All forms of discrimination and unequal treatment",
+      "style_index": "10"
+    },
+    {
+      "cell": "N51",
+      "value": "جميع أشكال التمييز والمعاملة غير المتساوية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A52",
+      "value": "L3-05-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B52",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C52",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D52",
+      "value": "Credit or disclosure compliance violations including KYC and retail disclosure requirements",
+      "style_index": "10"
+    },
+    {
+      "cell": "E52",
+      "value": "مخالفات متطلبات الائتمان أو الإفصاح بما فيها اعرف عميلك ومتطلبات الإفصاح للأفراد",
+      "style_index": "10"
+    },
+    {
+      "cell": "F52",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G52",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H52",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I52",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J52",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "K52",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "L52",
+      "value": "L3-05-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M52",
+      "value": "Credit or disclosure compliance violations including KYC and retail disclosure requirements",
+      "style_index": "10"
+    },
+    {
+      "cell": "N52",
+      "value": "مخالفات متطلبات الائتمان أو الإفصاح بما فيها اعرف عميلك ومتطلبات الإفصاح للأفراد",
+      "style_index": "10"
+    },
+    {
+      "cell": "A53",
+      "value": "L3-05-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B53",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C53",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D53",
+      "value": "Breach of information confidentiality",
+      "style_index": "10"
+    },
+    {
+      "cell": "E53",
+      "value": "الإخلال بسرية المعلومات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F53",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G53",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H53",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I53",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J53",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "K53",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "L53",
+      "value": "L3-05-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M53",
+      "value": "Breach of information confidentiality",
+      "style_index": "10"
+    },
+    {
+      "cell": "N53",
+      "value": "الإخلال بسرية المعلومات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A54",
+      "value": "L3-05-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B54",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C54",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D54",
+      "value": "Excessive transactions on a customer account to generate additional commissions",
+      "style_index": "10"
+    },
+    {
+      "cell": "E54",
+      "value": "الإفراط في تنفيذ معاملات على حساب العميل لتوليد عمولات إضافية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F54",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G54",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H54",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I54",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J54",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "K54",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "L54",
+      "value": "L3-05-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M54",
+      "value": "Excessive transactions on a customer account to generate additional commissions",
+      "style_index": "10"
+    },
+    {
+      "cell": "N54",
+      "value": "الإفراط في تنفيذ معاملات على حساب العميل لتوليد عمولات إضافية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A55",
+      "value": "L3-05-01-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B55",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C55",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D55",
+      "value": "Misuse of confidential information",
+      "style_index": "10"
+    },
+    {
+      "cell": "E55",
+      "value": "إساءة استخدام المعلومات السرية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F55",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G55",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H55",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I55",
+      "value": "L2-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J55",
+      "value": "Trust, Disclosure and Competence",
+      "style_index": "10"
+    },
+    {
+      "cell": "K55",
+      "value": "الأمانة والإفصاح والكفاءة المهنية",
+      "style_index": "10"
+    },
+    {
+      "cell": "L55",
+      "value": "L3-05-01-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "M55",
+      "value": "Misuse of confidential information",
+      "style_index": "10"
+    },
+    {
+      "cell": "N55",
+      "value": "إساءة استخدام المعلومات السرية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A56",
+      "value": "L3-05-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B56",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C56",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D56",
+      "value": "Transactions not permitted by law",
+      "style_index": "10"
+    },
+    {
+      "cell": "E56",
+      "value": "معاملات غير مسموح بها قانونًا",
+      "style_index": "10"
+    },
+    {
+      "cell": "F56",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G56",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H56",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I56",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J56",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "K56",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L56",
+      "value": "L3-05-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M56",
+      "value": "Transactions not permitted by law",
+      "style_index": "10"
+    },
+    {
+      "cell": "N56",
+      "value": "معاملات غير مسموح بها قانونًا",
+      "style_index": "10"
+    },
+    {
+      "cell": "A57",
+      "value": "L3-05-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B57",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C57",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D57",
+      "value": "Market monopolization or anti-competitive practice",
+      "style_index": "10"
+    },
+    {
+      "cell": "E57",
+      "value": "احتكار السوق أو الممارسات المنافية للمنافسة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F57",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G57",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H57",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I57",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J57",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "K57",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L57",
+      "value": "L3-05-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M57",
+      "value": "Market monopolization or anti-competitive practice",
+      "style_index": "10"
+    },
+    {
+      "cell": "N57",
+      "value": "احتكار السوق أو الممارسات المنافية للمنافسة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A58",
+      "value": "L3-05-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B58",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C58",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D58",
+      "value": "Insider trading on customer accounts",
+      "style_index": "10"
+    },
+    {
+      "cell": "E58",
+      "value": "التداول بناءً على معلومات داخلية في حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F58",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G58",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H58",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I58",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J58",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "K58",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L58",
+      "value": "L3-05-02-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M58",
+      "value": "Insider trading on customer accounts",
+      "style_index": "10"
+    },
+    {
+      "cell": "N58",
+      "value": "التداول بناءً على معلومات داخلية في حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A59",
+      "value": "L3-05-02-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B59",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C59",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D59",
+      "value": "Unlicensed activities or money laundering",
+      "style_index": "10"
+    },
+    {
+      "cell": "E59",
+      "value": "أنشطة غير مرخصة أو غسل الأموال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F59",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G59",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H59",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I59",
+      "value": "L2-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J59",
+      "value": "Improper Business Practices",
+      "style_index": "10"
+    },
+    {
+      "cell": "K59",
+      "value": "ممارسات الأعمال غير السليمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L59",
+      "value": "L3-05-02-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "M59",
+      "value": "Unlicensed activities or money laundering",
+      "style_index": "10"
+    },
+    {
+      "cell": "N59",
+      "value": "أنشطة غير مرخصة أو غسل الأموال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A60",
+      "value": "L3-05-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B60",
+      "value": "L2-05-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "C60",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D60",
+      "value": "Defects in customer products/services or errors in models",
+      "style_index": "10"
+    },
+    {
+      "cell": "E60",
+      "value": "عيوب منتجات أو خدمات العملاء أو أخطاء النماذج",
+      "style_index": "10"
+    },
+    {
+      "cell": "F60",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G60",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H60",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I60",
+      "value": "L2-05-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J60",
+      "value": "Product Defects or Problems",
+      "style_index": "10"
+    },
+    {
+      "cell": "K60",
+      "value": "عيوب المنتجات أو مشكلاتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L60",
+      "value": "L3-05-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M60",
+      "value": "Defects in customer products/services or errors in models",
+      "style_index": "10"
+    },
+    {
+      "cell": "N60",
+      "value": "عيوب منتجات أو خدمات العملاء أو أخطاء النماذج",
+      "style_index": "10"
+    },
+    {
+      "cell": "A61",
+      "value": "L3-05-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B61",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C61",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D61",
+      "value": "Failure to perform required customer inquiries",
+      "style_index": "10"
+    },
+    {
+      "cell": "E61",
+      "value": "عدم إجراء الاستفسارات المطلوبة بشأن العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F61",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G61",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H61",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I61",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J61",
+      "value": "Selection, Sponsorship and Exposure",
+      "style_index": "10"
+    },
+    {
+      "cell": "K61",
+      "value": "الاختيار والرعاية والتعرض للمخاطر",
+      "style_index": "10"
+    },
+    {
+      "cell": "L61",
+      "value": "L3-05-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M61",
+      "value": "Failure to perform required customer inquiries",
+      "style_index": "10"
+    },
+    {
+      "cell": "N61",
+      "value": "عدم إجراء الاستفسارات المطلوبة بشأن العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A62",
+      "value": "L3-05-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B62",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C62",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D62",
+      "value": "Exceeding approved customer exposure limits",
+      "style_index": "10"
+    },
+    {
+      "cell": "E62",
+      "value": "تجاوز حدود التعرض المعتمدة للعملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F62",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G62",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H62",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I62",
+      "value": "L2-05-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J62",
+      "value": "Selection, Sponsorship and Exposure",
+      "style_index": "10"
+    },
+    {
+      "cell": "K62",
+      "value": "الاختيار والرعاية والتعرض للمخاطر",
+      "style_index": "10"
+    },
+    {
+      "cell": "L62",
+      "value": "L3-05-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M62",
+      "value": "Exceeding approved customer exposure limits",
+      "style_index": "10"
+    },
+    {
+      "cell": "N62",
+      "value": "تجاوز حدود التعرض المعتمدة للعملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A63",
+      "value": "L3-05-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B63",
+      "value": "L2-05-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C63",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D63",
+      "value": "Disputes concerning performance of advisory services",
+      "style_index": "10"
+    },
+    {
+      "cell": "E63",
+      "value": "نزاعات بشأن أداء الخدمات الاستشارية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F63",
+      "value": "L1-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "G63",
+      "value": "Wrongful Practices Against Bank Customers' Rights",
+      "style_index": "10"
+    },
+    {
+      "cell": "H63",
+      "value": "ممارسات غير سليمة تمس حقوق عملاء البنك",
+      "style_index": "10"
+    },
+    {
+      "cell": "I63",
+      "value": "L2-05-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "J63",
+      "value": "Advisory Services",
+      "style_index": "10"
+    },
+    {
+      "cell": "K63",
+      "value": "الخدمات الاستشارية",
+      "style_index": "10"
+    },
+    {
+      "cell": "L63",
+      "value": "L3-05-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M63",
+      "value": "Disputes concerning performance of advisory services",
+      "style_index": "10"
+    },
+    {
+      "cell": "N63",
+      "value": "نزاعات بشأن أداء الخدمات الاستشارية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A64",
+      "value": "L3-06-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B64",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C64",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D64",
+      "value": "Losses caused by natural disasters",
+      "style_index": "10"
+    },
+    {
+      "cell": "E64",
+      "value": "خسائر ناجمة عن الكوارث الطبيعية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F64",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "G64",
+      "value": "Damages to Physical Assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "H64",
+      "value": "الأضرار التي تلحق بالأصول المادية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I64",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J64",
+      "value": "Natural Disasters and Other Events",
+      "style_index": "10"
+    },
+    {
+      "cell": "K64",
+      "value": "الكوارث الطبيعية والأحداث الأخرى",
+      "style_index": "10"
+    },
+    {
+      "cell": "L64",
+      "value": "L3-06-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M64",
+      "value": "Losses caused by natural disasters",
+      "style_index": "10"
+    },
+    {
+      "cell": "N64",
+      "value": "خسائر ناجمة عن الكوارث الطبيعية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A65",
+      "value": "L3-06-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B65",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C65",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D65",
+      "value": "Human-caused losses from external sources such as sabotage or terrorism",
+      "style_index": "10"
+    },
+    {
+      "cell": "E65",
+      "value": "خسائر بفعل الإنسان من مصادر خارجية مثل التخريب أو الإرهاب",
+      "style_index": "10"
+    },
+    {
+      "cell": "F65",
+      "value": "L1-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "G65",
+      "value": "Damages to Physical Assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "H65",
+      "value": "الأضرار التي تلحق بالأصول المادية",
+      "style_index": "10"
+    },
+    {
+      "cell": "I65",
+      "value": "L2-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J65",
+      "value": "Natural Disasters and Other Events",
+      "style_index": "10"
+    },
+    {
+      "cell": "K65",
+      "value": "الكوارث الطبيعية والأحداث الأخرى",
+      "style_index": "10"
+    },
+    {
+      "cell": "L65",
+      "value": "L3-06-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M65",
+      "value": "Human-caused losses from external sources such as sabotage or terrorism",
+      "style_index": "10"
+    },
+    {
+      "cell": "N65",
+      "value": "خسائر بفعل الإنسان من مصادر خارجية مثل التخريب أو الإرهاب",
+      "style_index": "10"
+    },
+    {
+      "cell": "A66",
+      "value": "L3-07-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B66",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C66",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D66",
+      "value": "Failure of electronic hardware, software or communication channels",
+      "style_index": "10"
+    },
+    {
+      "cell": "E66",
+      "value": "تعطل المعدات الإلكترونية أو البرمجيات أو قنوات الاتصال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F66",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "G66",
+      "value": "Business Interruption and System Failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "H66",
+      "value": "توقف الأعمال وتعطل الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "I66",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J66",
+      "value": "Systems",
+      "style_index": "10"
+    },
+    {
+      "cell": "K66",
+      "value": "الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L66",
+      "value": "L3-07-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M66",
+      "value": "Failure of electronic hardware, software or communication channels",
+      "style_index": "10"
+    },
+    {
+      "cell": "N66",
+      "value": "تعطل المعدات الإلكترونية أو البرمجيات أو قنوات الاتصال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A67",
+      "value": "L3-07-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B67",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C67",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D67",
+      "value": "Service interruption or business disruption",
+      "style_index": "10"
+    },
+    {
+      "cell": "E67",
+      "value": "انقطاع الخدمات أو تعطل الأعمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F67",
+      "value": "L1-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "G67",
+      "value": "Business Interruption and System Failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "H67",
+      "value": "توقف الأعمال وتعطل الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "I67",
+      "value": "L2-07-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J67",
+      "value": "Systems",
+      "style_index": "10"
+    },
+    {
+      "cell": "K67",
+      "value": "الأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L67",
+      "value": "L3-07-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M67",
+      "value": "Service interruption or business disruption",
+      "style_index": "10"
+    },
+    {
+      "cell": "N67",
+      "value": "انقطاع الخدمات أو تعطل الأعمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A68",
+      "value": "L3-08-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B68",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C68",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D68",
+      "value": "Communication failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "E68",
+      "value": "فشل الاتصال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F68",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G68",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H68",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I68",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J68",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K68",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L68",
+      "value": "L3-08-01-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M68",
+      "value": "Communication failure",
+      "style_index": "10"
+    },
+    {
+      "cell": "N68",
+      "value": "فشل الاتصال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A69",
+      "value": "L3-08-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B69",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C69",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D69",
+      "value": "Data-entry or data-loading errors",
+      "style_index": "10"
+    },
+    {
+      "cell": "E69",
+      "value": "أخطاء إدخال البيانات أو تحميلها",
+      "style_index": "10"
+    },
+    {
+      "cell": "F69",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G69",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H69",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I69",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J69",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K69",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L69",
+      "value": "L3-08-01-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M69",
+      "value": "Data-entry or data-loading errors",
+      "style_index": "10"
+    },
+    {
+      "cell": "N69",
+      "value": "أخطاء إدخال البيانات أو تحميلها",
+      "style_index": "10"
+    },
+    {
+      "cell": "A70",
+      "value": "L3-08-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B70",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C70",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D70",
+      "value": "Failure to meet deadlines or assigned responsibilities",
+      "style_index": "10"
+    },
+    {
+      "cell": "E70",
+      "value": "عدم الالتزام بالمواعيد النهائية أو المسؤوليات المحددة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F70",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G70",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H70",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I70",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J70",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K70",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L70",
+      "value": "L3-08-01-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M70",
+      "value": "Failure to meet deadlines or assigned responsibilities",
+      "style_index": "10"
+    },
+    {
+      "cell": "N70",
+      "value": "عدم الالتزام بالمواعيد النهائية أو المسؤوليات المحددة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A71",
+      "value": "L3-08-01-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "B71",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C71",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D71",
+      "value": "Incorrect system operation",
+      "style_index": "10"
+    },
+    {
+      "cell": "E71",
+      "value": "التشغيل غير الصحيح للأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F71",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G71",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H71",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I71",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J71",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K71",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L71",
+      "value": "L3-08-01-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "M71",
+      "value": "Incorrect system operation",
+      "style_index": "10"
+    },
+    {
+      "cell": "N71",
+      "value": "التشغيل غير الصحيح للأنظمة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A72",
+      "value": "L3-08-01-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "B72",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C72",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D72",
+      "value": "Accounting errors",
+      "style_index": "10"
+    },
+    {
+      "cell": "E72",
+      "value": "أخطاء محاسبية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F72",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G72",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H72",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I72",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J72",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K72",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L72",
+      "value": "L3-08-01-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "M72",
+      "value": "Accounting errors",
+      "style_index": "10"
+    },
+    {
+      "cell": "N72",
+      "value": "أخطاء محاسبية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A73",
+      "value": "L3-08-01-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "B73",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C73",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D73",
+      "value": "Poor business performance",
+      "style_index": "10"
+    },
+    {
+      "cell": "E73",
+      "value": "ضعف الأداء التشغيلي للأعمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F73",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G73",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H73",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I73",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J73",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K73",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L73",
+      "value": "L3-08-01-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "M73",
+      "value": "Poor business performance",
+      "style_index": "10"
+    },
+    {
+      "cell": "N73",
+      "value": "ضعف الأداء التشغيلي للأعمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A74",
+      "value": "L3-08-01-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "B74",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C74",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D74",
+      "value": "Failure to deliver services",
+      "style_index": "10"
+    },
+    {
+      "cell": "E74",
+      "value": "الإخفاق في تقديم الخدمات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F74",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G74",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H74",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I74",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J74",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K74",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L74",
+      "value": "L3-08-01-07",
+      "style_index": "10"
+    },
+    {
+      "cell": "M74",
+      "value": "Failure to deliver services",
+      "style_index": "10"
+    },
+    {
+      "cell": "N74",
+      "value": "الإخفاق في تقديم الخدمات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A75",
+      "value": "L3-08-01-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "B75",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "C75",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D75",
+      "value": "Failure to manage collateral",
+      "style_index": "10"
+    },
+    {
+      "cell": "E75",
+      "value": "الإخفاق في إدارة الضمانات",
+      "style_index": "10"
+    },
+    {
+      "cell": "F75",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G75",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H75",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I75",
+      "value": "L2-08-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "J75",
+      "value": "Transaction Capture, Execution and Maintenance",
+      "style_index": "10"
+    },
+    {
+      "cell": "K75",
+      "value": "تسجيل المعاملات وتنفيذها وصيانتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "L75",
+      "value": "L3-08-01-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "M75",
+      "value": "Failure to manage collateral",
+      "style_index": "10"
+    },
+    {
+      "cell": "N75",
+      "value": "الإخفاق في إدارة الضمانات",
+      "style_index": "10"
+    },
+    {
+      "cell": "A76",
+      "value": "L3-08-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B76",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C76",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D76",
+      "value": "Failure to submit mandatory reports",
+      "style_index": "10"
+    },
+    {
+      "cell": "E76",
+      "value": "عدم تقديم التقارير الإلزامية",
+      "style_index": "10"
+    },
+    {
+      "cell": "F76",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G76",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H76",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I76",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J76",
+      "value": "Monitoring and Reporting",
+      "style_index": "10"
+    },
+    {
+      "cell": "K76",
+      "value": "المراقبة وإعداد التقارير",
+      "style_index": "10"
+    },
+    {
+      "cell": "L76",
+      "value": "L3-08-02-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M76",
+      "value": "Failure to submit mandatory reports",
+      "style_index": "10"
+    },
+    {
+      "cell": "N76",
+      "value": "عدم تقديم التقارير الإلزامية",
+      "style_index": "10"
+    },
+    {
+      "cell": "A77",
+      "value": "L3-08-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B77",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "C77",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D77",
+      "value": "Inaccurate external reporting of realized losses",
+      "style_index": "10"
+    },
+    {
+      "cell": "E77",
+      "value": "عدم دقة التقارير الخارجية عن الخسائر المحققة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F77",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G77",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H77",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I77",
+      "value": "L2-08-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "J77",
+      "value": "Monitoring and Reporting",
+      "style_index": "10"
+    },
+    {
+      "cell": "K77",
+      "value": "المراقبة وإعداد التقارير",
+      "style_index": "10"
+    },
+    {
+      "cell": "L77",
+      "value": "L3-08-02-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M77",
+      "value": "Inaccurate external reporting of realized losses",
+      "style_index": "10"
+    },
+    {
+      "cell": "N77",
+      "value": "عدم دقة التقارير الخارجية عن الخسائر المحققة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A78",
+      "value": "L3-08-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B78",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "C78",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D78",
+      "value": "Loss of customer authorizations or assignments",
+      "style_index": "10"
+    },
+    {
+      "cell": "E78",
+      "value": "فقدان تفويضات العملاء أو تكليفاتهم",
+      "style_index": "10"
+    },
+    {
+      "cell": "F78",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G78",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H78",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I78",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J78",
+      "value": "Customer Documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "K78",
+      "value": "مستندات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "L78",
+      "value": "L3-08-03-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M78",
+      "value": "Loss of customer authorizations or assignments",
+      "style_index": "10"
+    },
+    {
+      "cell": "N78",
+      "value": "فقدان تفويضات العملاء أو تكليفاتهم",
+      "style_index": "10"
+    },
+    {
+      "cell": "A79",
+      "value": "L3-08-03-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B79",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "C79",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D79",
+      "value": "Loss of legal documents or insufficient documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "E79",
+      "value": "فقدان المستندات القانونية أو عدم كفاية التوثيق",
+      "style_index": "10"
+    },
+    {
+      "cell": "F79",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G79",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H79",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I79",
+      "value": "L2-08-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "J79",
+      "value": "Customer Documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "K79",
+      "value": "مستندات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "L79",
+      "value": "L3-08-03-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M79",
+      "value": "Loss of legal documents or insufficient documentation",
+      "style_index": "10"
+    },
+    {
+      "cell": "N79",
+      "value": "فقدان المستندات القانونية أو عدم كفاية التوثيق",
+      "style_index": "10"
+    },
+    {
+      "cell": "A80",
+      "value": "L3-08-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B80",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C80",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D80",
+      "value": "Failure to obtain customer approval for account access",
+      "style_index": "10"
+    },
+    {
+      "cell": "E80",
+      "value": "عدم الحصول على موافقة العميل للوصول إلى الحساب",
+      "style_index": "10"
+    },
+    {
+      "cell": "F80",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G80",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H80",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I80",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J80",
+      "value": "Customer Account Management",
+      "style_index": "10"
+    },
+    {
+      "cell": "K80",
+      "value": "إدارة حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "L80",
+      "value": "L3-08-04-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M80",
+      "value": "Failure to obtain customer approval for account access",
+      "style_index": "10"
+    },
+    {
+      "cell": "N80",
+      "value": "عدم الحصول على موافقة العميل للوصول إلى الحساب",
+      "style_index": "10"
+    },
+    {
+      "cell": "A81",
+      "value": "L3-08-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B81",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C81",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D81",
+      "value": "Incorrect customer records resulting in realized loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "E81",
+      "value": "سجلات عملاء غير صحيحة أدت إلى خسارة محققة",
+      "style_index": "10"
+    },
+    {
+      "cell": "F81",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G81",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H81",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I81",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J81",
+      "value": "Customer Account Management",
+      "style_index": "10"
+    },
+    {
+      "cell": "K81",
+      "value": "إدارة حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "L81",
+      "value": "L3-08-04-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M81",
+      "value": "Incorrect customer records resulting in realized loss",
+      "style_index": "10"
+    },
+    {
+      "cell": "N81",
+      "value": "سجلات عملاء غير صحيحة أدت إلى خسارة محققة",
+      "style_index": "10"
+    },
+    {
+      "cell": "A82",
+      "value": "L3-08-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "B82",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "C82",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D82",
+      "value": "Negligent loss or damage to customer assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "E82",
+      "value": "فقدان أصول العملاء أو إتلافها نتيجة الإهمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "F82",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G82",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H82",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I82",
+      "value": "L2-08-04",
+      "style_index": "10"
+    },
+    {
+      "cell": "J82",
+      "value": "Customer Account Management",
+      "style_index": "10"
+    },
+    {
+      "cell": "K82",
+      "value": "إدارة حسابات العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "L82",
+      "value": "L3-08-04-03",
+      "style_index": "10"
+    },
+    {
+      "cell": "M82",
+      "value": "Negligent loss or damage to customer assets",
+      "style_index": "10"
+    },
+    {
+      "cell": "N82",
+      "value": "فقدان أصول العملاء أو إتلافها نتيجة الإهمال",
+      "style_index": "10"
+    },
+    {
+      "cell": "A83",
+      "value": "L3-08-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B83",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C83",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D83",
+      "value": "Poor performance by non-customer counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "E83",
+      "value": "ضعف أداء أطراف التعامل المقابلة من غير العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F83",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G83",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H83",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I83",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "J83",
+      "value": "Trade Counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "K83",
+      "value": "أطراف التعامل المقابلة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L83",
+      "value": "L3-08-05-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M83",
+      "value": "Poor performance by non-customer counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "N83",
+      "value": "ضعف أداء أطراف التعامل المقابلة من غير العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A84",
+      "value": "L3-08-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "B84",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "C84",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D84",
+      "value": "Disputes with non-customer counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "E84",
+      "value": "نزاعات مع أطراف التعامل المقابلة من غير العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "F84",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G84",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H84",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I84",
+      "value": "L2-08-05",
+      "style_index": "10"
+    },
+    {
+      "cell": "J84",
+      "value": "Trade Counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "K84",
+      "value": "أطراف التعامل المقابلة",
+      "style_index": "10"
+    },
+    {
+      "cell": "L84",
+      "value": "L3-08-05-02",
+      "style_index": "10"
+    },
+    {
+      "cell": "M84",
+      "value": "Disputes with non-customer counterparties",
+      "style_index": "10"
+    },
+    {
+      "cell": "N84",
+      "value": "نزاعات مع أطراف التعامل المقابلة من غير العملاء",
+      "style_index": "10"
+    },
+    {
+      "cell": "A85",
+      "value": "L3-08-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "B85",
+      "value": "L2-08-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "C85",
+      "value": "L3",
+      "style_index": "10"
+    },
+    {
+      "cell": "D85",
+      "value": "Disputes with external service providers or suppliers",
+      "style_index": "10"
+    },
+    {
+      "cell": "E85",
+      "value": "نزاعات مع مقدمي الخدمات الخارجيين أو الموردين",
+      "style_index": "10"
+    },
+    {
+      "cell": "F85",
+      "value": "L1-08",
+      "style_index": "10"
+    },
+    {
+      "cell": "G85",
+      "value": "Executing, Delivering and Managing Transactions",
+      "style_index": "10"
+    },
+    {
+      "cell": "H85",
+      "value": "تنفيذ المعاملات وتسليمها وإدارتها",
+      "style_index": "10"
+    },
+    {
+      "cell": "I85",
+      "value": "L2-08-06",
+      "style_index": "10"
+    },
+    {
+      "cell": "J85",
+      "value": "Vendors and Suppliers",
+      "style_index": "10"
+    },
+    {
+      "cell": "K85",
+      "value": "الموردون ومقدمو الخدمات",
+      "style_index": "10"
+    },
+    {
+      "cell": "L85",
+      "value": "L3-08-06-01",
+      "style_index": "10"
+    },
+    {
+      "cell": "M85",
+      "value": "Disputes with external service providers or suppliers",
+      "style_index": "10"
+    },
+    {
+      "cell": "N85",
+      "value": "نزاعات مع مقدمي الخدمات الخارجيين أو الموردين",
+      "style_index": "10"
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "document_title": "Risk and Control assessment methodology",
+  "page_count": 8,
+  "source_status": "VERIFIED_ACCESSIBLE",
+  "pages": [
+    {
+      "page": 1,
+      "title": "Risk and Control assessment methodology",
+      "summary": "Official title slide for NBE Risk and Control Assessment Methodology."
+    },
+    {
+      "page": 2,
+      "title": "Control assessment",
+      "tables": {
+        "control_frequency": [
+          { "id": 1, "en": "Multiple times a day", "ar": "عدة مرات في اليوم" },
+          { "id": 2, "en": "Daily", "ar": "يومياً" },
+          { "id": 3, "en": "Weekly", "ar": "أسبوعياً" },
+          { "id": 4, "en": "Monthly", "ar": "شهرياً" },
+          { "id": 5, "en": "Quarterly", "ar": "ربع سنوي" },
+          { "id": 6, "en": "Annually", "ar": "سنوي" }
+        ],
+        "control_rating": [
+          { "id": 1, "ar": "ضابط رقابي فعال" },
+          { "id": 2, "ar": "ضابط رقابي يحتاج الى التطوير" },
+          { "id": 3, "ar": "لا يوجد ضابط رقابي" }
+        ],
+        "control_type": [
+          { "ar": "ضوابط رقابية مانعة", "en": "preventive", "description": "الضوابط التي من شأنها الحد من احتمالية حدوث المخاطرة، مثل (عدم سماح النظام بتجاوز الحدود المختلفة / مراجعة السلطة الاشرافية قبل تنفيذ العمليات / عدم قبول النظام الآلي ادخال حروف بدلا من ارقام احد الحقول)" },
+          { "ar": "ضوابط رقابية كاشفة", "en": "Detective", "description": "الضوابط التي من شأنها التعرف على مدى التعرض للمخاطرة حال حدوثها، حيث يساعد التعرف المبكر على احتمالية خفض تأثيرها مثل (التقارير الرقابية التي يتم مراجعتها بعد تنفيذ العمليات المصرفية / أنظمة الإنذار وكاميرات المراقبة)" },
+          { "ar": "ضوابط رقابية تصحيحية", "en": "Corrective", "description": "الضوابط التي من شأنها الحد من تأثير المخاطرة المعنية مثل (التأمين / خطة استمرارية الاعمال)" }
+        ],
+        "control_method": [
+          { "id": 1, "ar": "ضابط رقابي يدوي", "en": "Manual", "description": "يتم تطبيقه بالكامل بشكل يدوي دون وجود تدخل لأي أنظمة آلية، مثل حفظ المستندات الهامة في خزينة تحت الرقابة الثنائية" },
+          { "id": 2, "ar": "ضابط رقابي شبه آلي", "en": "Semi Automated", "description": "يشارك في تطبيقه كل من العنصر البشري والنظام الآلي، مثل قيام السلطة الإشرافية بتعزيز العمليات المصرفية على الأنظمة الآلية بعد المراجعة Checker" },
+          { "id": 3, "ar": "ضابط رقابي آلي", "en": "Automated", "description": "يتم تطبيقه بالكامل من خلال النظام الآلي دون وجود أي تدخل يدوي عليه، مثل قيام النظام آليا بمنع دخول المستخدم الى خدمات الانترنت البنكي بعد عدد محدد من المحاولات الفاشلة للدخول" }
+        ]
+      }
+    },
+    {
+      "page": 3,
+      "title": "Financial impact",
+      "tables": {
+        "financial_impact_scale": [
+          { "level": 1, "en": "Low", "ar": "تأثير مالي منخفض", "min_egp": 0, "max_egp": 150000 },
+          { "level": 2, "en": "Medium", "ar": "تأثير مالي متوسط", "min_egp": 150001, "max_egp": 500000 },
+          { "level": 3, "en": "High", "ar": "تأثير مالي كبير", "min_egp": 500001, "max_egp": 1500000 },
+          { "level": 4, "en": "Very High", "ar": "تأثير مالي كبير جدا", "min_egp": 1500001, "max_egp": 3000000 },
+          { "level": 5, "en": "Disaster Scenario", "ar": "تأثير مالي كارثي", "min_egp": 3000001, "max_egp": null }
+        ],
+        "expected_frequency": [
+          { "level": 1, "en": "Once per 2 years", "ar": "مرة كل سنتان", "annual_multiplier": 0.5 },
+          { "level": 2, "en": "Annually", "ar": "مرة واحدة كل سنة", "annual_multiplier": 1 },
+          { "level": 3, "en": "Half Yearly", "ar": "مرة واحدة كل نصف سنة", "annual_multiplier": 2 },
+          { "level": 4, "en": "Quarterly", "ar": "مرة واحدة كل ربع سنة", "annual_multiplier": 4 },
+          { "level": 5, "en": "Monthly", "ar": "مرة واحدة كل شهر", "annual_multiplier": 12 }
+        ],
+        "overall_control_effectiveness": [
+          { "id": 1, "ar": "مخاطرة مقبولة / ضوابط رقابية كافية" },
+          { "id": 2, "ar": "مخاطرة مقبولة / ضوابط رقابية كافية ولكن يمكن تجويد الضوابط مستقبلا بغرض تحسين الخدمة/ الأعمال" },
+          { "id": 3, "ar": "مخاطرة غير مقبولة حيث أن الضوابط الرقابية تحتاج تطوير" },
+          { "id": 4, "ar": "مخاطرة غير مقبولة حيث لا يوجد ضوابط رقابية" }
+        ]
+      }
+    },
+    {
+      "page": 4,
+      "title": "Non-financial impact",
+      "conservatism_note_ar": "يتم الاعتماد على التأثير الأعلى تقييماً وفقاً ومبدأ الأكثر تحوطا.",
+      "dimensions": [
+        {
+          "dimension_ar": "التأثير على تقديم الخدمة",
+          "description_ar": "مدى تأثر الخدمات المقدمة",
+          "levels": {
+            "منخفض": "عدم استقرار في الخدمة المقدمة مع عدم التأثير على اطراف خارجية",
+            "متوسط": "تأثير ملحوظ لانقطاع الخدمة المقدمة مع عدم وجود تأثير كبير على الأطراف المعنية",
+            "كبير": "انقطاع كبير في الخدمة يمكن معالجته بإمكانيات مصرفنا الداخلية ويؤدى الى حدوث ضرر بالعملاء",
+            "كبير جدا": "انقطاع كبير في الخدمة ويتطلب المعالجة اللجوء الى جهات خارجية متعاقد معها و يؤدى الى حدوث تأثيرات سلبية داخليا وخارجيا",
+            "كارثي": "توقف تقديم الخدمة لأجل غير محدد المدة"
+          }
+        },
+        {
+          "dimension_ar": "التأثير على السمعة والعملاء",
+          "description_ar": "تأثير سلبا على سمعة البنك لدى العملاء والأطراف الخارجية",
+          "levels": {
+            "منخفض": "تأثير منخفض على سمعة مصرفنا بين حالات فردية من العملاء",
+            "متوسط": "تأثير محدود على السمعة بين عدد محدود من العملاء قصير الاجل",
+            "كبير": "تأثير على شريحة من العملاء مع تأثير قصير الاجل لسمعة مصرفنا بمواقع التواصل الاجتماعي / الصحافة / وسائل الاعلام /.....",
+            "كبير جدا": "تأثير على شريحة من العملاء طويل الاجل وحدوث ضرر بالغ لسمعة مصرفنا يستمر لفترة طويلة بين عملاء مصرفنا في ضوء نشرها في اكثر من وسيلة تواصل اجتماعي",
+            "كارثي": "تأثير على معظم / كافة عملاء مصرفنا وإساءة بالغة لسمعة مصرفنا داخليا وخارجيا بين كافة عملاء مصرفنا والعملاء المستهدفين في ضوء نشرها اكثر من وسيلة تواصل اجتماعي وكذلك وسائل اعلام خارجيا"
+          }
+        },
+        {
+          "dimension_ar": "التعرض لملاحظات الجهات الرقابية",
+          "description_ar": "العقوبات / الملاحظات من جانب الجهات الرقابية",
+          "levels": {
+            "منخفض": "ملاحظات منخفضة المخاطر من جانب الجهات الرقابية",
+            "متوسط": "عدم الامتثال للقواعد والتعليمات مع وجود فترة توافق زمنية طويلة مسموح بها للامتثال /دون فرض عقوبات",
+            "كبير": "عدم الامتثال للقواعد او التعليمات بمصرفنا مع عدم وجود فترة زمنية او توافر فترة زمنية قصيرة لامتثال مع احتمالية فرض عقوبات",
+            "كبير جدا": "عدم الامتثال للقواعد والتعليمات يؤدى الى وجود ملاحظات جوهرية على التقييم العام لخط الأعمال محل التدقيق / مصرفنا بصفة عامة / وعقوبات",
+            "كارثي": "إيقاف مصرفنا عن تقديم بعض الخدمات والمنتجات من جانب الجهات الرقابية"
+          }
+        },
+        {
+          "dimension_ar": "التعرض لإجراءات قضائية",
+          "description_ar": "النزاعات القضائية مع العاملين او اطراف خارجية (عملاء / مقدمي خدمات/...)",
+          "levels": {
+            "منخفض": "وجود نزاعات قضائية مع العاملين بمصرفنا",
+            "متوسط": "وجود نزاعات مع اطراف خارجية (مقدمي خدمات / موردين / مكاتب / جهات استشارية ...)",
+            "كبير": "وجود دعاوى / نزاعات قضائية مع العملاء / SMES",
+            "كبير جدا": "وجود دعاوى / نزاعات قضائية مع عملاء شركات",
+            "كارثي": "تعرض مصرفنا لإجراءات قضائية مع هيئات وجهات دولية او محلية / اصدار أحكام نهائية."
+          }
+        }
+      ]
+    },
+    {
+      "page": 5,
+      "title": "Financial and Non-financial matrix",
+      "description": "5x5 Frequency x Impact heat matrix combining Financial Impact thresholds (up to 150k, 500k, 1.5M, 3M, >3M EGP) and Non-Financial Impact across frequencies (Once per 2 years, Annually, 6 months, 3 months, Monthly).",
+      "matrix_5x5": {
+        "1": {
+          "1": { "rating": "L", "color": "GREEN" },
+          "2": { "rating": "L", "color": "GREEN" },
+          "3": { "rating": "L", "color": "GREEN" },
+          "4": { "rating": "M", "color": "YELLOW" },
+          "5": { "rating": "M", "color": "YELLOW" }
+        },
+        "2": {
+          "1": { "rating": "L", "color": "GREEN" },
+          "2": { "rating": "L", "color": "GREEN" },
+          "3": { "rating": "M", "color": "YELLOW" },
+          "4": { "rating": "M", "color": "YELLOW" },
+          "5": { "rating": "H", "color": "ORANGE" }
+        },
+        "3": {
+          "1": { "rating": "L", "color": "GREEN" },
+          "2": { "rating": "M", "color": "YELLOW" },
+          "3": { "rating": "M", "color": "YELLOW" },
+          "4": { "rating": "H", "color": "ORANGE" },
+          "5": { "rating": "VH", "color": "RED" }
+        },
+        "4": {
+          "1": { "rating": "M", "color": "YELLOW" },
+          "2": { "rating": "M", "color": "YELLOW" },
+          "3": { "rating": "H", "color": "ORANGE" },
+          "4": { "rating": "VH", "color": "RED" },
+          "5": { "rating": "VH", "color": "RED" }
+        },
+        "5": {
+          "1": { "rating": "M", "color": "YELLOW" },
+          "2": { "rating": "H", "color": "ORANGE" },
+          "3": { "rating": "VH", "color": "RED" },
+          "4": { "rating": "VH", "color": "RED" },
+          "5": { "rating": "VH", "color": "RED" }
+        }
+      }
+    },
+    {
+      "page": 6,
+      "title": "1- مصفوفة المخاطر المتلازمة - Inherent & 2- مصفوفة المخاطر المتبقية - Residual",
+      "tables": {
+        "inherent_red_zone_matrix_5x5": {
+          "1": { "1": "STANDARD_ZONE", "2": "STANDARD_ZONE", "3": "STANDARD_ZONE", "4": "STANDARD_ZONE", "5": "STANDARD_ZONE" },
+          "2": { "1": "STANDARD_ZONE", "2": "STANDARD_ZONE", "3": "STANDARD_ZONE", "4": "STANDARD_ZONE", "5": "RED_ESCALATION_ZONE" },
+          "3": { "1": "STANDARD_ZONE", "2": "STANDARD_ZONE", "3": "STANDARD_ZONE", "4": "RED_ESCALATION_ZONE", "5": "RED_ESCALATION_ZONE" },
+          "4": { "1": "STANDARD_ZONE", "2": "STANDARD_ZONE", "3": "RED_ESCALATION_ZONE", "4": "RED_ESCALATION_ZONE", "5": "RED_ESCALATION_ZONE" },
+          "5": { "1": "STANDARD_ZONE", "2": "RED_ESCALATION_ZONE", "3": "RED_ESCALATION_ZONE", "4": "RED_ESCALATION_ZONE", "5": "RED_ESCALATION_ZONE" }
+        },
+        "risk_rating_thresholds_reference": [
+          { "rating": "Low", "amount": 50000 },
+          { "rating": "Medium", "amount": 151000 },
+          { "rating": "High", "amount": 501000 },
+          { "rating": "Very High", "amount": 1501000 }
+        ],
+        "rrf_matrix": {
+          "Auto": { "Preventive": 0.95, "Detective": 0.85, "Corrective": 0.50 },
+          "Semi Auto": { "Preventive": 0.90, "Detective": 0.80, "Corrective": 0.40 },
+          "Manual": { "Preventive": 0.75, "Detective": 0.60, "Corrective": 0.30 }
+        }
+      }
+    },
+    {
+      "page": 7,
+      "title": "تصنيفات فئات المخاطر",
+      "l1_categories": [
+        { "code": "1", "ar": "1_ احتيال داخلي", "en": "Internal Fraud" },
+        { "code": "2", "ar": "2_ احتيال خارجي", "en": "External Fraud" },
+        { "code": "3", "ar": "3_وسائل الاحتيال على البطاقات", "en": "Means of Credit Card Fraud" },
+        { "code": "4", "ar": "4_ممارسات العاملين وسلامة بيئة العمل", "en": "Violating labor laws and occupational safety" },
+        { "code": "5", "ar": "5_الممارسات الخاطئة في حق عملاء البنك", "en": "Wrongful practices against banks customers right" },
+        { "code": "6", "ar": "6_أضرار بأصول البنك", "en": "Damages to physical Assets" },
+        { "code": "7", "ar": "7_الأنظمة و التطبيقات", "en": "Business Interruption and System Failure" },
+        { "code": "8", "ar": "8_تنفيذ العمليات المصرفية", "en": "Executing Delivering and Managing Transactions" }
+      ]
+    },
+    {
+      "page": 8,
+      "title": "الأهداف الاستراتيجية",
+      "strategic_objectives": [
+        "التركيز على العملاء و تعظيم الأرباح",
+        "التحول الرقمي و تفعيل الذكاء الاصطناعي",
+        "النمو المربح و المستدام",
+        "الكفاءة و الامان والمرونة",
+        "الشمول المالي"
+      ]
+    }
+  ]
+}

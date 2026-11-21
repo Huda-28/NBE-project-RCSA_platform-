@@ -1,0 +1,2 @@
+# Preserve the supplied official RCSA Excel workbook layout for variable-length assessments.
+openpyxl>=3.1,<4

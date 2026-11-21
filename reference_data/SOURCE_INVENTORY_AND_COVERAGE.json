@@ -1,0 +1,181 @@
+{
+  "audit_timestamp": "2026-11-02T15:48:00-08:00",
+  "phase": "Phase 2 — Reference Data Registration and Verification",
+  "global_reference_sources": {
+    "methodology_pdf": {
+      "status": "AVAILABLE",
+      "title": "Risk and Control assessment methodology",
+      "pages": 8,
+      "extracted_path": "reference_data/Methodology_Extract_8_Pages.json",
+      "contains": [
+        "Control Frequency (1-6: Multiple times a day to Annually)",
+        "Control Rating (1-3: ضابط رقابي فعال / يحتاج الى التطوير / لا يوجد ضابط رقابي)",
+        "Control Type (Preventive / Detective / Corrective)",
+        "Control Method (1-Manual, 2-Semi Automated, 3-Automated)",
+        "Financial Impact Scale (1-Low <=150k, 2-Medium 150,001-500k, 3-High 500,001-1.5M, 4-Very High 1,500,001-3M, 5-Disaster >3M EGP)",
+        "Expected Frequency (1-Once per 2 years, 2-Annually, 3-Half Yearly, 4-Quarterly, 5-Monthly)",
+        "Overall Control Effectiveness (1-4)",
+        "Non-Financial Impact 4 Dimensions (Service, Reputation, Regulatory, Legal) + Conservatism Rule",
+        "Inherent & Residual 5x5 Matrix, Risk Rating Thresholds (Low 50k, Medium 151k, High 501k, Very High 1,501k), and RRF 3x3 Matrix",
+        "8 Level 1 Risk Categories (1_ احتيال داخلي to 8_ تنفيذ العمليات المصرفية)",
+        "5 Strategic Objectives"
+      ]
+    },
+    "official_rcsa_excel_template": {
+      "status": "PARTIALLY_AVAILABLE_READABLE_EXTRACTS",
+      "original_workbook_name": "نموذج المخاطر الافتراضي لعمليات القروض المشتركة _003_ (1)(10).xlsx",
+      "original_xlsx_bytes_present": false,
+      "readable_extracts_present": true,
+      "files": [
+        "reference_data/Official_RCSA_Template__1_Risk_Profile.json",
+        "reference_data/Official_RCSA_Template__1_Risk_Profile.csv",
+        "reference_data/Official_RCSA_Template__2_GVMetadata.json",
+        "reference_data/Official_RCSA_Template__2_GVMetadata.csv",
+        "reference_data/WORKBOOK_INVENTORY.json"
+      ],
+      "sheets_count": 2,
+      "formula_count": 49,
+      "merged_ranges_count": 34,
+      "preserved_formulas": {
+        "K_annual_expected_loss": "IF(I8=\"مرة كل ربع سنة \",J8*4,IF(I8=\"مرة كل شهر \",J8*12,IF(I8=\"مرة كل نصف سنه\",J8*2,IF(I8=\"مرة واحدة كل سنة \",J8,IF(I8=\"مرة كل سنتان \",J8/2)))))",
+        "L_inherent_risk_rating": "IF(AND(K8>0,K8<=150000),\"L \",IF(AND(K8>=150001,K8<=500000),\"M \",IF(AND(K8>=500001,K8<=1500000),\"H \",IF(AND(K8>=1500001,K8<=3000000),\"VH \",IF(K8>3000000,\"C \",\"\")))))",
+        "T_residual_loss": "IF(S8=\"\",\"\",((VLOOKUP(S8,EG889:EH897,2,FALSE))*K8))",
+        "U_residual_risk_rating": "IF(AND(T8>0,T8<=150000),\"L \",IF(AND(T8>=150001,T8<=500000),\"M \",IF(AND(T8>=500001,T8<=1500000),\"H \",IF(AND(T8>=1500001,T8<=3000000),\"VHاً \",IF(T8>3000000,\"C \",\"\")))))",
+        "Z_nfi_composite": "IF(SUM(IF(V8:Y8={\"L\",\"M\",\"H\",\"VH\"},80,20))=0,\"NA\",IF(AVERAGE(IF(V8:Y8=\"L\",20,IF(V8:Y8=\"M\",40,IF(V8:Y8=\"H\",60,IF(V8:Y8=\"VH\",80,\"\")))))<21,\"L\",IF(AVERAGE(IF(V8:Y8=\"L\",20,IF(V8:Y8=\"M\",40,IF(V8:Y8=\"H\",60,IF(V8:Y8=\"VH\",80,\"\")))))<41,\"M\",IF(AVERAGE(IF(V8:Y8=\"L\",20,IF(V8:Y8=\"M\",40,IF(V8:Y8=\"H\",60,IF(V8:Y8=\"VH\",80,\"\")))))<61,\"H\",IF(AVERAGE(IF(V8:Y8=\"L\",20,IF(V8:Y8=\"M\",40,IF(V8:Y8=\"H\",60,IF(V8:Y8=\"VH\",80,\"\")))))<81,\"VH\")))))",
+        "note_on_row_21_formula_anomaly": "In cell T21 of original workbook, lookup range is EG890:EH898 (relative drag offset by 1 row) instead of $EG$889:$EH$897, though S21='Semi Auto / preventive' is in EG890 so it still resolves to 0.1."
+      }
+    },
+    "risk_taxonomy_catalogue": {
+      "status": "AVAILABLE",
+      "original_workbook_name": "RCSA_Risk_Taxonomy_L1_L2_L3_AR_EN(2).xlsx",
+      "files": [
+        "reference_data/Risk_Taxonomy__1_Risk_Taxonomy_L1_L3.csv",
+        "reference_data/Risk_Taxonomy__1_Risk_Taxonomy_L1_L3.json"
+      ],
+      "total_entries": 84,
+      "l1_count": 8,
+      "l2_count": 20,
+      "l3_count": 56,
+      "structural_note": "L1-03 (Means of Credit Card Fraud / أساليب الاحتيال ببطاقات الائتمان) has 0 L2 and 0 L3 children in CBE instructions, matching ESG row 6 note '— (لا يوجد مستوى ثانٍ في التعليمات)'."
+    },
+    "esg_catalogue": {
+      "status": "AVAILABLE",
+      "original_workbook_name": "ESG_CBE_OpRisk_Categories(1).xlsx",
+      "files": [
+        "reference_data/ESG_Catalogue__1_ESG.csv",
+        "reference_data/ESG_Catalogue__1_ESG.json"
+      ],
+      "total_entries": 34,
+      "drivers_distribution": {
+        "E": 20,
+        "S": 7,
+        "G": 7
+      }
+    }
+  },
+  "business_units_coverage": [
+    {
+      "unit_id": "BU-SYNDICATED",
+      "code": "SYND-OPS",
+      "name_ar": "إدارة عمليات القروض المشتركة",
+      "tier": "DATA_READY_BU",
+      "sop": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_______________________________________________1__4__4f301a30.pdf",
+        "procedures_count": 7
+      },
+      "historical_incidents": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_____________________________1__3__7725d811.pdf",
+        "records_count": 5,
+        "incident_ids": ["100", "101", "102", "103", "106"]
+      },
+      "audit_findings": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_______________________________________________1__5__0aa1c9e1.pdf",
+        "duplicate_ignored_path": "public/assets/aistudio/_______________________________________________1___1__0aa1c9e1.pdf",
+        "records_count": 2
+      },
+      "risk_and_control_register": {
+        "status": "AVAILABLE",
+        "path": "reference_data/Official_RCSA_Template__1_Risk_Profile.csv",
+        "risks_count": 8,
+        "controls_count": 20,
+        "remediation_actions_count": 3
+      }
+    },
+    {
+      "unit_id": "BU-ACCOUNT",
+      "code": "ACCT-OPS",
+      "name_ar": "إدارة عمليات فتح الحسابات",
+      "tier": "DATA_READY_BU",
+      "sop": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_________________________________1__4__492fe846.pdf",
+        "procedures_count": 8
+      },
+      "historical_incidents": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_________________________________1__3__95fdf53e.pdf",
+        "records_count": 4,
+        "incident_ids": ["201", "220", "200", "106"]
+      },
+      "audit_findings": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/___________________________________________5__ac4aff51.pdf",
+        "records_count": 4
+      },
+      "risk_and_control_register": {
+        "status": "MISSING_PRE_EXISTING_WORKBOOK",
+        "note": "No pre-filled RCSA workbook was uploaded for BU-ACCOUNT; risks and controls must be derived from SOP (8 procedures), Incidents (4 records), and Audit Findings (4 findings) in Phase 2A."
+      }
+    },
+    {
+      "unit_id": "BU-POS",
+      "code": "POS-OPS",
+      "name_ar": "إدارة عمليات ماكينات نقاط البيع",
+      "tier": "DATA_READY_BU",
+      "sop": {
+        "status": "AVAILABLE",
+        "path": "public/assets/aistudio/_____________________________________________________002___1__3__8191fc9a.pdf",
+        "procedures_count": 5
+      },
+      "historical_incidents": {
+        "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO",
+        "path": null,
+        "records_count": null,
+        "note": "No incident PDF/CSV uploaded for BU-POS. Treated strictly as MISSING_DOCUMENT (not confirmed zero incidents) until user confirms or supplies inputs."
+      },
+      "audit_findings": {
+        "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO",
+        "path": null,
+        "records_count": null,
+        "note": "No audit findings PDF/CSV uploaded for BU-POS. Treated strictly as MISSING_DOCUMENT (not confirmed zero findings)."
+      },
+      "risk_and_control_register": {
+        "status": "MISSING_PRE_EXISTING_WORKBOOK",
+        "note": "Only SOP (5 sections) is present; financial impact and frequency inputs are absent and must trigger interactive clarification prompts in Phase 2A."
+      }
+    },
+    {
+      "unit_id": "BU-BRANCHES",
+      "code": "BRANCHES",
+      "name_ar": "شبكة الفروع",
+      "tier": "PARTIAL_DATA_NEW_BU",
+      "sop": { "status": "MISSING_AWAITING_USER_UPLOAD", "path": null, "procedures_count": 0 },
+      "historical_incidents": { "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO", "path": null, "records_count": null },
+      "audit_findings": { "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO", "path": null, "records_count": null },
+      "risk_and_control_register": { "status": "EMPTY_INITIAL_STATE", "risks_count": 0, "controls_count": 0 }
+    },
+    {
+      "unit_id": "BU-TRADING",
+      "code": "TRADING",
+      "name_ar": "التداول",
+      "tier": "PARTIAL_DATA_NEW_BU",
+      "sop": { "status": "MISSING_AWAITING_USER_UPLOAD", "path": null, "procedures_count": 0 },
+      "historical_incidents": { "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO", "path": null, "records_count": null },
+      "audit_findings": { "status": "MISSING_DOCUMENT_NOT_CONFIRMED_ZERO", "path": null, "records_count": null },
+      "risk_and_control_register": { "status": "EMPTY_INITIAL_STATE", "risks_count": 0, "controls_count": 0 }
+    }
+  ]
+}

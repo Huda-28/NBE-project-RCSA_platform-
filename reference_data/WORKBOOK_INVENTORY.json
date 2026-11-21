@@ -1,0 +1,55 @@
+[
+  {
+    "original_filename": "نموذج المخاطر الافتراضي لعمليات القروض المشتركة _003_ (1)(10).xlsx",
+    "is_original_excel_export_asset_required": true,
+    "sheets": [
+      {
+        "sheet_name": "Risk Profile",
+        "json_file": "Official_RCSA_Template__1_Risk_Profile.json",
+        "csv_file": "Official_RCSA_Template__1_Risk_Profile.csv",
+        "cell_count": 539,
+        "merged_ranges_count": 34,
+        "formula_count": 49
+      },
+      {
+        "sheet_name": "GVMetadata",
+        "json_file": "Official_RCSA_Template__2_GVMetadata.json",
+        "csv_file": "Official_RCSA_Template__2_GVMetadata.csv",
+        "cell_count": 2,
+        "merged_ranges_count": 0,
+        "formula_count": 0
+      }
+    ],
+    "note": "This extraction is for AI parsing only; retain the actual XLSX for exact Excel styling and export."
+  },
+  {
+    "original_filename": "RCSA_Risk_Taxonomy_L1_L2_L3_AR_EN(2).xlsx",
+    "is_original_excel_export_asset_required": true,
+    "sheets": [
+      {
+        "sheet_name": "Risk Taxonomy L1-L3",
+        "json_file": "Risk_Taxonomy__1_Risk_Taxonomy_L1_L3.json",
+        "csv_file": "Risk_Taxonomy__1_Risk_Taxonomy_L1_L3.csv",
+        "cell_count": 1074,
+        "merged_ranges_count": 0,
+        "formula_count": 0
+      }
+    ],
+    "note": "This extraction is for AI parsing only; retain the actual XLSX for exact Excel styling and export."
+  },
+  {
+    "original_filename": "ESG_CBE_OpRisk_Categories(1).xlsx",
+    "is_original_excel_export_asset_required": true,
+    "sheets": [
+      {
+        "sheet_name": "ربط مخاطر ESG",
+        "json_file": "ESG_Catalogue__1_ESG.json",
+        "csv_file": "ESG_Catalogue__1_ESG.csv",
+        "cell_count": 180,
+        "merged_ranges_count": 5,
+        "formula_count": 0
+      }
+    ],
+    "note": "This extraction is for AI parsing only; retain the actual XLSX for exact Excel styling and export."
+  }
+]

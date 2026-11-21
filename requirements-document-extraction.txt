@@ -1,0 +1,3 @@
+# Optional lightweight dependency for selectable-text PDFs only.
+# DOCX and XLSX extraction use Python's standard library.
+pypdf>=5,<7
