@@ -348,5 +348,29 @@ describe('Phase 3B — Real Evidence-Grounded Conversational RCSA Agent & Qwen R
       'Agent must answer with elevated open-domain banking authority when query is not in RAG'
     );
   });
+
+  test('14. Verify BM25 synonym expansion, 1400-char context window extraction, and resilient LLM JSON repair', async () => {
+    const { tokenizeRagQuery, extractBestContextWindow } = await import('../src/server/rag-service.js');
+    const { parseResilientLlmJson } = await import('../src/server/llm-adapter.js');
+
+    // 1. Synonym expansion & bigrams
+    const tok = tokenizeRagQuery('مراجعة فروق تسوية حسابات النوسترو');
+    assert.ok(tok.bigrams.length >= 2, 'Bi-grams must be generated for multi-word queries');
+    assert.ok(
+      tok.expandedSynonyms.includes('مطابقه') || tok.expandedSynonyms.includes('reconciliation'),
+      'Banking synonym clusters must expand settlement/Nostro terms'
+    );
+
+    // 2. Context window extraction around matched term
+    const longDoc = `${'مقدمة عامة عن سياسات البنك. '.repeat(30)}فقرة هامة جداً: يجب مطابقة أرصدة حسابات النوسترو يومياً مع كشوف المراسلين خلال 24 ساعة.${' تذييل إضافي للمستند.'.repeat(30)}`;
+    const win = extractBestContextWindow(longDoc, ['نوسترو', 'مطابقه'], 400);
+    assert.ok(win.includes('يجب مطابقة أرصدة حسابات النوسترو'), 'Context window must center around matched operational terms');
+
+    // 3. Resilient JSON repair for fenced/reasoning LLM outputs
+    const messyLlmOutput = `<think>Analyzing banking chunk...</think>\nHere is the extracted JSON:\n\`\`\`json\n{\n  "items": [\n    {\n      "chunk_id": "CHK-99",\n      "risk_title_ar": "خطر تأخر مطابقة النوسترو",\n    }\n  ]\n}\n\`\`\``;
+    const parsed = parseResilientLlmJson(messyLlmOutput);
+    assert.ok(parsed && Array.isArray(parsed.items), 'parseResilientLlmJson must strip <think>, fences, and trailing commas');
+    assert.equal(parsed.items[0].chunk_id, 'CHK-99');
+  });
 });
 

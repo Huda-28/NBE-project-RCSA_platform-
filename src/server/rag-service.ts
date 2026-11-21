@@ -177,7 +177,28 @@ const ARABIC_STOP_WORDS = new Set([
   'قم', 'يرجي', 'اريد', 'عايز', 'لو', 'سمحت', 'لي', 'لنا', 'عنها',
 ]);
 
-export function tokenizeRagQuery(query: string): { rawTerms: string[]; stems: string[] } {
+/**
+ * Bilingual Banking & Operational Risk Synonym Clusters for Query Expansion.
+ * Helps match user questions written in different operational phrasing against SOP/Audit/Incident chunks.
+ */
+const BANKING_SYNONYM_CLUSTERS: string[][] = [
+  ['تسويه', 'تسويات', 'مطابقه', 'فروق', 'مقاصه', 'نوسترو', 'reconciliation', 'settlement', 'nostro'],
+  ['حواله', 'حوالات', 'تحويل', 'تحويلات', 'سويفت', 'رسائل', 'swift', 'mt103', 'mt202'],
+  ['صلاحيات', 'اعتماد', 'مراجعه مزدوج', 'فصل مهام', 'توقيع', 'maker', 'checker', 'authorization'],
+  ['حظر', 'عقوبات', 'غسل اموال', 'امتثال', 'تجميد', 'فك تجميد', 'sanctions', 'ofac', 'aml', 'kyc'],
+  ['احتيال', 'تزوير', 'انتحال', 'اختلاس', 'مزور', 'fraud', 'forgery', 'callback'],
+  ['عطل', 'اعطال', 'توقف', 'انقطاع', 'شبكه', 'ماكينات', 'نقاط البيع', 'pos', 'outage', 'downtime'],
+  ['قيد', 'قيود', 'محاسب', 'استاذ عام', 'حساب وسيط', 'مدين', 'دائن', 'gl', 'ledger'],
+  ['تفتيش', 'ملاحظه', 'فجوه', 'تدقيق', 'audit', 'finding'],
+  ['حادث', 'خساره', 'خسائر', 'تعويض', 'غرامه', 'loss', 'incident'],
+];
+
+export function tokenizeRagQuery(query: string): {
+  rawTerms: string[];
+  stems: string[];
+  expandedSynonyms: string[];
+  bigrams: string[];
+} {
   const norm = normalizeTextForRag(query);
   const rawWords = norm.split(/\s+/).filter(w => w.length >= 2 && !ARABIC_STOP_WORDS.has(w));
   const stems = new Set<string>();
@@ -196,10 +217,60 @@ export function tokenizeRagQuery(query: string): { rawTerms: string[]; stems: st
     }
   }
 
+  // Build adjacent bi-grams for phrase proximity scoring
+  const bigrams: string[] = [];
+  for (let i = 0; i < rawWords.length - 1; i++) {
+    bigrams.push(`${rawWords[i]} ${rawWords[i + 1]}`);
+  }
+
+  // Expand synonyms from banking clusters when query matches a cluster term
+  const expandedSynonyms = new Set<string>();
+  const stemArr = Array.from(stems);
+  for (const cluster of BANKING_SYNONYM_CLUSTERS) {
+    const matchesCluster = cluster.some(cTerm =>
+      stemArr.some(s => s.length >= 3 && (cTerm.includes(s) || s.includes(cTerm)))
+    );
+    if (matchesCluster) {
+      for (const syn of cluster) {
+        if (!stems.has(syn)) {
+          expandedSynonyms.add(syn);
+        }
+      }
+    }
+  }
+
   return {
     rawTerms: rawWords,
-    stems: Array.from(stems),
+    stems: stemArr,
+    expandedSynonyms: Array.from(expandedSynonyms),
+    bigrams,
   };
+}
+
+/**
+ * Extract the richest context window (up to maxChars, default 1400) centered around the first matched query term
+ * so the LLM receives complete operational paragraphs/tables instead of a truncated 240-char prefix.
+ */
+export function extractBestContextWindow(rawText: string, searchTerms: string[], maxChars = 1400): string {
+  if (!rawText) return '';
+  const clean = rawText.trim();
+  if (clean.length <= maxChars) return clean;
+
+  const normFull = normalizeTextForRag(clean);
+  let bestPos = -1;
+  for (const term of searchTerms) {
+    if (term.length < 3) continue;
+    const idx = normFull.indexOf(term);
+    if (idx !== -1 && (bestPos === -1 || idx < bestPos)) {
+      bestPos = idx;
+    }
+  }
+
+  if (bestPos <= 120) {
+    return clean.slice(0, maxChars);
+  }
+  const start = Math.max(0, bestPos - 220);
+  return (start > 0 ? '...' : '') + clean.slice(start, start + maxChars);
 }
 
 /**
@@ -427,7 +498,7 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
 }
 
 /**
- * Hybrid lexical + Arabic morphological stem + phrase + numeric RAG search.
+ * Hybrid BM25 IDF + Arabic morphological stem + bilingual banking synonym + bi-gram phrase + numeric RAG search.
  */
 export function searchRelevantCitations(
   sessionId: string,
@@ -436,9 +507,42 @@ export function searchRelevantCitations(
   topK = 5
 ): CitationReference[] {
   const bundle = assembleRagContextBundle(sessionId, unitId);
-  const { rawTerms, stems } = tokenizeRagQuery(query);
+  const { rawTerms, stems, expandedSynonyms, bigrams } = tokenizeRagQuery(query);
   const normQuery = normalizeTextForRag(query);
   const citations: Array<CitationReference & { score: number }> = [];
+
+  // Build corpus-wide Document Frequency (DF) for BM25 IDF weighting
+  const allCorpusNormTexts: string[] = [];
+  for (const doc of bundle.session_documents) {
+    for (const chunk of doc.chunks) {
+      allCorpusNormTexts.push(normalizeTextForRag(`${chunk.section_title || ''} ${chunk.content_text || ''}`));
+    }
+  }
+  for (const inc of bundle.incidents) {
+    allCorpusNormTexts.push(normalizeTextForRag(`${inc.event_type || ''} ${inc.description || ''} ${inc.cause || ''}`));
+  }
+  for (const af of bundle.audit_findings) {
+    allCorpusNormTexts.push(normalizeTextForRag(`${af.title_ar || ''} ${af.details_ar || ''} ${af.corrective_action_ar || ''}`));
+  }
+
+  const totalDocsN = Math.max(1, allCorpusNormTexts.length);
+  const computeIdf = (term: string): number => {
+    let df = 0;
+    for (const txt of allCorpusNormTexts) {
+      if (txt.includes(term)) df++;
+    }
+    return Math.log(1 + (totalDocsN - df + 0.5) / (df + 0.5));
+  };
+
+  const stemIdfMap = new Map<string, number>();
+  for (const s of stems) {
+    stemIdfMap.set(s, Math.max(0.8, computeIdf(s)));
+  }
+
+  // Detect if the user is asking a purely theoretical open-domain regulatory question (e.g. Basel 3 / Three Lines of Defense)
+  const isOpenDomainFrameworkQuery = Boolean(
+    normQuery.match(/بازل\s*3|خطوط الدفاع الثلاث|three lines of defense/)
+  );
 
   // 1. Search in session document chunks (highest priority for user's uploaded files)
   for (const doc of bundle.session_documents) {
@@ -448,32 +552,58 @@ export function searchRelevantCitations(
       const lowerRaw = rawText.toLowerCase();
 
       let score = 0;
+      let directLexicalMatches = 0;
 
-      // Exact substring match
+      // Exact substring match with IDF boost
       for (const t of rawTerms) {
         if (lowerRaw.includes(t) || normText.includes(t)) {
-          score += 4;
+          const idf = stemIdfMap.get(t) ?? 1.2;
+          score += 4 * idf;
+          directLexicalMatches++;
         }
       }
 
-      // Stem match
+      // Stem match with IDF boost
       for (const s of stems) {
         if (normText.includes(s)) {
-          score += 2.5;
+          const idf = stemIdfMap.get(s) ?? 1.0;
+          score += 2.5 * idf;
+          directLexicalMatches++;
         }
       }
 
-      // Multi-word phrase bonus
-      if (normQuery.length > 6 && normText.includes(normQuery)) {
-        score += 10;
+      // Bi-gram phrase proximity bonus
+      for (const bg of bigrams) {
+        if (normText.includes(bg)) {
+          score += 6;
+        }
       }
 
-      // Numeric/financial bonus if query asks about money, numbers, loss, or impact
+      // Bilingual banking domain synonym expansion (only if not a theoretical open-domain framework question)
+      if (!isOpenDomainFrameworkQuery && (directLexicalMatches > 0 || expandedSynonyms.length > 0)) {
+        let synMatches = 0;
+        for (const syn of expandedSynonyms) {
+          if (syn.length >= 3 && normText.includes(syn)) {
+            synMatches++;
+          }
+        }
+        if (directLexicalMatches > 0 && synMatches > 0) {
+          score += Math.min(8, synMatches * 2.0);
+        }
+      }
+
+      // Multi-word full phrase bonus
+      if (normQuery.length > 6 && normText.includes(normQuery)) {
+        score += 12;
+      }
+
+      // Numeric/financial bonus if query asks about money, numbers, loss, or impact AND already has a lexical match
       if (
+        directLexicalMatches > 0 &&
         normQuery.match(/مبلغ|قيمه|خسار|مالي|جنيه|كم|عدد|نسبه|ساعه|يوم|حد/) &&
         rawText.match(/\d+/)
       ) {
-        score += 3;
+        score += 3.5;
       }
 
       // Always include chunks if query is general summary/analysis or if score > 0
@@ -484,10 +614,10 @@ export function searchRelevantCitations(
           title_ar: doc.title_ar,
           file_name: doc.file_name,
           section_title: chunk.section_title || `مقطع رقم ${chunk.chunk_index}`,
-          quote_text: rawText.slice(0, 280),
+          quote_text: extractBestContextWindow(rawText, [...rawTerms, ...stems], 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
-          relevance_score: score + 2,
+          relevance_score: Number((score + 2).toFixed(2)),
           score: score + 2,
         });
       }
@@ -500,7 +630,13 @@ export function searchRelevantCitations(
     const normText = normalizeTextForRag(rawText);
     let score = 0;
     for (const s of stems) {
-      if (normText.includes(s)) score += 2.5;
+      if (normText.includes(s)) {
+        const idf = stemIdfMap.get(s) ?? 1.0;
+        score += 2.5 * idf;
+      }
+    }
+    for (const bg of bigrams) {
+      if (normText.includes(bg)) score += 5;
     }
     if (normQuery.match(/حادث|حوادث|خسار|فعلي|تاريخ/)) {
       score += 4;
@@ -513,7 +649,7 @@ export function searchRelevantCitations(
         section_title: `صافي الخسارة: ${Number(inc.loss_amount_egp || 0).toLocaleString()} ج.م`,
         quote_text: inc.description || 'حادث تشغيلي مسجل بسجل الخسائر التاريخية',
         doc_type: 'INCIDENT_LOG',
-        relevance_score: score + 1.5,
+        relevance_score: Number((score + 1.5).toFixed(2)),
         score: score + 1.5,
       });
     }
@@ -525,7 +661,13 @@ export function searchRelevantCitations(
     const normText = normalizeTextForRag(rawText);
     let score = 0;
     for (const s of stems) {
-      if (normText.includes(s)) score += 2.5;
+      if (normText.includes(s)) {
+        const idf = stemIdfMap.get(s) ?? 1.0;
+        score += 2.5 * idf;
+      }
+    }
+    for (const bg of bigrams) {
+      if (normText.includes(bg)) score += 5;
     }
     if (normQuery.match(/تفتيش|مراجع|ملاحظ|رقاب|فجو/)) {
       score += 4;
@@ -535,10 +677,10 @@ export function searchRelevantCitations(
         document_id: `AUDIT-${af.id}`,
         title_ar: `ملاحظة تفتيش: ${af.title_ar}`,
         file_name: `تقرير التفتيش الداخلي (${af.finding_number || af.id})`,
-        section_title: `الأثر: ${(af.impact_ar || 'ملاحظة رقابية').slice(0, 60)}`,
-        quote_text: `${af.details_ar} — الإجراء التصحيحي: ${af.corrective_action_ar}`.slice(0, 260),
+        section_title: `الأثر: ${(af.impact_ar || 'ملاحظة رقابية').slice(0, 80)}`,
+        quote_text: `${af.details_ar} — الإجراء التصحيحي: ${af.corrective_action_ar}`.slice(0, 900),
         doc_type: 'AUDIT_REPORT',
-        relevance_score: score + 1.5,
+        relevance_score: Number((score + 1.5).toFixed(2)),
         score: score + 1.5,
       });
     }
@@ -551,14 +693,14 @@ export function searchRelevantCitations(
   );
   if (citations.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
     for (const doc of bundle.session_documents) {
-      for (const chunk of doc.chunks.slice(0, 4)) {
+      for (const chunk of doc.chunks.slice(0, 6)) {
         citations.push({
           document_id: doc.id,
           chunk_id: chunk.id,
           title_ar: doc.title_ar,
           file_name: doc.file_name,
           section_title: chunk.section_title || `مقطع رقم ${chunk.chunk_index}`,
-          quote_text: chunk.content_text.slice(0, 280),
+          quote_text: chunk.content_text.slice(0, 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
           relevance_score: 1,

@@ -1003,145 +1003,18 @@ async function buildHighPrecisionRcsaProposals(params: {
     ];
   };
 
-  // Phase 1: Full-Document Core Pattern Coverage (ensures core operational SOP risks such as
-  // Outgoing Transfers, Incoming Transfers, Omitted Execution, GL/Nostro Reconciliation, Sanctions/AML,
-  // External Fraud, Accounting Entries, and Freeze/Release are extracted cleanly with 2-3 controls each)
-  const combinedDocumentText = allDocTextParts.join('\n');
-  if (combinedDocumentText.trim().length > 40) {
-    const matchedCoreRisks = extractMatchedPatternsFromFullDocument(
-      combinedDocumentText,
-      maxProposalsToGenerate
-    );
-    const levelNumMap: Record<string, number> = { '-': 0, L: 1, M: 2, H: 3, VH: 4, C: 5 };
-    const compLabelMap: Record<string, string> = {
-      L: 'L (منخفض)',
-      M: 'M (متوسط)',
-      H: 'H (كبير)',
-      VH: 'VH (كبير جداً)',
-      C: 'C (كارثي)',
-    };
-
-    for (const coreRisk of matchedCoreRisks) {
-      if (generatedProposals.length >= maxProposalsToGenerate) break;
-      if (existingTitles.has(coreRisk.risk_title_ar)) continue;
-      existingTitles.add(coreRisk.risk_title_ar);
-
-      const riskId = `RSK-${session.unit.code}-${String(nextRiskSeq).padStart(2, '0')}`;
-      const seqStr = String(nextRiskSeq).padStart(2, '0');
-      nextRiskSeq++;
-
-      const estLoss = coreRisk.reference_anchor_egp;
-      const nfiAll = [coreRisk.nfi_service, coreRisk.nfi_reputation, coreRisk.nfi_regulatory, coreRisk.nfi_legal];
-      const nfiMax = nfiAll.reduce((b, cur) => (levelNumMap[cur] > levelNumMap[b] ? cur : b), 'L');
-      const citations = findBestCitationForText(`${coreRisk.process_name_ar} ${coreRisk.risk_title_ar} ${coreRisk.description_ar}`);
-
-      const matchedBaselineRisk =
-        session.workflow_mode === 'UPDATE' && ragBundle.baseline_risks.length > 0
-          ? ragBundle.baseline_risks[0]
-          : null;
-
-      const rawProposalData = enrichProposalWithPythonCalculation(session.unit_id, {
-        risk_id: matchedBaselineRisk?.risk_id || riskId,
-        linked_baseline_risk_id: matchedBaselineRisk?.risk_id || undefined,
-        reassessment_flag_br:
-          session.workflow_mode === 'UPDATE' ? 'BR-007/BR-008/BR-009' : undefined,
-        requires_reviewer_reassessment: session.workflow_mode === 'UPDATE',
-        process_name_ar: coreRisk.process_name_ar,
-        strategic_objective_ar: coreRisk.strategic_objective_ar,
-        risk_library_name_ar: coreRisk.taxonomy_l3_ar || coreRisk.taxonomy_l2_ar,
-        risk_title_ar: coreRisk.risk_title_ar,
-        description_ar: coreRisk.description_ar,
-        single_incident_max_loss: estLoss,
-        financial_impact_amount: estLoss,
-        financial_impact_justification: `قيمة مرجعية معيارية معتمدة وفق منهجية البنك الأهلي المصري (${estLoss.toLocaleString()} ج.م — شريحة EI880:EI884) لعدم توفر خسائر تاريخية مسجلة`,
-        inherent_frequency_text: coreRisk.inherent_frequency_text,
-        frequency_multiplier: coreRisk.frequency_multiplier,
-        frequency_justification: coreRisk.frequency_justification_ar,
-        expected_annual_loss: estLoss * coreRisk.frequency_multiplier,
-        clarification_status: 'NEEDS_CONFIRMATION',
-        taxonomy_l1_id: coreRisk.taxonomy_l1_id,
-        taxonomy_l1_ar: coreRisk.taxonomy_l1_ar,
-        taxonomy_l2_id: coreRisk.taxonomy_l2_id,
-        taxonomy_l2_ar: coreRisk.taxonomy_l2_ar,
-        taxonomy_l3_id: coreRisk.taxonomy_l3_id,
-        taxonomy_l3_ar: coreRisk.taxonomy_l3_ar,
-        taxonomy_rationale_ar: `التصنيف المعتمد وفق منهجية البنك (${coreRisk.taxonomy_l1_ar} ← ${coreRisk.taxonomy_l2_ar} ← ${coreRisk.taxonomy_l3_ar}).`,
-        esg_pillar: coreRisk.esg.pillar_label_ar,
-        esg_code: coreRisk.esg.pillars[0] || undefined,
-        esg_pathway_ar: coreRisk.esg.pathway_ar,
-        nfi_service_level: levelNumMap[coreRisk.nfi_service] || 1,
-        nfi_reputation_level: levelNumMap[coreRisk.nfi_reputation] || 1,
-        nfi_regulatory_level: levelNumMap[coreRisk.nfi_regulatory] || 1,
-        nfi_legal_level: levelNumMap[coreRisk.nfi_legal] || 1,
-        nfi_composite_score: compLabelMap[nfiMax] || 'M (متوسط)',
-        acceptance_rationale_ar: coreRisk.acceptance_rationale_ar,
-        corrective_action_ar: coreRisk.corrective_action_ar,
-        columns_populated_count: 29,
-        phase2c_inputs: {
-          nfi: {
-            service: { rating: coreRisk.nfi_service, evidence: coreRisk.service_impact_evidence_ar },
-            reputation: { rating: coreRisk.nfi_reputation, evidence: coreRisk.reputation_impact_evidence_ar },
-            regulatory: { rating: coreRisk.nfi_regulatory, evidence: coreRisk.regulatory_impact_evidence_ar },
-            legal: { rating: coreRisk.nfi_legal, evidence: coreRisk.legal_impact_evidence_ar },
-          },
-          esg:
-            coreRisk.esg.status === 'ASSESSED'
-              ? {
-                  status: 'ASSESSED',
-                  pillars: coreRisk.esg.pillars,
-                  catalogue_ids: coreRisk.esg.catalogue_ids,
-                  evidence: coreRisk.esg.evidence,
-                }
-              : {
-                  status: 'NO_DOCUMENTED_LINK',
-                  pillars: [],
-                  evidence: {},
-                  justification:
-                    coreRisk.esg.justification ||
-                    'لا توجد صلة موثقة بأبعاد ESG وفق كتالوج البنك المركزي المصري.',
-                },
-          acceptance_class: coreRisk.acceptance_class,
-          acceptance_rationale: coreRisk.acceptance_rationale_ar,
-          corrective_action: coreRisk.acceptance_class === 1 ? '' : coreRisk.corrective_action_ar,
-        },
-        model_generated_by: modelProfile,
-        controls: coreRisk.controls.map((ctrl, cIdx) => ({
-          control_id: `CTL-${session.unit.code}-${seqStr}-0${cIdx + 1}`,
-          control_name_ar: ctrl.control_name_ar,
-          control_type_label_ar: ctrl.control_type_label_ar,
-          control_method_label_ar: ctrl.control_method_label_ar,
-          description_ar: ctrl.description_ar,
-          control_owner: ctrl.control_owner_ar,
-          control_frequency_raw: ctrl.control_frequency_raw,
-          design_classification: ctrl.design_classification,
-          automation_level: ctrl.automation_level,
-          effectiveness_raw: ctrl.effectiveness_raw,
-          implementation_status: 'IMPLEMENTED',
-          scope_relevance: 'ELIGIBLE',
-          flagged_for_reviewer_reassessment: session.workflow_mode === 'UPDATE',
-        })),
-      });
-
-      generatedProposals.push({
-        type: session.workflow_mode === 'UPDATE' && matchedBaselineRisk ? 'CHANGE_RECOMMENDATION' : 'RISK',
-        data: rawProposalData,
-        citations,
-      });
-    }
-  }
-
-  // Phase 2: Universal Chunk Extraction for any remaining slots (handles unseen/custom BU documents)
-  const remainingSlots = maxProposalsToGenerate - generatedProposals.length;
+  // Phase 1: LLM-First Structured Extraction on Uploaded Chunks (when an LLM is configured)
+  // Followed by Core SOP Pattern Coverage & Semantic Chunk Extraction for any remaining slots
   const llmExtractedItems =
-    remainingSlots > 0 && unindexedDocChunks.length > 0
+    unindexedDocChunks.length > 0
       ? await generateStructuredRcsaProposalsWithLlm({
           unitNameAr: session.unit?.name_ar || 'الوحدة التنظيمية',
-          chunks: unindexedDocChunks.slice(0, remainingSlots + 2).map(({ doc, chunk }) => ({
+          chunks: unindexedDocChunks.slice(0, maxProposalsToGenerate + 2).map(({ doc, chunk }) => ({
             chunk_id: chunk.id,
             doc_title_ar: doc.title_ar,
             content_text: chunk.content_text.trim(),
           })),
-          maxItems: remainingSlots,
+          maxItems: maxProposalsToGenerate,
           modelProfile,
         })
       : null;
@@ -1155,11 +1028,13 @@ async function buildHighPrecisionRcsaProposals(params: {
     }
   }
 
-  for (const { doc, chunk } of unindexedDocChunks) {
-    if (generatedProposals.length >= maxProposalsToGenerate) break;
+  // Helper to process a single chunk (either LLM-enriched or deterministic semantic extraction)
+  const processSingleChunkToProposal = (doc: any, chunk: any, requireLlmItem = false) => {
+    if (generatedProposals.length >= maxProposalsToGenerate) return;
+    const llmItem = llmItemByChunkId.get(chunk.id);
+    if (requireLlmItem && !llmItem) return;
 
     const chunkText = chunk.content_text.trim();
-    const llmItem = llmItemByChunkId.get(chunk.id);
     const cleanSectionHint = stripLocationMarkers(chunk.section_title || '');
     const taxEsg = matchBestTaxonomyAndEsg(`${doc.title_ar} ${cleanSectionHint} ${chunkText}`, ragBundle);
     const detectedAmounts = extractMonetaryAmountsFromText(chunkText);
@@ -1213,28 +1088,29 @@ async function buildHighPrecisionRcsaProposals(params: {
         ? cleanLlmRiskDesc.replace(/^احتمال\s+/, '')
         : semanticRisk.description_ar;
 
-    if (existingTitles.has(finalRiskTitle)) continue;
+    if (existingTitles.has(finalRiskTitle)) return;
     existingTitles.add(finalRiskTitle);
+    existingChunkIds.add(chunk.id);
 
     const riskId = `RSK-${session.unit.code}-${String(nextRiskSeq).padStart(2, '0')}`;
     const seqStr = String(nextRiskSeq).padStart(2, '0');
     nextRiskSeq++;
 
-    // Build multiple controls (preferring LLM multi-controls array if provided, else semantic multi-controls)
-    const llmControlsList = Array.isArray(llmItem?.controls) && llmItem.controls.length > 0
-      ? llmItem.controls
-      : llmItem?.control_description_ar
-        ? [
-            {
-              control_name_ar: llmItem.control_name_ar,
-              control_type: llmItem.control_type,
-              automation_level: llmItem.automation_level,
-              control_frequency_ar: llmItem.control_frequency_ar,
-              control_owner_ar: 'السلطة الإشرافية',
-              control_description_ar: llmItem.control_description_ar,
-            },
-          ]
-        : null;
+    const llmControlsList =
+      Array.isArray(llmItem?.controls) && llmItem.controls.length > 0
+        ? llmItem.controls
+        : llmItem?.control_description_ar
+          ? [
+              {
+                control_name_ar: llmItem.control_name_ar,
+                control_type: llmItem.control_type,
+                automation_level: llmItem.automation_level,
+                control_frequency_ar: llmItem.control_frequency_ar,
+                control_owner_ar: 'السلطة الإشرافية',
+                control_description_ar: llmItem.control_description_ar,
+              },
+            ]
+          : null;
 
     const builtControls = llmControlsList
       ? llmControlsList.map((lc: any, cIdx: number) => {
@@ -1377,12 +1253,154 @@ async function buildHighPrecisionRcsaProposals(params: {
           title_ar: doc.title_ar,
           file_name: doc.file_name,
           section_title: chunk.section_title || 'مقطع مرجعي',
-          quote_text: chunkText.slice(0, 240),
+          quote_text: chunkText.slice(0, 600),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
         },
       ],
     });
+  };
+
+  // Priority 1A: Process any chunks that the LLM explicitly extracted first
+  if (llmItemByChunkId.size > 0) {
+    for (const { doc, chunk } of unindexedDocChunks) {
+      if (generatedProposals.length >= maxProposalsToGenerate) break;
+      if (llmItemByChunkId.has(chunk.id)) {
+        processSingleChunkToProposal(doc, chunk, true);
+      }
+    }
+  }
+
+  // Priority 1B: Full-Document Core Pattern Coverage for any remaining slots
+  const combinedDocumentText = allDocTextParts.join('\n');
+  if (generatedProposals.length < maxProposalsToGenerate && combinedDocumentText.trim().length > 40) {
+    const matchedCoreRisks = extractMatchedPatternsFromFullDocument(
+      combinedDocumentText,
+      maxProposalsToGenerate
+    );
+    const levelNumMap: Record<string, number> = { '-': 0, L: 1, M: 2, H: 3, VH: 4, C: 5 };
+    const compLabelMap: Record<string, string> = {
+      L: 'L (منخفض)',
+      M: 'M (متوسط)',
+      H: 'H (كبير)',
+      VH: 'VH (كبير جداً)',
+      C: 'C (كارثي)',
+    };
+
+    for (const coreRisk of matchedCoreRisks) {
+      if (generatedProposals.length >= maxProposalsToGenerate) break;
+      if (existingTitles.has(coreRisk.risk_title_ar)) continue;
+      existingTitles.add(coreRisk.risk_title_ar);
+
+      const riskId = `RSK-${session.unit.code}-${String(nextRiskSeq).padStart(2, '0')}`;
+      const seqStr = String(nextRiskSeq).padStart(2, '0');
+      nextRiskSeq++;
+
+      const estLoss = coreRisk.reference_anchor_egp;
+      const nfiAll = [coreRisk.nfi_service, coreRisk.nfi_reputation, coreRisk.nfi_regulatory, coreRisk.nfi_legal];
+      const nfiMax = nfiAll.reduce((b, cur) => (levelNumMap[cur] > levelNumMap[b] ? cur : b), 'L');
+      const citations = findBestCitationForText(`${coreRisk.process_name_ar} ${coreRisk.risk_title_ar} ${coreRisk.description_ar}`);
+
+      const matchedBaselineRisk =
+        session.workflow_mode === 'UPDATE' && ragBundle.baseline_risks.length > 0
+          ? ragBundle.baseline_risks[0]
+          : null;
+
+      const rawProposalData = enrichProposalWithPythonCalculation(session.unit_id, {
+        risk_id: matchedBaselineRisk?.risk_id || riskId,
+        linked_baseline_risk_id: matchedBaselineRisk?.risk_id || undefined,
+        reassessment_flag_br:
+          session.workflow_mode === 'UPDATE' ? 'BR-007/BR-008/BR-009' : undefined,
+        requires_reviewer_reassessment: session.workflow_mode === 'UPDATE',
+        process_name_ar: coreRisk.process_name_ar,
+        strategic_objective_ar: coreRisk.strategic_objective_ar,
+        risk_library_name_ar: coreRisk.taxonomy_l3_ar || coreRisk.taxonomy_l2_ar,
+        risk_title_ar: coreRisk.risk_title_ar,
+        description_ar: coreRisk.description_ar,
+        single_incident_max_loss: estLoss,
+        financial_impact_amount: estLoss,
+        financial_impact_justification: `قيمة مرجعية معيارية معتمدة وفق منهجية البنك الأهلي المصري (${estLoss.toLocaleString()} ج.م — شريحة EI880:EI884) لعدم توفر خسائر تاريخية مسجلة`,
+        inherent_frequency_text: coreRisk.inherent_frequency_text,
+        frequency_multiplier: coreRisk.frequency_multiplier,
+        frequency_justification: coreRisk.frequency_justification_ar,
+        expected_annual_loss: estLoss * coreRisk.frequency_multiplier,
+        clarification_status: 'NEEDS_CONFIRMATION',
+        taxonomy_l1_id: coreRisk.taxonomy_l1_id,
+        taxonomy_l1_ar: coreRisk.taxonomy_l1_ar,
+        taxonomy_l2_id: coreRisk.taxonomy_l2_id,
+        taxonomy_l2_ar: coreRisk.taxonomy_l2_ar,
+        taxonomy_l3_id: coreRisk.taxonomy_l3_id,
+        taxonomy_l3_ar: coreRisk.taxonomy_l3_ar,
+        taxonomy_rationale_ar: `التصنيف المعتمد وفق منهجية البنك (${coreRisk.taxonomy_l1_ar} ← ${coreRisk.taxonomy_l2_ar} ← ${coreRisk.taxonomy_l3_ar}).`,
+        esg_pillar: coreRisk.esg.pillar_label_ar,
+        esg_code: coreRisk.esg.pillars[0] || undefined,
+        esg_pathway_ar: coreRisk.esg.pathway_ar,
+        nfi_service_level: levelNumMap[coreRisk.nfi_service] || 1,
+        nfi_reputation_level: levelNumMap[coreRisk.nfi_reputation] || 1,
+        nfi_regulatory_level: levelNumMap[coreRisk.nfi_regulatory] || 1,
+        nfi_legal_level: levelNumMap[coreRisk.nfi_legal] || 1,
+        nfi_composite_score: compLabelMap[nfiMax] || 'M (متوسط)',
+        acceptance_rationale_ar: coreRisk.acceptance_rationale_ar,
+        corrective_action_ar: coreRisk.corrective_action_ar,
+        columns_populated_count: 29,
+        phase2c_inputs: {
+          nfi: {
+            service: { rating: coreRisk.nfi_service, evidence: coreRisk.service_impact_evidence_ar },
+            reputation: { rating: coreRisk.nfi_reputation, evidence: coreRisk.reputation_impact_evidence_ar },
+            regulatory: { rating: coreRisk.nfi_regulatory, evidence: coreRisk.regulatory_impact_evidence_ar },
+            legal: { rating: coreRisk.nfi_legal, evidence: coreRisk.legal_impact_evidence_ar },
+          },
+          esg:
+            coreRisk.esg.status === 'ASSESSED'
+              ? {
+                  status: 'ASSESSED',
+                  pillars: coreRisk.esg.pillars,
+                  catalogue_ids: coreRisk.esg.catalogue_ids,
+                  evidence: coreRisk.esg.evidence,
+                }
+              : {
+                  status: 'NO_DOCUMENTED_LINK',
+                  pillars: [],
+                  evidence: {},
+                  justification:
+                    coreRisk.esg.justification ||
+                    'لا توجد صلة موثقة بأبعاد ESG وفق كتالوج البنك المركزي المصري.',
+                },
+          acceptance_class: coreRisk.acceptance_class,
+          acceptance_rationale: coreRisk.acceptance_rationale_ar,
+          corrective_action: coreRisk.acceptance_class === 1 ? '' : coreRisk.corrective_action_ar,
+        },
+        model_generated_by: modelProfile,
+        controls: coreRisk.controls.map((ctrl, cIdx) => ({
+          control_id: `CTL-${session.unit.code}-${seqStr}-0${cIdx + 1}`,
+          control_name_ar: ctrl.control_name_ar,
+          control_type_label_ar: ctrl.control_type_label_ar,
+          control_method_label_ar: ctrl.control_method_label_ar,
+          description_ar: ctrl.description_ar,
+          control_owner: ctrl.control_owner_ar,
+          control_frequency_raw: ctrl.control_frequency_raw,
+          design_classification: ctrl.design_classification,
+          automation_level: ctrl.automation_level,
+          effectiveness_raw: ctrl.effectiveness_raw,
+          implementation_status: 'IMPLEMENTED',
+          scope_relevance: 'ELIGIBLE',
+          flagged_for_reviewer_reassessment: session.workflow_mode === 'UPDATE',
+        })),
+      });
+
+      generatedProposals.push({
+        type: session.workflow_mode === 'UPDATE' && matchedBaselineRisk ? 'CHANGE_RECOMMENDATION' : 'RISK',
+        data: rawProposalData,
+        citations,
+      });
+    }
+  }
+
+  // Priority 2: Universal Semantic Chunk Extraction for any remaining slots
+  for (const { doc, chunk } of unindexedDocChunks) {
+    if (generatedProposals.length >= maxProposalsToGenerate) break;
+    if (existingChunkIds.has(chunk.id)) continue;
+    processSingleChunkToProposal(doc, chunk, false);
   }
 
   // Zero-Shot Cross-BU Structural Decomposition (when unit has 0 uploaded files)
@@ -1560,6 +1578,22 @@ export async function sendAgentMessage(
 
   const qOption = resolveQwenModelProfile(activeProfile);
 
+  // Fetch recent conversation history (last 8 messages BEFORE saving the new message) for Multi-Turn Memory
+  const priorHistoryRows = db
+    .prepare(`
+      SELECT sender_role, message_text_ar
+      FROM rcsa_agent_conversations
+      WHERE session_id = ? AND sender_role IN ('USER', 'AGENT')
+      ORDER BY created_at DESC, rowid DESC
+      LIMIT 8
+    `)
+    .all(sessionId) as Array<{ sender_role: string; message_text_ar: string }>;
+
+  const multiTurnHistory = priorHistoryRows.reverse().map(row => ({
+    role: (row.sender_role === 'AGENT' ? 'assistant' : 'user') as 'user' | 'assistant',
+    content: row.message_text_ar.slice(0, 1400),
+  }));
+
   // 1. Save User Message
   const userMsgId = `MSG-U-${Date.now()}`;
   db.prepare(`
@@ -1570,16 +1604,29 @@ export async function sendAgentMessage(
   // 2. Retrieve RAG context & citations using Qwen model's topK depth
   const citations = searchRelevantCitations(sessionId, session.unit_id, userMessageText, qOption.rag_top_k);
   const ragBundle = assembleRagContextBundle(sessionId, session.unit_id);
+  const existingState = getAgentSessionState(sessionId, user);
 
-  // 3. Generate Reply (Autonomous LLM with elevated Open-Domain + RAG authority, or Offline Grounded/Open-Domain Synthesis)
+  // 3. Generate Reply (Autonomous LLM with Multi-Turn Memory + RAG + Active Proposals context, or Offline Grounded Synthesis)
   let agentReplyText = '';
+
+  const activeProposalsSummary =
+    existingState.proposals.length > 0
+      ? `\nالتوصيات والمخاطر المستنبطة حالياً في الجلسة (${existingState.proposals.length}):\n` +
+        existingState.proposals
+          .slice(0, 8)
+          .map(
+            (p, idx) =>
+              `${idx + 1}. [${p.proposal_data?.risk_id || p.id}] ${p.proposal_data?.risk_title_ar || ''}: الأثر الفردي = ${Number(p.proposal_data?.financial_impact_amount || 0).toLocaleString()} ج.م | أقصى RRF = ${Math.round(Number(p.proposal_data?.effective_max_rrf || 0) * 100)}% | المتبقي = ${p.proposal_data?.residual_rating || '-'} | عدد الضوابط = ${(p.proposal_data?.controls || []).length}`
+          )
+          .join('\n')
+      : '';
 
   const promptContextText = `
 النموذج المختار: ${qOption.label_ar}
 الوحدة التنظيمية: ${session.unit.name_ar} (${session.unit.code})
 نمط التقييم: ${session.workflow_mode === 'NEW' ? 'إنشاء تقييم RCSA جديد' : 'تحديث ومقارنة تقييم RCSA قائم'}
 المستندات المرفوعة بالجلسة (${ragBundle.session_documents.length}):
-${ragBundle.session_documents.map(d => `- ${d.title_ar} (${d.doc_type}): ${d.chunks.length} مقطع نصي`).join('\n') || 'لا توجد مستندات مرفوعة حالياً'}
+${ragBundle.session_documents.map(d => `- ${d.title_ar} (${d.doc_type}): ${d.chunks.length} مقطع نصي`).join('\n') || 'لا توجد مستندات مرفوعة حالياً'}${activeProposalsSummary}
 
 حالة البحث في فهرس RAG لهذا السؤال: ${
     citations.length > 0
@@ -1588,7 +1635,7 @@ ${ragBundle.session_documents.map(d => `- ${d.title_ar} (${d.doc_type}): ${d.chu
   }
 ${
   citations.length > 0
-    ? `المقتطفات المسترجعة عبر محرك RAG:\n${citations.map((c, idx) => `[${idx + 1}] (${c.title_ar} - ${c.section_title}): "${c.quote_text}"`).join('\n\n')}`
+    ? `المقتطفات الكاملة المسترجعة عبر محرك RAG (BM25 + مترادفات مصرفية):\n${citations.map((c, idx) => `[${idx + 1}] (${c.title_ar} - ${c.section_title}):\n"""\n${c.quote_text}\n"""`).join('\n\n')}`
     : ''
 }
 
@@ -1602,17 +1649,20 @@ ${ragBundle.audit_findings.slice(0, 5).map(af => `- ${af.title_ar}: ${af.details
   const systemPrompt =
     activeProfile === 'qwen-0.5b'
       ? `أنت وكيل الذكاء الاصطناعي المصرفي (الوضع: سريع) للبنك الأهلي المصري لنظام RCSA وRAG.
-تتمتع بصلاحية مزدوجة عالية:
-1) إذا وُجدت مقتطفات مطابقة في فهرس RAG، اعتمد عليها بدقة وأجب باختصار ووضوح.
-2) إذا لم تجد إجابة السؤال في فهرس RAG أو كان السؤال عاماً أو استشارياً أو مصرفياً خارج نطاق الملفات المرفوعة، فلديك صلاحية كاملة وحرية تامة للإجابة من معرفتك الشاملة وخبرتك في العمل المصرفي وإدارة المخاطر (معايير بازل، تعليمات البنك المركزي المصري، الضوابط الرقابية، مؤشرات KRI، الأمن السيبراني، مكافحة الاحتيال، أو أي موضوع يسأل عنه المستخدم) دون الامتناع عن الإجابة.`
+تتمتع بصلاحية مزدوجة عالية وذاكرة محادثة متسلسلة:
+1) إذا وُجدت مقتطفات مطابقة في فهرس RAG، اعتمد عليها بدقة وأجب بوضوح مع ذكر الأرقام والمصادر.
+2) إذا سأل المستخدم سؤالاً متابعاً عن رسالة سابقة أو مخاطرة مقترحة بالجلسة، اربط إجابتك مباشرة بسجل المحادثة والتوصيات الحالية.
+3) إذا لم تجد إجابة السؤال في فهرس RAG أو كان السؤال عاماً أو استشارياً أو مصرفياً خارج نطاق الملفات المرفوعة، فلديك صلاحية كاملة وحرية تامة للإجابة من معرفتك الشاملة وخبرتك في العمل المصرفي وإدارة المخاطر (معايير بازل، تعليمات البنك المركزي المصري، الضوابط الرقابية، مؤشرات KRI، الأمن السيبراني، مكافحة الاحتيال، أو أي موضوع يسأل عنه المستخدم) دون الامتناع عن الإجابة.`
       : `أنت وكيل الذكاء الاصطناعي المصرفي الخبير (الوضع: دقيق) للبنك الأهلي المصري لنظام RCSA وRAG.
-تتمتع بصلاحية استشارية وتحليلية عليا:
-1) عند توفر أدلة ومقتطفات في فهرس RAG، قم بتحليلها بعمق ووثق إجابتك بالمصادر مع ربط المخاطر بتصنيف البنك المركزي (L1/L2/L3) وركائز الاستدامة (ESG).
-2) عندما لا تتوفر إجابة السؤال في فهرس RAG أو يطرح المستخدم سؤالاً خارج نطاق الملفات المرفوعة، استخدم صلاحيتك الكاملة ومعرفتك الموسوعية والخبرة المصرفية والرقابية لتقديم إجابة وافية ومعمقة وحلول عملية مبتكرة، مع التنويه بشفافية إلى أن الإجابة مستندة إلى خبرة النموذج الاستشارية.`;
+تتمتع بصلاحية استشارية وتحليلية عليا وذاكرة محادثة متسلسلة:
+1) عند توفر أدلة ومقتطفات في فهرس RAG، قم بتحليلها بعمق ووثق إجابتك بالمصادر والأرقام مع ربط المخاطر بتصنيف البنك المركزي (L1/L2/L3) وركائز الاستدامة (ESG) والأهداف الاستراتيجية الخمسة للبنك الأهلي.
+2) إذا كان سؤال المستخدم متابعاً لرسالة سابقة أو متعلقاً بتوصيات RCSA المستنبطة في الجلسة، استند إلى ذاكرة المحادثة والتوصيات الحالية لتقديم تحليل تراكمي دقيق.
+3) عندما لا تتوفر إجابة السؤال في فهرس RAG أو يطرح المستخدم سؤالاً خارج نطاق الملفات المرفوعة، استخدم صلاحيتك الكاملة ومعرفتك الموسوعية والخبرة المصرفية والرقابية لتقديم إجابة وافية ومعمقة وحلول عملية مبتكرة، مع التنويه بشفافية إلى أن الإجابة مستندة إلى خبرة النموذج الاستشارية.`;
 
   const llmRes = await generateAgentAutonomousCompletion(
     [
       { role: 'system', content: systemPrompt },
+      ...multiTurnHistory,
       { role: 'user', content: `سياق الجلسة وRAG:\n${promptContextText}\n\nسؤال/توجيه المستخدم: ${userMessageText}` },
     ],
     { modelProfile: activeProfile }
@@ -1639,7 +1689,6 @@ ${ragBundle.audit_findings.slice(0, 5).map(af => `- ${af.title_ar}: ${af.details
   }
 
   // 4. Generate High-Accuracy RCSA Proposals when user asks for RCSA/document analysis OR on first RAG-matched turn
-  const existingState = getAgentSessionState(sessionId, user);
   const normMsg = normalizeTextForRag(userMessageText);
   const userRequestedRcsaGeneration = Boolean(
     normMsg.match(/تحليل المستند|تحليل كافه|توليد|استخراج|بناء مصفوف|مصفوفه rcsa|المخاطر والضوابط المقترح|اقتراح قائمه المخاطر/)

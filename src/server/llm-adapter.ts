@@ -32,9 +32,9 @@ export const QWEN_MODEL_OPTIONS: Record<QwenModelProfileId, QwenModelOption> = {
     ollama_command: 'ollama run qwen3:1.7b',
     speed_tier: 'FAST',
     accuracy_tier: 'STANDARD',
-    rag_top_k: 6,
+    rag_top_k: 8,
     temperature: 0.15,
-    max_tokens: 1280,
+    max_tokens: 2560,
   },
   'qwen-4b': {
     id: 'qwen-4b',
@@ -48,9 +48,9 @@ export const QWEN_MODEL_OPTIONS: Record<QwenModelProfileId, QwenModelOption> = {
     ollama_command: 'ollama run qwen3.5:4b',
     speed_tier: 'DEEP',
     accuracy_tier: 'HIGH_PRECISION',
-    rag_top_k: 12,
+    rag_top_k: 16,
     temperature: 0.1,
-    max_tokens: 2048,
+    max_tokens: 4096,
   },
 };
 
@@ -92,6 +92,50 @@ export function resolveQwenModelProfile(profileId?: string | null): QwenModelOpt
     return QWEN_MODEL_OPTIONS['qwen-4b'];
   }
   return QWEN_MODEL_OPTIONS['qwen-4b'];
+}
+
+/**
+ * Resiliently parse JSON emitted by local or cloud LLMs (handles markdown fences, surrounding prose, and trailing commas).
+ */
+export function parseResilientLlmJson(rawText: string): any | null {
+  if (!rawText || !rawText.trim()) return null;
+  let cleaned = rawText.trim();
+  // Strip <think>...</think> blocks emitted by reasoning models (e.g. Qwen3 / DeepSeek-R1)
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Strip markdown ```json ... ``` fences
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenceMatch && fenceMatch[1]) {
+    cleaned = fenceMatch[1].trim();
+  }
+  const normalized = cleaned.replace(/,\s*([\]}])/g, '$1');
+  try {
+    return JSON.parse(normalized);
+  } catch {
+    // Try extracting the outermost JSON object or array in order of earliest appearance
+    const firstBracket = normalized.indexOf('[');
+    const lastBracket = normalized.lastIndexOf(']');
+    const firstBrace = normalized.indexOf('{');
+    const lastBrace = normalized.lastIndexOf('}');
+
+    const candidateEntries: Array<{ start: number; text: string }> = [];
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      candidateEntries.push({ start: firstBrace, text: normalized.slice(firstBrace, lastBrace + 1) });
+    }
+    if (firstBracket !== -1 && lastBracket > firstBracket) {
+      candidateEntries.push({ start: firstBracket, text: normalized.slice(firstBracket, lastBracket + 1) });
+    }
+    candidateEntries.sort((a, b) => a.start - b.start);
+
+    for (const entry of candidateEntries) {
+      const noTrailingCommas = entry.text.replace(/,\s*([\]}])/g, '$1');
+      try {
+        return JSON.parse(noTrailingCommas);
+      } catch {
+        // continue
+      }
+    }
+    return null;
+  }
 }
 
 /**
@@ -230,7 +274,7 @@ export async function generateLlmCompletion(
   const endpoint = cleanBase.endsWith('/chat/completions')
     ? cleanBase
     : `${cleanBase}/chat/completions`;
-  const timeoutMs = options?.timeoutMs || (chosenOption.id === 'qwen-0.5b' ? 15000 : 30000);
+  const timeoutMs = options?.timeoutMs || (chosenOption.id === 'qwen-0.5b' ? 25000 : 45000);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -281,7 +325,8 @@ export async function generateLlmCompletion(
     }
 
     const data: any = await res.json();
-    const content = data.choices?.[0]?.message?.content || data.message?.content || '';
+    const rawContent = data.choices?.[0]?.message?.content || data.message?.content || '';
+    const content = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     if (!content) {
       return {
@@ -317,9 +362,9 @@ export async function generateLlmCompletion(
 }
 
 /**
- * Elevated Autonomous LLM Completion for the AI Agent:
- * 1. Uses local Ollama / OpenAI-compatible server (`qwen2.5:0.5b` or `qwen3.5:4b`) when configured and reachable.
- * 2. Falls back to server-side `@google/genai` (`gemini-3-flash-preview`) when running in cloud/preview without local Ollama,
+ * Elevated Autonomous LLM Completion for the AI Agent with full Multi-Turn Conversation Memory:
+ * 1. Uses local Ollama / OpenAI-compatible server when configured and reachable.
+ * 2. Falls back to server-side `@google/genai` (`gemini-4-hydrogen`) with structured multi-turn `contents`,
  *    giving the LLM full authority to answer both RAG-grounded and open-domain questions outside the RAG index.
  */
 export async function generateAgentAutonomousCompletion(
@@ -361,16 +406,20 @@ export async function generateAgentAutonomousCompletion(
         .filter(m => m.role === 'system')
         .map(m => m.content)
         .join('\n\n');
-      const userPrompt = messages
-        .filter(m => m.role !== 'system')
-        .map(m => `${m.role === 'assistant' ? 'المساعد' : 'المستخدم'}: ${m.content}`)
-        .join('\n\n');
+
+      const dialogueTurns = messages
+        .filter(m => m.role !== 'system' && m.content && m.content.trim().length > 0)
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
 
       const response = await ai.models.generateContent({
         model: 'gemini-4-hydrogen',
-        contents: userPrompt,
+        contents: dialogueTurns.length > 0 ? dialogueTurns : 'مرحباً',
         config: {
           systemInstruction: systemInstruction || undefined,
+          temperature: options?.temperature ?? chosenOption.temperature,
           thinkingConfig: {
             thinkingLevel: chosenOption.id === 'qwen-0.5b' ? ThinkingLevel.LOW : ThinkingLevel.HIGH,
           },
@@ -428,7 +477,7 @@ export interface LlmExtractedRcsaItem {
 /**
  * Use configured LLM (Ollama/OpenAI or server-side Gemini `gemini-4-hydrogen`) to extract concrete,
  * named RCSA Risks and multiple Controls directly from document chunks as structured JSON.
- * Strictly calibrated to NBE 8-Page RCSA Methodology.
+ * Strictly calibrated to NBE 8-Page RCSA Methodology with Few-Shot Gold Standard Guidance.
  */
 export async function generateStructuredRcsaProposalsWithLlm(params: {
   unitNameAr: string;
@@ -449,17 +498,17 @@ export async function generateStructuredRcsaProposalsWithLlm(params: {
   }
 
   const systemPrompt = `أنت خبير إدارة المخاطر التشغيلية (RCSA) بالبنك الأهلي المصري.
-مهمتك استخراج المخاطر التشغيلية والضوابط الرقابية الفعلية من المقاطع النصية المرفوعة للوحدة (${unitNameAr}) وفقاً لمنهجية البنك الأهلي المصري المعتمدة:
+مهمتك قراءة المقاطع النصية المرفوعة للوحدة (${unitNameAr}) بعمق واستخراج المخاطر التشغيلية الفعلية والضوابط الرقابية التفصيلية الواردة بها وفقاً لمنهجية البنك الأهلي المصري المعتمدة (29 عموداً):
 قواعد إلزامية صارمة:
 1) لا تكتب أبداً أرقام الصفحات أو المقاطع (مثل "صفحة 1 • مقطع (1)") ولا اسم الملف كاسم للخطر أو الضابط.
-2) صياغة المخاطرة (risk_description_ar): لا تبدأ بعبارة "احتمال..."، بل ابدأ بالحدث التشغيلي المحدد والسبب واذكر النتيجة والأثر صراحةً (مثل: "أخطاء تنفيذ التحويلات الصادرة نتيجة... مما يؤدي إلى ارتداد الحوالات وتكبد خسائر مالية وتعويضات للعملاء").
+2) صياغة المخاطرة (risk_description_ar): لا تبدأ بعبارة "احتمال..."، بل ابدأ بالحدث التشغيلي المحدد والسبب واذكر النتيجة والأثر صراحةً (مثال نموذجي: "أخطاء تنفيذ التحويلات الصادرة نتيجة قصور المراجعة المستندية وعدم مطابقة رموز BIC، مما يؤدي إلى ارتداد الحوالات وتكبد خسائر مالية وتعويضات للعملاء").
 3) الأهداف الاستراتيجية (strategic_objective_ar): اختر حصراً أحد الأهداف الخمسة المعتمدة للبنك الأهلي المصري فقط:
    - التركيز على العملاء و تعظيم الأرباح
    - التحول الرقمي و تفعيل الذكاء الاصطناعي
    - النمو المربح و المستدام
    - الكفاءة و الامان والمرونة
    - الشمول المالي
-4) نص الضابط الرقابي (control_description_ar): اكتب الإجراء الرقابي العملي فقط، واحذف تماماً آلية أو نوع الضابط من داخل النص (ممنوع كتابة "ضابط رقابي وقائي - آلي" أو "Semi-Automated" داخل النص).
+4) نص الضابط الرقابي (control_description_ar): اكتب الإجراء الرقابي العملي فقط كما يطبق ميدانياً، واحذف تماماً آلية أو نوع الضابط من داخل النص (ممنوع كتابة "ضابط رقابي وقائي - آلي" أو "Semi-Automated" داخل النص).
 5) دورية الضابط الرقابي (control_frequency_ar): اختر حصراً من القائمة الرسمية للبنك (ممنوع استخدام Per Transaction أو Per Event):
    - Multiple times a day (عدة مرات في اليوم)
    - Daily (يومياً)
@@ -468,12 +517,44 @@ export async function generateStructuredRcsaProposalsWithLlm(params: {
    - Quarterly (ربع سنوي)
    - Annually (سنوي)
    - Ad-hoc (وفقاً والحالة)
-6) استخرج عدة ضوابط رقابية (2 إلى 3 ضوابط مميزة من الإجراءات) لكل مخاطرة في مصفوفة controls.
+6) استخرج عدة ضوابط رقابية (2 إلى 3 ضوابط مميزة ومتكاملة: مانعة وكاشفة) لكل مخاطرة في مصفوفة controls.
 7) عدد مرات حدوث المخاطرة (inherent_frequency_ar): نوّع التكرار منطقياً حسب حجم النشاط (مرة كل سنتان / مرة واحدة كل سنة / مرة واحدة كل نصف سنة / مرة واحدة كل ربع سنة / مرة واحدة كل شهر) ولا تجعلها كلها سنوياً.
-8) الأثر المالي الفردي المرجعي (estimated_loss_egp): إن لم ترد خسارة فعلية موثقة بالمستند، اختر حصراً من القيم المرجعية المعتمدة بمنهجية البنك فقط: 50000 أو 151000 أو 501000 أو 1501000 أو 3001000 (ممنوع استخدام 250000).`;
+8) الأثر المالي الفردي المرجعي (estimated_loss_egp): إن ورد رقم خسارة فعلية بالمستند فاستخدمه، وإن لم يرد اختر حصراً من القيم المرجعية الـ 5 المعتمدة بمنهجية البنك فقط: 50000 أو 151000 أو 501000 أو 1501000 أو 3001000 (ممنوع استخدام 250000).
+
+مثال مرجعي (Few-Shot Gold Standard) لعنصر واحد:
+{
+  "chunk_id": "CHK-1",
+  "process_name_ar": "تنفيذ ومراجعة التحويلات الخارجية عبر نظام السويفت",
+  "strategic_objective_ar": "التركيز على العملاء و تعظيم الأرباح",
+  "risk_title_ar": "أخطاء إدخال بيانات المستفيد أو العملة في رسائل السويفت الصادرة",
+  "risk_description_ar": "أخطاء إدخال بيانات المستفيد أو رقم IBAN أو العملة في رسائل MT103 نتيجة قصور المراجعة المستندية قبل التمرير، مما يؤدي إلى ارتداد الحوالة وتحمل عمولات مراسلين وخسائر مالية وتأثر رضا العملاء.",
+  "inherent_frequency_ar": "مرة واحدة كل ربع سنة",
+  "estimated_loss_egp": 151000,
+  "controls": [
+    {
+      "control_name_ar": "التحقق الآلي من صيغة IBAN ورموز السويفت BIC",
+      "control_type": "PREVENTIVE",
+      "automation_level": "AUTOMATED",
+      "control_frequency_ar": "Multiple times a day",
+      "control_owner_ar": "النظام المصرفي الأساسي",
+      "control_description_ar": "فحص النظام آلياً لصحة هيكل رقم الحساب الدولي IBAN ومطابقة كود البنك المراسل BIC ومنع التمرير عند وجود خطأ."
+    },
+    {
+      "control_name_ar": "المراجعة المزدوجة المستقلة (Maker-Checker) قبل الإجازة النهائية",
+      "control_type": "PREVENTIVE",
+      "automation_level": "SEMI_AUTOMATED",
+      "control_frequency_ar": "Multiple times a day",
+      "control_owner_ar": "السلطة الإشرافية",
+      "control_description_ar": "مطابقة المراجع المستقل لبيانات رسالة السويفت مع أصل طلب العميل المعتمد قبل إجازة الإرسال على النظام."
+    }
+  ]
+}`;
 
   const chunksBlock = chunks
-    .map((c, idx) => `[${idx + 1}] chunk_id=${c.chunk_id} | المصدر=${c.doc_title_ar}\n${c.content_text}`)
+    .map(
+      (c, idx) =>
+        `[${idx + 1}] chunk_id=${c.chunk_id} | المصدر=${c.doc_title_ar}\n${c.content_text.slice(0, 1800)}`
+    )
     .join('\n\n---\n\n');
 
   const userPrompt = `استخرج بحد أقصى (${maxItems}) مخاطر تشغيلية رئيسية شاملة ومتعددة الضوابط من المقاطع التالية لوحدة (${unitNameAr}):\n\n${chunksBlock}`;
@@ -488,10 +569,10 @@ export async function generateStructuredRcsaProposalsWithLlm(params: {
             content: `${userPrompt}\n\nأعد النتيجة بصيغة JSON object يحتوي على مفتاح "items" كمصفوفة بهذه الحقول فقط: chunk_id, process_name_ar, strategic_objective_ar, risk_title_ar, risk_description_ar, inherent_frequency_ar, estimated_loss_egp, controls (مصفوفة من 2-3 ضوابط لكل منها: control_name_ar, control_type [PREVENTIVE|DETECTIVE|CORRECTIVE], automation_level [AUTOMATED|SEMI_AUTOMATED|MANUAL], control_frequency_ar, control_owner_ar, control_description_ar).`,
           },
         ],
-        { modelProfile: chosenOption.id, responseFormatJson: true, timeoutMs: 25000 }
+        { modelProfile: chosenOption.id, responseFormatJson: true, timeoutMs: 45000 }
       );
       if (jsonRes.success && jsonRes.content) {
-        const parsed = JSON.parse(jsonRes.content);
+        const parsed = parseResilientLlmJson(jsonRes.content);
         const items = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.items) ? parsed.items : null;
         if (items && items.length > 0) return items;
       }
@@ -567,7 +648,7 @@ export async function generateStructuredRcsaProposalsWithLlm(params: {
       });
       const rawJson = (response.text || '').trim();
       if (rawJson) {
-        const parsed = JSON.parse(rawJson);
+        const parsed = parseResilientLlmJson(rawJson);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
