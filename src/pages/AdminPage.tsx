@@ -103,7 +103,7 @@ export const AdminPage: React.FC = () => {
             <select
               required
               value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
+              onChange={(e) => setSelectedEmployee(e.target.value === 'OTHER' ? (users[0]?.employee_id || '') : e.target.value)}
               className="block w-full min-h-10 mt-1.5 rounded-xl px-3 py-2 bg-[#F8F8F6] border border-[#DCDAD5] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
               <option value="">اختر موظفًا</option>
@@ -112,6 +112,7 @@ export const AdminPage: React.FC = () => {
                   {u.full_name} — {u.employee_id}
                 </option>
               ))}
+              <option value="OTHER">أخرى</option>
             </select>
           </label>
           <label className="text-xs font-bold text-slate-800">
@@ -119,7 +120,7 @@ export const AdminPage: React.FC = () => {
             <select
               required
               value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
+              onChange={(e) => setSelectedUnit(e.target.value === 'OTHER' ? (units[0]?.id || '') : e.target.value)}
               className="block w-full min-h-10 mt-1.5 rounded-xl px-3 py-2 bg-[#F8F8F6] border border-[#DCDAD5] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
               <option value="">اختر الوحدة</option>
@@ -128,18 +129,20 @@ export const AdminPage: React.FC = () => {
                   {u.name_ar}
                 </option>
               ))}
+              <option value="OTHER">أخرى</option>
             </select>
           </label>
           <label className="text-xs font-bold text-slate-800">
             الصلاحية
             <select
               value={newRole}
-              onChange={(e) => setNewRole(e.target.value)}
+              onChange={(e) => setNewRole(e.target.value === 'OTHER' ? 'AUDITOR' : e.target.value)}
               className="block w-full min-h-10 mt-1.5 rounded-xl px-3 py-2 bg-[#F8F8F6] border border-[#DCDAD5] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
               <option value="MAKER">مُعد التقييم</option>
               <option value="CHECKER">المراجع المستقل</option>
               <option value="AUDITOR">مدقق (قراءة فقط)</option>
+              <option value="OTHER">أخرى</option>
             </select>
           </label>
         </div>

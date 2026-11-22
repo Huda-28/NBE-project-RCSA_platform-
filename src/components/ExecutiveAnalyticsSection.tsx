@@ -196,7 +196,13 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
                 aria-label="تحديد وحدة العمل للتحليل"
                 value={selectedUnitId || units[0].id}
                 onChange={(e) => {
-                  onSelectUnitFilter(e.target.value);
+                  const val = e.target.value;
+                  if (val === 'OTHER') {
+                    setScopeMode('ALL');
+                    setActiveCellCoord(null);
+                    return;
+                  }
+                  onSelectUnitFilter(val);
                   setActiveCellCoord(null);
                 }}
                 className="min-h-10 px-3 py-1.5 text-xs font-bold bg-[#F8F8F6] border border-[#DCDAD5] rounded-xl text-[#09331F] focus:outline-none focus:ring-2 focus:ring-[#006547]"
@@ -206,6 +212,7 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
                     {u.name_ar} ({u.code})
                   </option>
                 ))}
+                <option value="OTHER">أخرى</option>
               </select>
             )}
           </div>

@@ -30,6 +30,10 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showNfiGuide, setShowNfiGuide] = useState(false);
+  const [nfiOtherMode, setNfiOtherMode] = useState<Record<string, boolean>>({});
+  const [esgOtherMode, setEsgOtherMode] = useState(false);
+  const [accOtherMode, setAccOtherMode] = useState(false);
   const [catalog, setCatalog] = useState<Array<{id: number; risk_example_ar: string; pillar: string; l1_ar: string; l2_ar: string}>>([]);
   useEffect(() => {
     if (!token) return;
@@ -43,6 +47,7 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
     let active = true;
     setLoading(true);
     setResult(null); setForm(structuredClone(INITIAL)); setMessage('');
+    setNfiOtherMode({}); setEsgOtherMode(false); setAccOtherMode(false);
     fetch(`/api/hitl/assessments/${encodeURIComponent(assessmentId)}/risks/${encodeURIComponent(riskId)}/phase2c`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(async r => { const x = await r.json(); if (!r.ok) throw new Error(x.error || 'تعذر تحميل التقييم غير المالي'); return x; })
@@ -72,23 +77,114 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
   return (
     <section className="m-4 bg-white rounded-2xl border border-[#DCDAD5] p-5 space-y-4 shadow-2xs" aria-label="تقييم الأثر غير المالي والاستدامة">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E3DE]">
-        <h4 className="text-sm font-extrabold text-[#09331F]">الأثر غير المالي والاستدامة وقبول المخاطرة</h4>
-        <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${result?.status === 'COMPLETE' ? 'bg-emerald-50 text-[#006547] border-emerald-300' : 'bg-amber-50 text-amber-900 border-amber-300'}`}>
-          {result?.status === 'COMPLETE' ? 'مكتمل ✓' : 'يتطلب استكمالًا'}
-        </span>
+        <div>
+          <h4 className="text-sm font-extrabold text-[#09331F]">الأثر غير المالي والاستدامة وقبول المخاطرة</h4>
+          <p className="text-[11px] text-slate-600 mt-0.5">
+            قاعدة المخاطرة الرئيسية (Key Risk): الأثر المالي المتبقي (Residual Financial) أو أي بُعد غير مالي (NFI) يساوي H أو VH أو C • * يتم الاعتماد على التأثير الأعلى تقييماً وفقاً ومبدأ الأكثر تحوطاً.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowNfiGuide(prev => !prev)}
+            className="px-2.5 py-1 rounded-lg bg-[#F8F8F6] hover:bg-[#EFECE6] border border-[#DCDAD5] text-[11px] font-bold text-[#09331F] cursor-pointer"
+          >
+            {showNfiGuide ? 'إخفاء مصفوفة NFI المعتمدة (الشريحة 4)' : 'عرض مصفوفة تقييم الأثر غير المالي (الشريحة 4)'}
+          </button>
+          <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${result?.status === 'COMPLETE' ? 'bg-emerald-50 text-[#006547] border-emerald-300' : 'bg-amber-50 text-amber-900 border-amber-300'}`}>
+            {result?.status === 'COMPLETE' ? 'مكتمل ✓' : 'يتطلب استكمالًا'}
+          </span>
+        </div>
       </div>
+
+      {showNfiGuide && (
+        <div className="rounded-xl border border-[#006547]/40 bg-[#F8FAF9] p-3 overflow-x-auto text-[11px] space-y-2" data-testid="nfi-slide4-matrix-guide">
+          <div className="font-extrabold text-[#09331F]">
+            معايير تقييم الأثر غير المالي المعتمدة (الشريحة 4 — 4 أبعاد × 5 درجات، مع استخدام «-» عند عدم وجود تعرض مباشر)
+          </div>
+          <table className="w-full text-right border-collapse border border-[#DCDAD5] bg-white">
+            <thead className="bg-[#09331F] text-white">
+              <tr>
+                <th className="p-1.5 border border-[#DCDAD5]">البعد غير المالي</th>
+                <th className="p-1.5 border border-[#DCDAD5]">منخفض (L)</th>
+                <th className="p-1.5 border border-[#DCDAD5]">متوسط (M)</th>
+                <th className="p-1.5 border border-[#DCDAD5]">كبير (H)</th>
+                <th className="p-1.5 border border-[#DCDAD5]">كبير جداً (VH)</th>
+                <th className="p-1.5 border border-[#DCDAD5]">كارثي (C)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E5E3DE]">
+              <tr>
+                <td className="p-1.5 font-bold bg-[#F8F8F6] border border-[#DCDAD5]">تقديم الخدمة</td>
+                <td className="p-1.5 border border-[#DCDAD5]">عطل داخلي بسيط دون أثر على العملاء</td>
+                <td className="p-1.5 border border-[#DCDAD5]">اضطراب طفيف بمستوى الخدمة لبعض العملاء</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تعطل جزئي بخط أعمال أو خدمة رئيسية</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تعطل شامل لوظيفة جوهرية (&gt; يوم)</td>
+                <td className="p-1.5 border border-[#DCDAD5]">فقدان قدرة تقديم الخدمة لأجل غير مسمى</td>
+              </tr>
+              <tr>
+                <td className="p-1.5 font-bold bg-[#F8F8F6] border border-[#DCDAD5]">السمعة والعملاء</td>
+                <td className="p-1.5 border border-[#DCDAD5]">شكاوى محدودة تعالج فوراً</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تغطية سلبية محلية محدودة/فقدان عملاء محدودين</td>
+                <td className="p-1.5 border border-[#DCDAD5]">انتقاد إعلامي مستمر أو فقدان شريحة مهمة</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تغطية سلبية واسعة وفقدان كبير للعملاء</td>
+                <td className="p-1.5 border border-[#DCDAD5]">انهيار ثقة الجمهور وتدخل قيادي واسع</td>
+              </tr>
+              <tr>
+                <td className="p-1.5 font-bold bg-[#F8F8F6] border border-[#DCDAD5]">الجهات الرقابية</td>
+                <td className="p-1.5 border border-[#DCDAD5]">ملاحظات تفتيش داخلي بسيطة</td>
+                <td className="p-1.5 border border-[#DCDAD5]">مخالفات محدودة لإجراءات وتوصيات تفتيشية</td>
+                <td className="p-1.5 border border-[#DCDAD5]">مخالفات جسيمة وغرامات/جزاءات من الجهة الرقابية</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تحذيرات رسمية وتغليظ إشرافي على البنك</td>
+                <td className="p-1.5 border border-[#DCDAD5]">تهديد للترخيص أو قيود رقابية شاملة</td>
+              </tr>
+              <tr>
+                <td className="p-1.5 font-bold bg-[#F8F8F6] border border-[#DCDAD5]">الإجراءات القضائية</td>
+                <td className="p-1.5 border border-[#DCDAD5]">استخدام (-) عند عدم وجود تعرض قضائي، أو L لنزاع محدود غير جوهري</td>
+                <td className="p-1.5 border border-[#DCDAD5]">دعاوى تعاقدية/مطالبات متوسطة الأثر</td>
+                <td className="p-1.5 border border-[#DCDAD5]">قضايا جوهرية أو غرامات قضائية مرتفعة</td>
+                <td className="p-1.5 border border-[#DCDAD5]">دعاوى جسيمة متعددة ذات أثر مالي/تنظيمي واسع</td>
+                <td className="p-1.5 border border-[#DCDAD5]">أحكام قضائية/عقابية تهدد استمرارية النشاط</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="text-[10px] font-bold text-[#006547]">
+            * يتم الاعتماد على التأثير الأعلى تقييماً وفقاً ومبدأ الأكثر تحوطاً — وإذا لم يوجد تعرض لإجراءات قضائية يُثبت الرمز (-).
+          </div>
+        </div>
+      )}
+
       {loading ? <p className="text-xs text-slate-600">جارٍ تحميل مدخلات التقييم...</p> : <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {DIMENSIONS.map(([key, label]) => (
             <div key={key} className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
               <label className="block text-xs font-bold text-[#09331F]">{label}</label>
               <select disabled={!editable} aria-label={`تقييم ${label}`} className="w-full bg-white border border-[#DCDAD5] rounded-lg p-2 text-xs font-semibold disabled:opacity-70"
-                value={form.nfi[key]?.rating || 'PENDING'} onChange={e => setForm(p => ({ ...p, nfi: { ...p.nfi, [key]: { ...p.nfi[key], rating: e.target.value } } }))}>
+                value={nfiOtherMode[key] ? 'OTHER' : (form.nfi[key]?.rating || 'PENDING')}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === 'OTHER') {
+                    setNfiOtherMode(prev => ({ ...prev, [key]: true }));
+                    return;
+                  }
+                  setNfiOtherMode(prev => ({ ...prev, [key]: false }));
+                  setForm(p => ({ ...p, nfi: { ...p.nfi, [key]: { ...p.nfi[key], rating: val } } }));
+                }}>
                 <option value="PENDING">لم يُستوفَ بعد</option>
                 <option value="-">لا يوجد تأثير مثبت (-)</option>
                 <option value="L">منخفض</option><option value="M">متوسط</option>
                 <option value="H">مرتفع</option><option value="VH">مرتفع جدًا</option><option value="C">كارثي</option>
+                <option value="OTHER">أخرى</option>
               </select>
+              {nfiOtherMode[key] && (
+                <div className="text-[11px] bg-amber-50 border border-amber-300 rounded-lg p-2 space-y-1">
+                  <div className="font-bold text-amber-900">توضيح مخصص لبعد {label} (أخرى):</div>
+                  <input type="text" disabled={!editable} placeholder="اكتب التوصيف أو المبرر المخصص في خانة الدليل أدناه، واختر الدرجة المعادلة أعلاه عند الاعتماد."
+                    value={form.nfi[key]?.evidence || ''}
+                    onChange={e => setForm(p => ({ ...p, nfi: { ...p.nfi, [key]: { ...p.nfi[key], evidence: e.target.value } } }))}
+                    className="w-full bg-white border border-[#DCDAD5] rounded p-1.5 text-xs" />
+                </div>
+              )}
               <textarea disabled={!editable} rows={2} value={form.nfi[key]?.evidence || ''}
                 onChange={e => setForm(p => ({ ...p, nfi: { ...p.nfi, [key]: { ...p.nfi[key], evidence: e.target.value } } }))}
                 placeholder="المصدر أو سبب عدم التأثر" aria-label={`دليل ${label}`}
@@ -98,12 +194,27 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
         </div>
         <div className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
           <label className="text-xs font-bold text-[#09331F] block">تصنيف الاستدامة (ESG)</label>
-          <select disabled={!editable} value={form.esg.status} className="w-full rounded-lg p-2 bg-white border border-[#DCDAD5] text-xs font-semibold"
-            onChange={e => setForm(p => ({ ...p, esg: { ...p.esg, status: e.target.value, pillars: e.target.value === 'ASSESSED' ? p.esg.pillars : [], catalogue_ids: e.target.value === 'ASSESSED' ? p.esg.catalogue_ids : [], evidence: e.target.value === 'ASSESSED' ? p.esg.evidence : {} } }))}>
+          <select disabled={!editable} value={esgOtherMode ? 'OTHER' : form.esg.status} className="w-full rounded-lg p-2 bg-white border border-[#DCDAD5] text-xs font-semibold"
+            onChange={e => {
+              const val = e.target.value;
+              if (val === 'OTHER') {
+                setEsgOtherMode(true);
+                return;
+              }
+              setEsgOtherMode(false);
+              setForm(p => ({ ...p, esg: { ...p.esg, status: val, pillars: val === 'ASSESSED' ? p.esg.pillars : [], catalogue_ids: val === 'ASSESSED' ? p.esg.catalogue_ids : [], evidence: val === 'ASSESSED' ? p.esg.evidence : {} } }));
+            }}>
             <option value="PENDING">لم يُحسم بعد</option>
             <option value="ASSESSED">صلة موثقة بالاستدامة</option>
             <option value="NO_DOCUMENTED_LINK">لا توجد صلة مثبتة في الأدلة</option>
+            <option value="OTHER">أخرى</option>
           </select>
+          {esgOtherMode && (
+            <textarea disabled={!editable} rows={2} value={form.esg.justification || ''}
+              onChange={e => setForm(f => ({ ...f, esg: { ...f.esg, justification: e.target.value } }))}
+              placeholder="ملاحظة أو تصنيف مخصص للاستدامة (أخرى)..."
+              className="w-full rounded-lg bg-white border border-amber-300 p-2 text-xs" />
+          )}
           {form.esg.status === 'ASSESSED' && <div className="flex flex-wrap gap-4">
             {(['E','S','G'] as const).map(pillar => <div key={pillar} className="space-y-1 flex-1 min-w-32">
               <label className="flex gap-2 items-center text-xs font-semibold"><input type="checkbox" disabled={!editable}
@@ -136,12 +247,21 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
         </div>
         <div className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
           <label className="text-xs font-bold text-[#09331F] block">تصنيف قبول المخاطرة — قرار المراجع</label>
-          <select disabled={!editable} value={form.acceptance_class ?? ''} className="w-full bg-white border border-[#DCDAD5] rounded-lg p-2 text-xs font-semibold"
-            onChange={e => setForm(f => ({ ...f, acceptance_class: e.target.value ? Number(e.target.value) : null, corrective_action: e.target.value === '3' || e.target.value === '4' ? f.corrective_action : '' }))}>
+          <select disabled={!editable} value={accOtherMode ? 'OTHER' : (form.acceptance_class ?? '')} className="w-full bg-white border border-[#DCDAD5] rounded-lg p-2 text-xs font-semibold"
+            onChange={e => {
+              const val = e.target.value;
+              if (val === 'OTHER') {
+                setAccOtherMode(true);
+                return;
+              }
+              setAccOtherMode(false);
+              setForm(f => ({ ...f, acceptance_class: val ? Number(val) : null, corrective_action: val === '3' || val === '4' ? f.corrective_action : '' }));
+            }}>
             <option value="">لم يُحدد بعد</option>
             {CHOICES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+            <option value="OTHER">أخرى</option>
           </select>
-          <textarea disabled={!editable} rows={2} placeholder="الأساس المنطقي لقرار القبول" value={form.acceptance_rationale}
+          <textarea disabled={!editable} rows={2} placeholder={accOtherMode ? 'أدخل توصيف قرار القبول المخصص (أخرى) وأساسه المنطقي...' : 'الأساس المنطقي لقرار القبول'} value={form.acceptance_rationale}
             onChange={e => setForm(f => ({ ...f, acceptance_rationale: e.target.value }))}
             className="w-full rounded-lg bg-white border border-[#DCDAD5] p-2 text-xs" />
           {(form.acceptance_class === 3 || form.acceptance_class === 4) && <textarea disabled={!editable} rows={2} placeholder="الإجراء التصحيحي المطلوب"
@@ -150,7 +270,7 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
         </div>
         {result && <div className="rounded-xl bg-emerald-50/70 border border-[#006547]/30 p-3 text-xs text-[#09331F] flex flex-wrap gap-4">
           <span>أعلى أثر غير مالي: <strong>{result.nfi_overall}</strong></span>
-          <span>مخاطرة رئيسية: <strong>{result.key_risk === 'YES' ? 'نعم' : result.key_risk === 'NO' ? 'لا' : 'قيد الاستيفاء'}</strong></span>
+          <span>مخاطرة رئيسية (Residual/NFI ≥ H): <strong>{result.key_risk === 'YES' ? 'نعم' : result.key_risk === 'NO' ? 'لا' : 'قيد الاستيفاء'}</strong></span>
           <span>جاهزية هذه المخاطرة: <strong>{result.ready_for_export ? 'مكتملة' : 'غير مكتملة'}</strong></span>
           {result.esg_taxonomy_override_required && <span className="text-amber-800 font-bold">تعارض في مطابقة ESG مع L1؛ راجع التبرير</span>}
           {result.stale_after_risk_change && <span className="text-amber-800 font-bold">تغيّرت مدخلات المخاطرة؛ أعيدي التحقق والحفظ</span>}

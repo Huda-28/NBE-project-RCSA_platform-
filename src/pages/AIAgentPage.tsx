@@ -1121,7 +1121,13 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
             <select
               id="agent-bu-select"
               value={selectedUnitId}
-              onChange={(e) => handleUnitChange(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value === 'OTHER') {
+                  setShowAddUnitModal(true);
+                  return;
+                }
+                handleUnitChange(e.target.value);
+              }}
               className="px-3.5 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#006547]"
             >
               {businessUnits.map((bu) => (
@@ -1129,6 +1135,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                   {bu.name_ar} ({bu.code})
                 </option>
               ))}
+              <option value="OTHER">أخرى</option>
             </select>
             <button
               type="button"
@@ -1222,13 +1229,14 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                 </label>
                 <select
                   value={pasteDocType}
-                  onChange={(e) => setPasteDocType(e.target.value)}
+                  onChange={(e) => setPasteDocType(e.target.value === 'OTHER' ? 'SOP' : e.target.value)}
                   className="w-full px-3 py-2 text-xs font-bold bg-[#F8F8F6] border border-[#DCDAD5] rounded-xl text-slate-900"
                 >
                   <option value="SOP">إجراءات عمل قياسية (SOP)</option>
                   <option value="INCIDENT_LOG">سجل حوادث وخسائر تشغيلية (INCIDENT_LOG)</option>
                   <option value="AUDIT_REPORT">تقرير تفتيش ومراجعة داخلية (AUDIT_REPORT)</option>
                   <option value="PREVIOUS_RCSA">بيانات مصفوفة مخاطر (PREVIOUS_RCSA)</option>
+                  <option value="OTHER">أخرى</option>
                 </select>
               </div>
             </div>

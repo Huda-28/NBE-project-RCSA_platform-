@@ -72,6 +72,7 @@ export function createWorkflowSession(params: {
   baseAssessmentId?: string;
   sessionTitle?: string;
   useHistoricalSources?: boolean;
+  preloadBaselineRisks?: boolean;
 }): EnrichedWorkflowSession {
   const { unitId, user, workflowMode } = params;
 
@@ -90,9 +91,10 @@ export function createWorkflowSession(params: {
 
   let baseAssessmentId = params.baseAssessmentId || null;
   let candidateRisks: any[] = [];
+  const shouldPreloadBaseline = workflowMode === 'UPDATE' || (Boolean(params.useHistoricalSources) && Boolean(params.preloadBaselineRisks));
 
-  if (workflowMode === 'UPDATE') {
-    // In UPDATE mode, find the chosen baseline or latest approved assessment
+  if (shouldPreloadBaseline) {
+    // Resolve chosen baseline or latest approved assessment
     if (!baseAssessmentId) {
       const latestApproved = db.prepare(`
         SELECT id FROM rcsa_assessments 
@@ -157,15 +159,18 @@ export function createWorkflowSession(params: {
       }).filter(Boolean);
     }
   } else {
-    // In NEW mode: strictly DO NOT copy unrelated historical risks
+    // In NEW mode without preloading: strictly DO NOT copy unrelated historical risks
     baseAssessmentId = null;
     candidateRisks = [];
   }
 
   const sessionId = `SES-${unit.code}-${Date.now().toString(36).toUpperCase()}`;
-  const defaultTitle = workflowMode === 'UPDATE'
-    ? `تحديث تقييم المخاطر التشغيلية - ${unit.name_ar}`
-    : `تقييم جديد للمخاطر التشغيلية - ${unit.name_ar}`;
+  const defaultTitle =
+    workflowMode === 'UPDATE'
+      ? `تحديث تقييم المخاطر التشغيلية - ${unit.name_ar}`
+      : params.useHistoricalSources
+        ? `تقييم جديد (مستندات جديدة + بيانات الوحدة السابقة) - ${unit.name_ar}`
+        : `تقييم جديد للمخاطر التشغيلية - ${unit.name_ar}`;
   const sessionTitle = (params.sessionTitle || defaultTitle).trim();
   const useHistorical = workflowMode === 'UPDATE' ? 1 : (params.useHistoricalSources ? 1 : 0);
 

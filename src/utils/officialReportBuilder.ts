@@ -358,11 +358,14 @@ export function buildOfficialRcsaReportModel(params: {
 
     const inhRating = String(c.annualized_financial_rating || '-').trim();
     const resRating = String(c.continuous_residual_rating || '-').trim();
+    const nfiOverallVal = String(p2cResult.nfi_overall || d.nfi_overall || '').trim();
+    const hasHighNfi = ['H', 'VH', 'C'].includes(nfiOverallVal);
+    const hasHighRes = ['H', 'VH', 'C'].includes(resRating);
 
     const keyRiskRaw =
       p2cResult.key_risk ||
       d.inherent_nfi_applicable ||
-      (inhRating === 'VH' || inhRating === 'C' || inhRating === 'H' ? 'YES' : 'NO');
+      (hasHighRes || hasHighNfi ? 'YES' : 'NO');
     const keyRiskBadge =
       keyRiskRaw === 'YES' || keyRiskRaw === 'yes' || keyRiskRaw === 'نعم'
         ? 'yes'
@@ -492,7 +495,7 @@ export function buildOfficialRcsaReportHtml(
     logoDataUri?: string;
   }
 ): string {
-  const theme = options?.theme || 'reference_burgundy';
+  const theme = options?.theme || 'nbe_emerald';
   const includeExtended = Boolean(options?.includeExtendedColumns);
   const headerBg = theme === 'nbe_emerald' ? '#09331F' : '#7A1C1C';
   const subHeaderBg = theme === 'nbe_emerald' ? '#006547' : '#801C1C';
@@ -777,6 +780,12 @@ export function buildOfficialRcsaReportHtml(
     <div class="official-objective-row">
       <div class="official-objective-label">الأهداف الاستراتيجية</div>
       <div class="official-objective-value">${escapeHtml(model.strategic_objective_ar)}</div>
+    </div>
+    <div class="official-objective-row" style="border-top:1px solid #000;background:#F8FAF9;font-size:10px;">
+      <div class="official-objective-label" style="background:${subHeaderBg};font-size:10px;">ضوابط الاحتساب</div>
+      <div class="official-objective-value" style="font-size:10px;font-weight:600;">
+        المخاطرة الرئيسية (Key Risk): نعم إذا كان الأثر المالي المتبقي (Residual Financial) أو أي بُعد غير مالي (NFI) يساوي H/VH/C، وإلا (لا) • تجميع الأثر غير المالي: * يتم الاعتماد على التأثير الأعلى تقييماً وفقاً ومبدأ الأكثر تحوطاً.
+      </div>
     </div>
   </div>
 

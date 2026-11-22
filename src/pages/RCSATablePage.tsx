@@ -1093,7 +1093,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   disabled={isSavingOrRecalculating}
                   onClick={() => setShowOfficialReportModal(true)}
                   data-testid="open-official-report-modal-btn"
-                  className="px-3.5 py-1.5 rounded-xl bg-[#7A1C1C] hover:bg-[#5E1414] text-white border border-[#F79C1E]/50 text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#F79C1E]/50 text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-[#F79C1E]" />
                   <span>معاينة التقرير الرسمي (PDF / Excel)</span>
@@ -1148,6 +1148,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               value={selectedUnitId}
               onChange={e => {
                 const newBu = e.target.value;
+                if (newBu === 'OTHER') {
+                  setShowAddUnitModal(true);
+                  return;
+                }
                 setSessionInfo(null);
                 setSelectedAssessmentId('');
                 setHitlState(null);
@@ -1161,6 +1165,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   {b.name_ar} ({b.code})
                 </option>
               ))}
+              <option value="OTHER">أخرى</option>
             </select>
             <button
               type="button"
@@ -1181,6 +1186,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               value={selectedAssessmentId}
               onChange={e => {
                 const nextId = e.target.value;
+                if (nextId === 'OTHER') {
+                  if (isMakerOrAdmin) handleCreateManualDraft();
+                  return;
+                }
                 setSelectedAssessmentId(nextId);
                 onNavigate?.({ page: 'rcsa-table', unitId: selectedUnitId, assessmentId: nextId }, true);
               }}
@@ -1193,6 +1202,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 </option>
               ))}
               {unitAssessments.length === 0 && <option key="asm-empty" value="">لم يتم إنشاء تقييم لهذه الوحدة بعد</option>}
+              <option value="OTHER">أخرى</option>
             </select>
           </div>
 
@@ -2112,6 +2122,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l1_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
+                          if (selectedId === 'OTHER') {
+                            setRiskForm(prev => ({ ...prev, taxonomy_l1_id: 'OTHER', taxonomy_l1_ar: 'أخرى', taxonomy_l2_id: '', taxonomy_l2_ar: '', taxonomy_l3_id: '', taxonomy_l3_ar: '' }));
+                            return;
+                          }
                           const matchedL1 = taxonomyL1s.find(
                             l1 => (l1.taxonomy_id || l1.id) === selectedId
                           );
@@ -2146,11 +2160,13 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         {!taxonomyL1s.some(
                           l1 => (l1.taxonomy_id || l1.id) === riskForm.taxonomy_l1_id
                         ) &&
-                          riskForm.taxonomy_l1_ar && (
+                          riskForm.taxonomy_l1_ar &&
+                          riskForm.taxonomy_l1_id !== 'OTHER' && (
                             <option key="l1-custom" value={riskForm.taxonomy_l1_id || 'CUSTOM'}>
                               {riskForm.taxonomy_l1_ar}
                             </option>
                           )}
+                        <option key="l1-other" value="OTHER">أخرى</option>
                       </select>
                     </div>
 
@@ -2166,6 +2182,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l2_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
+                          if (selectedId === 'OTHER') {
+                            setRiskForm(prev => ({ ...prev, taxonomy_l2_id: 'OTHER', taxonomy_l2_ar: 'أخرى', taxonomy_l3_id: '', taxonomy_l3_ar: '' }));
+                            return;
+                          }
                           const matchedL2 = taxonomyL2s.find(
                             l2 => (l2.taxonomy_id || l2.id) === selectedId
                           );
@@ -2202,11 +2222,13 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         {!taxonomyL2s.some(
                           l2 => (l2.taxonomy_id || l2.id) === riskForm.taxonomy_l2_id
                         ) &&
-                          riskForm.taxonomy_l2_ar && (
+                          riskForm.taxonomy_l2_ar &&
+                          riskForm.taxonomy_l2_id !== 'OTHER' && (
                             <option key="l2-custom" value={riskForm.taxonomy_l2_id || 'CUSTOM'}>
                               {riskForm.taxonomy_l2_ar}
                             </option>
                           )}
+                        <option key="l2-other" value="OTHER">أخرى</option>
                       </select>
                     </div>
 
@@ -2222,6 +2244,10 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         value={riskForm.taxonomy_l3_id || ''}
                         onChange={e => {
                           const selectedId = e.target.value;
+                          if (selectedId === 'OTHER') {
+                            setRiskForm(prev => ({ ...prev, taxonomy_l3_id: 'OTHER', taxonomy_l3_ar: 'أخرى' }));
+                            return;
+                          }
                           const matchedL3 = taxonomyL3s.find(
                             l3 => (l3.taxonomy_id || l3.id) === selectedId
                           );
@@ -2254,11 +2280,13 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         {!taxonomyL3s.some(
                           l3 => (l3.taxonomy_id || l3.id) === riskForm.taxonomy_l3_id
                         ) &&
-                          riskForm.taxonomy_l3_ar && (
+                          riskForm.taxonomy_l3_ar &&
+                          riskForm.taxonomy_l3_id !== 'OTHER' && (
                             <option key="l3-custom" value={riskForm.taxonomy_l3_id || 'CUSTOM'}>
                               {riskForm.taxonomy_l3_ar}
                             </option>
                           )}
+                        <option key="l3-other" value="OTHER">أخرى</option>
                       </select>
                     </div>
                   </div>
@@ -2318,13 +2346,21 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         disabled={!isEditableDraft}
                         data-testid="expected-frequency-select"
                         value={riskForm.expected_frequency_text}
-                        onChange={e =>
+                        onChange={e => {
+                          if (e.target.value === 'OTHER') {
+                            setRiskForm(prev => ({
+                              ...prev,
+                              expected_frequency_text: prev.expected_frequency_text || 'Annually\nسنوياً',
+                              frequency_origin: 'AUTHORIZED_USER_ESTIMATE',
+                            }));
+                            return;
+                          }
                           setRiskForm(prev => ({
                             ...prev,
                             expected_frequency_text: e.target.value,
                             frequency_origin: 'AUTHORIZED_USER_ESTIMATE',
-                          }))
-                        }
+                          }));
+                        }}
                         className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg text-slate-900 font-semibold disabled:opacity-60"
                       >
                         <option key="freq-empty" value="">-- اختر التكرار المعتمد (PENDING_INPUT) --</option>
@@ -2339,6 +2375,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               {riskForm.expected_frequency_text} (قيمة المصدر الحالي)
                             </option>
                           )}
+                        <option key="freq-other" value="OTHER">أخرى</option>
                       </select>
                       <div>
                         <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">
@@ -2570,20 +2607,23 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                     </div>
                   </div>
 
-                  {/* 3. Deferred Phase 2C Capabilities Notice */}
-                  <div className="p-3 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] text-[11px] text-slate-700 space-y-1">
-                    <div className="font-bold text-slate-900">
-                      متطلبات التقييم غير المالي والاستدامة:
+                  {/* 3. Key Risk Rule & Phase 2C Notice */}
+                  <div className="p-3 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] text-[11px] text-slate-700 space-y-1.5">
+                    <div className="font-bold text-[#09331F]">
+                      قاعدة تصنيف المخاطرة الرئيسية (Key Risk) ومتطلبات NFI / ESG:
+                    </div>
+                    <div className="text-[11px] text-slate-800 leading-relaxed">
+                      تُصنّف المخاطرة كـ <strong>مخاطرة رئيسية (نعم / YES)</strong> فقط إذا كان <strong>التقييم المتبقي للأثر المالي (Residual Financial: {calc.continuous_residual_rating || 'PENDING'})</strong> أو أي بُعد من أبعاد <strong>الأثر غير المالي (NFI)</strong> يساوي H أو VH أو C، وتُعد (لا / NO) إذا كانت جميع الأبعاد المتبقية M أو أقل.
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        الأثر غير المالي NFI: يُستكمل لكل مخاطرة
+                        الأثر غير المالي NFI: المعيار الأعلى وفق مبدأ الأكثر تحوطاً
                       </span>
                       <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        قبول المخاطرة (AA): قرار بشري موثق
+                        قبول المخاطرة (AA): متسق مع فاعلية الضوابط ومصفوفة المخاطر
                       </span>
                       <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        تصنيف ESG: أدلة ومرجع تصنيفي
+                        تصنيف ESG: كتالوج CBE المرجعي (34 بنداً)
                       </span>
                     </div>
                   </div>
@@ -2639,13 +2679,14 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                           onChange={e =>
                             setNewControlForm(prev => ({
                               ...prev,
-                              implementation_status: e.target.value as any,
+                              implementation_status: (e.target.value === 'OTHER' ? 'PROPOSED' : e.target.value) as any,
                             }))
                           }
                           className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg font-bold"
                         >
                           <option value="IMPLEMENTED">مطبق حالياً (IMPLEMENTED)</option>
                           <option value="PROPOSED">ضابط مقترح مستقبلي (PROPOSED — RRF=0)</option>
+                          <option value="OTHER">أخرى</option>
                         </select>
                       </div>
                       <div>
@@ -2653,7 +2694,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         <select
                           value={newControlForm.control_type_raw}
                           onChange={e =>
-                            setNewControlForm(prev => ({ ...prev, control_type_raw: e.target.value }))
+                            setNewControlForm(prev => ({ ...prev, control_type_raw: e.target.value === 'OTHER' ? 'Preventive' : e.target.value }))
                           }
                           className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg"
                         >
@@ -2662,6 +2703,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               {o.label}
                             </option>
                           ))}
+                          <option value="OTHER">أخرى</option>
                         </select>
                       </div>
                       <div>
@@ -2669,7 +2711,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         <select
                           value={newControlForm.control_method_raw}
                           onChange={e =>
-                            setNewControlForm(prev => ({ ...prev, control_method_raw: e.target.value }))
+                            setNewControlForm(prev => ({ ...prev, control_method_raw: e.target.value === 'OTHER' ? 'Manual' : e.target.value }))
                           }
                           className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg"
                         >
@@ -2678,6 +2720,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               {o.label}
                             </option>
                           ))}
+                          <option value="OTHER">أخرى</option>
                         </select>
                       </div>
                       <div>
@@ -2685,7 +2728,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                         <select
                           value={newControlForm.effectiveness_raw}
                           onChange={e =>
-                            setNewControlForm(prev => ({ ...prev, effectiveness_raw: e.target.value }))
+                            setNewControlForm(prev => ({ ...prev, effectiveness_raw: e.target.value === 'OTHER' ? 'PENDING_REVIEW' : e.target.value }))
                           }
                           className="w-full px-3 py-1.5 bg-[#F4F3F0] border border-[#B8B6B2] rounded-lg"
                         >
@@ -2694,6 +2737,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               {o.label}
                             </option>
                           ))}
+                          <option value="OTHER">أخرى</option>
                         </select>
                       </div>
                     </div>
@@ -2797,7 +2841,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                   ...prev,
                                   [cc.control_id]: {
                                     ...prev[cc.control_id],
-                                    control_type_raw: e.target.value,
+                                    control_type_raw: e.target.value === 'OTHER' ? 'Preventive' : e.target.value,
                                   },
                                 }))
                               }
@@ -2812,6 +2856,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                 !CONTROL_TYPE_OPTIONS.some(o => o.value === cf.control_type_raw) && (
                                   <option key="ctype-custom" value={cf.control_type_raw}>{cf.control_type_raw}</option>
                                 )}
+                              <option value="OTHER">أخرى</option>
                             </select>
                           </div>
 
@@ -2826,7 +2871,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                   ...prev,
                                   [cc.control_id]: {
                                     ...prev[cc.control_id],
-                                    control_method_raw: e.target.value,
+                                    control_method_raw: e.target.value === 'OTHER' ? 'Manual' : e.target.value,
                                   },
                                 }))
                               }
@@ -2841,6 +2886,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                 !CONTROL_METHOD_OPTIONS.some(o => o.value === cf.control_method_raw) && (
                                   <option key="cmethod-custom" value={cf.control_method_raw}>{cf.control_method_raw}</option>
                                 )}
+                              <option value="OTHER">أخرى</option>
                             </select>
                           </div>
 
@@ -2855,7 +2901,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                   ...prev,
                                   [cc.control_id]: {
                                     ...prev[cc.control_id],
-                                    effectiveness_raw: e.target.value,
+                                    effectiveness_raw: e.target.value === 'OTHER' ? 'PENDING_REVIEW' : e.target.value,
                                   },
                                 }))
                               }
@@ -2866,6 +2912,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                   {o.label}
                                 </option>
                               ))}
+                              <option value="OTHER">أخرى</option>
                             </select>
                           </div>
                         </div>
@@ -2883,7 +2930,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                     ...prev,
                                     [cc.control_id]: {
                                       ...prev[cc.control_id],
-                                      implementation_status: e.target.value,
+                                      implementation_status: e.target.value === 'OTHER' ? 'PROPOSED' : e.target.value,
                                     },
                                   }))
                                 }
@@ -2891,6 +2938,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                               >
                                 <option value="IMPLEMENTED">مطبق حالياً (IMPLEMENTED)</option>
                                 <option value="PROPOSED">ضابط مقترح (PROPOSED — RRF=0)</option>
+                                <option value="OTHER">أخرى</option>
                               </select>
                             </div>
 
@@ -2920,6 +2968,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                                 <option value="EXCLUDED">
                                   مستبعد نطاقياً (يغطي نطاقاً مختلفاً — لا يخفض الخطر المتبقي)
                                 </option>
+                                <option value="OTHER">أخرى</option>
                               </select>
                             </div>
 

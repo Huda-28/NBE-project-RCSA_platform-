@@ -397,9 +397,19 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
     audit_findings = [];
   }
 
-  // Fetch baseline risks if base_assessment_id exists
+  // Fetch baseline risks if base_assessment_id exists OR dual-source mode (use_historical_sources = 1)
   let baseline_risks: any[] = [];
-  if (sessionRow?.base_assessment_id) {
+  let effectiveBaseAssessmentId = sessionRow?.base_assessment_id || null;
+  if (!effectiveBaseAssessmentId && Number(sessionRow?.use_historical_sources || 0) === 1) {
+    const latestApproved = db
+      .prepare(
+        `SELECT id FROM rcsa_assessments WHERE unit_id = ? AND status = 'APPROVED' ORDER BY version_number DESC, approved_at DESC LIMIT 1`
+      )
+      .get(unitId) as { id: string } | undefined;
+    effectiveBaseAssessmentId = latestApproved?.id || null;
+  }
+
+  if (effectiveBaseAssessmentId) {
     const pkgs = db
       .prepare(`
       SELECT risk_id, current_draft_input_json, calculated_output_json 
@@ -407,7 +417,7 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
       WHERE assessment_id = ? 
       ORDER BY display_order ASC
     `)
-      .all(sessionRow.base_assessment_id) as any[];
+      .all(effectiveBaseAssessmentId) as any[];
 
     baseline_risks = pkgs
       .map(p => {
@@ -1091,6 +1101,7 @@ export function matchBestTaxonomyAndEsg(
   esg_code: 'E' | 'S' | 'G';
   esg_pathway_ar: string;
   esg_catalogue_item?: string;
+  esg_catalogue_id?: number;
 } {
   const { stems } = tokenizeRagQuery(text);
   const norm = normalizeTextForRag(text);
@@ -1177,18 +1188,31 @@ export function matchBestTaxonomyAndEsg(
   if (bestL3 && bestScore > 0) {
     const resolvedL1Id = bestL3.l1_id || 'L1-08';
     const officialL1Ar = NBE_L1_LABELS[resolvedL1Id] || bestL3.l1_ar || '8_تنفيذ العمليات المصرفية';
+    const defaultCatByL1: Record<string, { id: number; pillar: 'E' | 'S' | 'G' }> = {
+      'L1-01': { id: 31, pillar: 'G' },
+      'L1-02': { id: 33, pillar: 'G' },
+      'L1-03': { id: 33, pillar: 'G' },
+      'L1-04': { id: 24, pillar: 'S' },
+      'L1-05': { id: 30, pillar: 'G' },
+      'L1-06': { id: 16, pillar: 'E' },
+      'L1-07': { id: 18, pillar: 'E' },
+      'L1-08': { id: 32, pillar: 'G' },
+    };
+    const l1Fallback = defaultCatByL1[resolvedL1Id] || { id: 32, pillar: 'G' as const };
+    const matchedCatalogueId = Number(bestEsg?.item_number || l1Fallback.id);
     return {
       taxonomy_l1_id: resolvedL1Id,
       taxonomy_l1_ar: officialL1Ar,
       taxonomy_l2_id: bestL3.l2_id || 'L2-08-01',
-      taxonomy_l2_ar: bestL3.l2_ar || 'تخطيط وتنفيذ المعاملات',
+      taxonomy_l2_ar: bestL3.l2_ar || 'تسجيل المعاملات وتنفيذها وصيانتها',
       taxonomy_l3_id: bestL3.l3_id || bestL3.taxonomy_id || 'L3-08-01-02',
       taxonomy_l3_ar: bestL3.l3_ar || bestL3.name_ar || 'أخطاء إدخال البيانات أو تحميلها',
-      taxonomy_rationale_ar: `تم الربط وفق هيكل تصنيف المخاطر التشغيلية المعتمد بالبنك (${officialL1Ar} ← ${bestL3.l2_ar} ← ${bestL3.l3_ar || bestL3.name_ar}).`,
+      taxonomy_rationale_ar: `تم الربط وفق هيكل تصنيف المخاطر التشغيلية المعتمد بالبنك (${officialL1Ar} ← ${bestL3.l2_ar || 'تسجيل المعاملات وتنفيذها وصيانتها'} ← ${bestL3.l3_ar || bestL3.name_ar}).`,
       esg_pillar: esgPillarLabel,
-      esg_code: esgDriver,
+      esg_code: bestEsg?.esg_driver || l1Fallback.pillar || esgDriver,
       esg_pathway_ar: esgPathway,
       esg_catalogue_item: bestEsg?.risk_name_ar,
+      esg_catalogue_id: matchedCatalogueId,
     };
   }
 
@@ -1196,12 +1220,14 @@ export function matchBestTaxonomyAndEsg(
     taxonomy_l1_id: 'L1-08',
     taxonomy_l1_ar: '8_تنفيذ العمليات المصرفية',
     taxonomy_l2_id: 'L2-08-01',
-    taxonomy_l2_ar: 'تخطيط وتنفيذ المعاملات',
+    taxonomy_l2_ar: 'تسجيل المعاملات وتنفيذها وصيانتها',
     taxonomy_l3_id: 'L3-08-01-02',
-    taxonomy_l3_ar: 'أخطاء إدخال البيانات أو صيانتها أو تحميلها',
+    taxonomy_l3_ar: 'أخطاء إدخال البيانات أو تحميلها',
     taxonomy_rationale_ar: 'التصنيف المعتمد وفق كتالوج مخاطر التشغيل المصرفية (8_تنفيذ العمليات المصرفية).',
-    esg_pillar: esgPillarLabel,
-    esg_code: esgDriver,
-    esg_pathway_ar: esgPathway,
+    esg_pillar: 'G (حوكمة العمليات المصرفية والرقابة الداخلية)',
+    esg_code: 'G' as const,
+    esg_pathway_ar: '[32] ضعف حوكمة العمليات والرقابة والتقارير الرقابية (L1-08)',
+    esg_catalogue_item: 'ضعف حوكمة العمليات والرقابة والتقارير الرقابية',
+    esg_catalogue_id: 32,
   };
 }

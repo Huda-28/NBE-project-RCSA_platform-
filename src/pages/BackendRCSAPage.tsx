@@ -47,8 +47,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   const [activeSession, setActiveSession] = useState<any | null>(null);
   const [, setSessionLoading] = useState<boolean>(false);
 
-  // Fresh assessment is the default. Historical sources are opt-in, never silently mixed.
+  // Fresh assessment is the default. Historical sources or dual-source combined mode are explicit choices.
+  const [sourceMode, setSourceMode] = useState<'NEW_DOCS' | 'HISTORICAL' | 'COMBINED'>('NEW_DOCS');
   const [useHistoricalSources, setUseHistoricalSources] = useState(false);
+  const [customDocTypeLabel, setCustomDocTypeLabel] = useState('');
   const [uploadedInSession, setUploadedInSession] = useState<string[]>([]);
 
   // Unit context for steps 2-6
@@ -181,7 +183,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             }
             if (sess.calc_preview) setCalcPreview(sess.calc_preview);
             if (sess.uploaded_document_ids) setUploadedInSession(sess.uploaded_document_ids);
-            setUseHistoricalSources(Boolean(sess.use_historical_sources));
+            const useHist = Boolean(sess.use_historical_sources);
+            setUseHistoricalSources(useHist);
+            setSourceMode(sess.workflow_mode === 'UPDATE' ? 'HISTORICAL' : useHist ? 'COMBINED' : 'NEW_DOCS');
           }
         })
         .catch((err) => console.error('Failed to load initial session:', err))
@@ -207,12 +211,18 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     }
   }, [selectedBU, loadGuidedContext]);
 
-  // Start new persistent workflow session (NEW or UPDATE mode)
-  const handleStartSession = async (mode: 'NEW' | 'UPDATE', baseId?: string) => {
+  // Start new persistent workflow session (NEW_DOCS, HISTORICAL/UPDATE, or COMBINED dual-source)
+  const handleStartSession = async (
+    mode: 'NEW' | 'UPDATE',
+    baseId?: string,
+    nextSourceMode?: 'NEW_DOCS' | 'HISTORICAL' | 'COMBINED'
+  ) => {
     if (!token || !selectedBU) return;
     setSessionLoading(true);
+    const resolvedSourceMode = nextSourceMode || (mode === 'UPDATE' ? 'HISTORICAL' : 'NEW_DOCS');
+    const useHist = resolvedSourceMode === 'HISTORICAL' || resolvedSourceMode === 'COMBINED';
     try {
-      const chosenBase = mode === 'UPDATE' ? baseId || baseAssessmentId || undefined : undefined;
+      const chosenBase = useHist ? baseId || baseAssessmentId || undefined : undefined;
       const res = await fetch('/api/workflow/sessions', {
         method: 'POST',
         headers: {
@@ -223,10 +233,12 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           unit_id: selectedBU,
           workflow_mode: mode,
           base_assessment_id: chosenBase,
-          session_title: `${mode === 'NEW' ? 'تقييم جديد' : 'تحديث تقييم معتمد'} - ${
-            unitContext?.unit?.name_ar || selectedBU
-          }`,
-          use_historical_sources: mode === 'UPDATE',
+          session_title:
+            resolvedSourceMode === 'COMBINED'
+              ? `تقييم جديد (مستندات جديدة + بيانات الوحدة السابقة) - ${unitContext?.unit?.name_ar || selectedBU}`
+              : `${mode === 'NEW' ? 'تقييم جديد' : 'تحديث تقييم معتمد'} - ${unitContext?.unit?.name_ar || selectedBU}`,
+          use_historical_sources: useHist,
+          preload_baseline_risks: resolvedSourceMode === 'COMBINED' || mode === 'UPDATE',
         }),
       });
       const body = await res.json();
@@ -235,6 +247,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       setSessionId(sess.id);
       setActiveSession(sess);
       setWorkflowMode(sess.workflow_mode);
+      setSourceMode(resolvedSourceMode);
       if (sess.base_assessment_id) setBaseAssessmentId(sess.base_assessment_id);
       setCandidateRisks(sess.candidate_risks || []);
       setCalcPreview(null);
@@ -268,7 +281,9 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
     setCandidateRisks(sess.candidate_risks || []);
     if (sess.calc_preview) setCalcPreview(sess.calc_preview);
     setUploadedInSession(sess.uploaded_document_ids || []);
-    setUseHistoricalSources(Boolean(sess.use_historical_sources));
+    const useHist = Boolean(sess.use_historical_sources);
+    setUseHistoricalSources(useHist);
+    setSourceMode(sess.workflow_mode === 'UPDATE' ? 'HISTORICAL' : useHist ? 'COMBINED' : 'NEW_DOCS');
     onNavigate?.(
       {
         page: 'backend-rcsa',
@@ -352,8 +367,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          doc_type: docType,
-          title_ar: docTitleAr.trim() || selectedFile.name,
+          doc_type: docType === 'OTHER' ? 'SOP' : docType,
+          title_ar:
+            (docType === 'OTHER' && customDocTypeLabel.trim() ? `[${customDocTypeLabel.trim()}] ` : '') +
+            (docTitleAr.trim() || selectedFile.name),
           file_name: selectedFile.name,
           mime_type: selectedFile.type || `application/${ext || 'octet-stream'}`,
           text_content: textContent,
@@ -548,13 +565,16 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
       {/* Stepper Progress Bar */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#DCDAD5] shadow-xs">
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6] p-3 text-xs">
+        <div className="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6] p-3 text-xs" data-testid="assessment-source-mode-bar">
           <span className="font-bold text-[#09331F]">مصدر التقييم:</span>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
-              checked={!useHistoricalSources}
+              data-testid="source-mode-new-docs"
+              checked={sourceMode === 'NEW_DOCS'}
               onChange={() => {
+                setSourceMode('NEW_DOCS');
+                setWorkflowMode('NEW');
                 setUseHistoricalSources(false);
                 setCandidateRisks([]);
                 setCalcPreview(null);
@@ -566,14 +586,32 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
-              checked={useHistoricalSources}
+              data-testid="source-mode-historical"
+              checked={sourceMode === 'HISTORICAL'}
               onChange={() => {
+                setSourceMode('HISTORICAL');
+                setWorkflowMode('UPDATE');
                 setUseHistoricalSources(true);
                 setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
                 setCalcPreview(null);
               }}
             />
             الاستعانة ببيانات الوحدة السابقة
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#006547]">
+            <input
+              type="radio"
+              data-testid="source-mode-combined"
+              checked={sourceMode === 'COMBINED'}
+              onChange={() => {
+                setSourceMode('COMBINED');
+                setWorkflowMode('NEW');
+                setUseHistoricalSources(true);
+                setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
+                setCalcPreview(null);
+              }}
+            />
+            مستندات جديدة + الاستعانة ببيانات الوحدة السابقة معاً
           </label>
         </div>
 
@@ -711,16 +749,18 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Option 1: New RCSA */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Option 1: New RCSA (New Docs Only) */}
                   <div
+                    data-testid="card-mode-new-docs"
                     onClick={() => {
                       setWorkflowMode('NEW');
+                      setSourceMode('NEW_DOCS');
                       setUseHistoricalSources(false);
-                      handleStartSession('NEW');
+                      handleStartSession('NEW', undefined, 'NEW_DOCS');
                     }}
                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      workflowMode === 'NEW'
+                      sourceMode === 'NEW_DOCS'
                         ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
                         : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
                     }`}
@@ -728,30 +768,32 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {workflowMode === 'NEW' && (
+                          {sourceMode === 'NEW_DOCS' && (
                             <div className="w-2 h-2 rounded-full bg-[#006547]" />
                           )}
                         </div>
                         <span className="text-xs font-bold text-[#09331F]">
-                          إنشاء تقييم جديد كلياً (New RCSA)
+                          مستندات جديدة فقط (New RCSA)
                         </span>
                       </div>
                       <span className="text-[10px] text-sky-800 font-bold">بداية نظيفة</span>
                     </div>
                     <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
-                      بدء تقييم جديد للوحدة؛ لا يتم نسخ أي مخاطر أو مستندات سابقة تلقائياً لضمان سلامة الأدلة.
+                      بدء تقييم جديد اعتماداً على المستندات والأدلة المرفوعة حديثاً دون استيراد مخاطر سابقة.
                     </p>
                   </div>
 
                   {/* Option 2: Update Existing Approved RCSA */}
                   <div
+                    data-testid="card-mode-historical"
                     onClick={() => {
                       setWorkflowMode('UPDATE');
+                      setSourceMode('HISTORICAL');
                       setUseHistoricalSources(true);
-                      handleStartSession('UPDATE');
+                      handleStartSession('UPDATE', undefined, 'HISTORICAL');
                     }}
                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      workflowMode === 'UPDATE'
+                      sourceMode === 'HISTORICAL'
                         ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
                         : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
                     }`}
@@ -759,21 +801,21 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {workflowMode === 'UPDATE' && (
+                          {sourceMode === 'HISTORICAL' && (
                             <div className="w-2 h-2 rounded-full bg-[#006547]" />
                           )}
                         </div>
                         <span className="text-xs font-bold text-[#09331F]">
-                          تحديث تقييم معتمد سابق (Update Existing RCSA)
+                          الاستعانة ببيانات الوحدة السابقة (Update)
                         </span>
                       </div>
                       <span className="text-[10px] text-[#006547] font-bold">تحديث دوري</span>
                     </div>
                     <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
-                      استيراد مخاطر وضوابط النسخة المعتمدة كنقطة انطلاق للمراجعة مع بقاء النسخة المعتمدة الأصلية غير قابلة للتغيير.
+                      استيراد مخاطر وضوابط النسخة المعتمدة وسجل الحوادث والتفتيش مع إبقاء النسخة الأصلية غير قابلة للتغيير.
                     </p>
 
-                    {workflowMode === 'UPDATE' && unitApprovedAssessments.length > 0 && (
+                    {(sourceMode === 'HISTORICAL' || sourceMode === 'COMBINED') && unitApprovedAssessments.length > 0 && (
                       <div
                         className="mt-3 pt-3 border-t border-[#E5E3DE] pr-6"
                         onClick={(e) => e.stopPropagation()}
@@ -784,9 +826,10 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                         <select
                           value={baseAssessmentId}
                           onChange={(e) => {
+                            if (e.target.value === 'OTHER') return;
                             const newBaseId = e.target.value;
                             setBaseAssessmentId(newBaseId);
-                            handleStartSession('UPDATE', newBaseId);
+                            handleStartSession(sourceMode === 'COMBINED' ? 'NEW' : 'UPDATE', newBaseId, sourceMode);
                           }}
                           className="w-full min-h-9 px-2.5 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
                         >
@@ -796,9 +839,43 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                               {a.version_number})
                             </option>
                           ))}
+                          <option value="OTHER">أخرى</option>
                         </select>
                       </div>
                     )}
+                  </div>
+
+                  {/* Option 3: Combined Dual-Source (New Documents + Historical Unit Data Together) */}
+                  <div
+                    data-testid="card-mode-combined"
+                    onClick={() => {
+                      setWorkflowMode('NEW');
+                      setSourceMode('COMBINED');
+                      setUseHistoricalSources(true);
+                      handleStartSession('NEW', undefined, 'COMBINED');
+                    }}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      sourceMode === 'COMBINED'
+                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
+                          {sourceMode === 'COMBINED' && (
+                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-[#09331F]">
+                          مستندات جديدة + بيانات الوحدة السابقة معاً
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-amber-800 font-bold">مصدر مزدوج</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
+                      الجمع بين رفع مستندات جديدة والاستعانة بمخاطر الوحدة السابقة وسجلات الحوادث والتفتيش في تقييم واحد متكامل.
+                    </p>
                   </div>
                 </div>
 
@@ -896,7 +973,17 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       <option value="AUDIT_REPORT">تقرير التفتيش والمراجعة الداخلية</option>
                       <option value="INCIDENT_LOG">سجل أحداث الخسائر والحوادث التشغيلية</option>
                       <option value="PREVIOUS_RCSA">سجل تقييم مخاطر سابق (RCSA)</option>
+                      <option value="OTHER">أخرى</option>
                     </select>
+                    {docType === 'OTHER' && (
+                      <input
+                        type="text"
+                        value={customDocTypeLabel}
+                        onChange={(e) => setCustomDocTypeLabel(e.target.value)}
+                        placeholder="حدد نوع المستند (أخرى)..."
+                        className="w-full min-h-9 mt-1.5 rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs text-slate-900"
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -1262,13 +1349,17 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                             </label>
                             <select
                               value={risk.frequency_score ?? ''}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                if (e.target.value === 'OTHER') {
+                                  handleUpdateCandidateRisk(rIdx, 'frequency_score', risk.frequency_score ?? 2);
+                                  return;
+                                }
                                 handleUpdateCandidateRisk(
                                   rIdx,
                                   'frequency_score',
                                   e.target.value === '' ? null : Number(e.target.value)
-                                )
-                              }
+                                );
+                              }}
                               className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs font-bold text-slate-900"
                             >
                               <option value="">-- اختر درجة التكرار --</option>
@@ -1277,6 +1368,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                               <option value={3}>3 — محتمل / نصف سنوي (معامل 2 سنوياً)</option>
                               <option value={4}>4 — متكرر / ربع سنوي (معامل 4 سنوياً)</option>
                               <option value={5}>5 — متكرر جداً / شهري (معامل 12 سنوياً)</option>
+                              <option value="OTHER">أخرى</option>
                             </select>
                           </div>
                         </div>
@@ -1339,7 +1431,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                         rIdx,
                                         cIdx,
                                         'design_classification',
-                                        e.target.value || null
+                                        e.target.value === 'OTHER' ? 'Preventive' : (e.target.value || null)
                                       )
                                     }
                                     className={`w-full min-h-9 mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
@@ -1352,6 +1444,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                     <option value="Preventive">وقائي (Preventive)</option>
                                     <option value="Detective">كاشف (Detective)</option>
                                     <option value="Corrective">تصحيحي (Corrective)</option>
+                                    <option value="OTHER">أخرى</option>
                                   </select>
                                 </div>
 
@@ -1369,7 +1462,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                         rIdx,
                                         cIdx,
                                         'automation_level',
-                                        e.target.value || null
+                                        e.target.value === 'OTHER' ? 'Manual' : (e.target.value || null)
                                       )
                                     }
                                     className={`w-full min-h-9 mt-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
@@ -1382,6 +1475,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                                     <option value="Automated">آلي بالكامل (Automated)</option>
                                     <option value="Semi-Automated">نصف آلي (Semi-Automated)</option>
                                     <option value="Manual">يدوي (Manual)</option>
+                                    <option value="OTHER">أخرى</option>
                                   </select>
                                 </div>
                               </div>

@@ -4263,6 +4263,7 @@ export function createGuidedAssessmentDraft(params: {
               ...p2cInputs,
               taxonomy_l1_ar: resolvedTaxL1,
               financial_rating: persistedCalcOutput?.annualized_financial_rating || 'M',
+              residual_financial_rating: persistedCalcOutput?.continuous_residual_rating || null,
             },
           });
           db.prepare(`

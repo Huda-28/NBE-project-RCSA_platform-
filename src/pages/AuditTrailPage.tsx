@@ -99,7 +99,7 @@ export const AuditTrailPage: React.FC<AuditTrailPageProps> = ({ initialUnitId })
             <span className="text-xs text-slate-700 font-bold shrink-0">نوع الإجراء:</span>
             <select
               value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
+              onChange={(e) => setActionFilter(e.target.value === 'OTHER' ? 'ALL' : e.target.value)}
               className="w-full sm:w-auto min-h-10 px-3 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
             >
               <option value="ALL">كافة الإجراءات الرقابية والتدقيقية</option>
@@ -130,6 +130,7 @@ export const AuditTrailPage: React.FC<AuditTrailPageProps> = ({ initialUnitId })
                     </option>
                   );
                 })}
+              <option value="OTHER">أخرى</option>
             </select>
           </div>
         </div>

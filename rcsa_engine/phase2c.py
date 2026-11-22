@@ -54,9 +54,17 @@ def evaluate_phase2c(data: Mapping[str, Any]) -> Dict[str, Any]:
     financial = data.get("financial_rating")
     if financial not in (*RANK.keys(), "PENDING", None):
         raise InputValidationError("financial_rating must be L/M/H/VH/C or PENDING")
+
+    residual_fin = data.get("residual_financial_rating")
+    if residual_fin not in (*RANK.keys(), "PENDING", None):
+        residual_fin = None
+
+    effective_fin = residual_fin if residual_fin in RANK else financial
+    key_risk_basis = "RESIDUAL_FINANCIAL_AND_NFI" if residual_fin in RANK else "FINANCIAL_AND_NFI"
+
     key_risk = "YES" if any(
-        v in ("H", "VH", "C") for v in (financial, overall, *nfi_values.values())
-    ) else "PENDING" if (financial is None or financial == "PENDING" or overall == "PENDING") else "NO"
+        v in ("H", "VH", "C") for v in (effective_fin, overall, *nfi_values.values())
+    ) else "PENDING" if (effective_fin is None or effective_fin == "PENDING" or overall == "PENDING") else "NO"
 
     esg = data.get("esg") or {}
     if not isinstance(esg, dict):
@@ -98,17 +106,30 @@ def evaluate_phase2c(data: Mapping[str, Any]) -> Dict[str, Any]:
     if choice == 1 and corrective:
         raise InputValidationError("mandatory corrective action must be empty for an adequate-control accepted risk")
 
+    matrix_alignment_warning_ar = None
+    if choice in (3, 4) and effective_fin == "L" and overall in ("-", "L", "M"):
+        matrix_alignment_warning_ar = (
+            "تنبيه توافق مصفوفة المخاطر: الأثر المالي المتبقي منخفض (L) والأثر غير المالي لا يتجاوز (M)؛ "
+            "وفق مصفوفة المخاطر المعتمدة يُرجى التحقق من تصنيف القبول (الفئة 1 أو 2 مقبولة ما لم يوجد قصور جوهري غير مغطى)."
+        )
+
     return {
         "status": "COMPLETE" if not pending else "PENDING_INPUT",
         "nfi_dimensions": nfi_values,
         "nfi_overall": overall,
         "key_risk": key_risk,
+        "key_risk_basis": key_risk_basis,
+        "key_risk_rule_ar": (
+            "تُحدّد المخاطرة كـ Key Risk (نعم) إذا كان الأثر المالي المتبقي بعد الضوابط أو أي بُعد من أبعاد الأثر غير المالي "
+            "(تقديم الخدمة، السمعة، الجهات الرقابية، الإجراءات القضائية) بدرجة H أو VH أو C."
+        ),
         "esg_status": esg_status,
         "esg_pillars": pillars,
         "esg_catalogue_matches": esg_matches,
         "esg_taxonomy_override_required": any(m["taxonomy_mismatch"] for m in esg_matches),
         "acceptance_class": choice,
         "acceptance_label_ar": ACCEPTANCE.get(choice),
+        "matrix_alignment_warning_ar": matrix_alignment_warning_ar,
         "pending_inputs": pending,
         "ready_for_export": not pending and financial in RANK and key_risk in ("YES", "NO"),
     }

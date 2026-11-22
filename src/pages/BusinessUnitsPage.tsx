@@ -637,7 +637,7 @@ export const BusinessUnitsPage: React.FC<BusinessUnitsPageProps> = ({
                       </label>
                       <select
                         value={baseCompareId}
-                        onChange={(e) => setBaseCompareId(e.target.value)}
+                        onChange={(e) => setBaseCompareId(e.target.value === 'OTHER' ? (unitHistory.assessments[0]?.id || '') : e.target.value)}
                         className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
                       >
                         {unitHistory.assessments.map((a: any) => (
@@ -645,6 +645,7 @@ export const BusinessUnitsPage: React.FC<BusinessUnitsPageProps> = ({
                             {a.timestamps?.primary_version_label_ar || a.clean_title_ar}
                           </option>
                         ))}
+                        <option value="OTHER">أخرى</option>
                       </select>
                     </div>
 
@@ -654,7 +655,7 @@ export const BusinessUnitsPage: React.FC<BusinessUnitsPageProps> = ({
                       </label>
                       <select
                         value={targetCompareId}
-                        onChange={(e) => setTargetCompareId(e.target.value)}
+                        onChange={(e) => setTargetCompareId(e.target.value === 'OTHER' ? (unitHistory.assessments[unitHistory.assessments.length - 1]?.id || '') : e.target.value)}
                         className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
                       >
                         {unitHistory.assessments.map((a: any) => (
@@ -662,6 +663,7 @@ export const BusinessUnitsPage: React.FC<BusinessUnitsPageProps> = ({
                             {a.timestamps?.primary_version_label_ar || a.clean_title_ar}
                           </option>
                         ))}
+                        <option value="OTHER">أخرى</option>
                       </select>
                     </div>
 

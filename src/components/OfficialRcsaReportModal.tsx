@@ -43,7 +43,7 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
   const [statusToast, setStatusToast] = useState<string | null>(null);
   const [reportModel, setReportModel] = useState<OfficialRcsaReportModel | null>(null);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
-  const [theme, setTheme] = useState<'reference_burgundy' | 'nbe_emerald'>('reference_burgundy');
+  const [theme, setTheme] = useState<'reference_burgundy' | 'nbe_emerald'>('nbe_emerald');
   const [includeExtendedColumns, setIncludeExtendedColumns] = useState<boolean>(false);
   const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -257,17 +257,6 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
               <Palette className="w-3.5 h-3.5 text-[#F79C1E]" />
               <button
                 type="button"
-                onClick={() => setTheme('reference_burgundy')}
-                className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
-                  theme === 'reference_burgundy'
-                    ? 'bg-[#7A1C1C] text-white border border-white/40'
-                    : 'text-emerald-100 hover:text-white'
-                }`}
-              >
-                النموذج المرجعي (Burgundy)
-              </button>
-              <button
-                type="button"
                 onClick={() => setTheme('nbe_emerald')}
                 className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
                   theme === 'nbe_emerald'
@@ -275,7 +264,18 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
                     : 'text-emerald-100 hover:text-white'
                 }`}
               >
-                هوية البنك (NBE Green)
+                هوية البنك الأخضر (الافتراضي)
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('reference_burgundy')}
+                className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                  theme === 'reference_burgundy'
+                    ? 'bg-[#7A1C1C] text-white border border-white/40'
+                    : 'text-emerald-100 hover:text-white'
+                }`}
+              >
+                النموذج الأرشيفي (Burgundy)
               </button>
             </div>
 

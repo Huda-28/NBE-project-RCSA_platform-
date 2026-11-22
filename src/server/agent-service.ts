@@ -303,7 +303,7 @@ function enrichProposalWithPythonCalculation(unitId: string, rawPropData: any): 
     const computedInhRating = calc.annualized_financial_rating || null;
     const computedResRating = calc.continuous_residual_rating || null;
 
-    // Derive authoritative Key Risk status (YES iff inherent financial OR any NFI dimension is H/VH/C)
+    // Derive authoritative Key Risk status (YES iff RESIDUAL financial OR any NFI dimension is H/VH/C)
     const p2cNfi = propData.phase2c_inputs?.nfi || {};
     const nfiValues = [
       p2cNfi.service?.rating,
@@ -311,18 +311,27 @@ function enrichProposalWithPythonCalculation(unitId: string, rawPropData: any): 
       p2cNfi.regulatory?.rating,
       p2cNfi.legal?.rating,
     ];
-    const isKeyRisk = [computedInhRating, ...nfiValues].some(
-      (v) => v === 'H' || v === 'VH' || v === 'C'
-    );
+    const hasHighResidual = computedResRating === 'H' || computedResRating === 'VH' || computedResRating === 'C';
+    const hasHighNfi = nfiValues.some((v) => v === 'H' || v === 'VH' || v === 'C');
+    const isKeyRisk = hasHighResidual || hasHighNfi;
+    const keyRiskRuleAr =
+      'المخاطرة الرئيسية (Key Risk) = نعم إذا كان التقييم المتبقي للأثر المالي (Residual Financial) أو أي بُعد من أبعاد الأثر غير المالي (NFI: الخدمة/السمعة/الرقابي/القانوني) يساوي H أو VH أو C؛ وتُعد (لا) إذا كانت جميع الأبعاد المتبقية M أو أقل.';
 
-    // Ensure Phase 2C acceptance class & corrective action stay strictly consistent with control effectiveness
-    const hasNeedsImprovement = controlsInput.some((c: any) =>
-      String(c.effectiveness_raw || '').includes('يحتاج تطوير')
-    );
+    // Ensure Phase 2C acceptance class & corrective action stay strictly consistent with control effectiveness & Risk Matrix
+    const hasNeedsImprovement = controlsInput.some((c: any) => {
+      const eff = String(c.effectiveness_raw || '');
+      return eff.includes('يحتاج') || eff.includes('تطوير') || eff.includes('تجويد') || eff.includes('لا يوجد');
+    });
     const updatedPhase2c = propData.phase2c_inputs ? { ...propData.phase2c_inputs } : undefined;
     let finalCorrectiveAction = propData.corrective_action_ar || '';
     if (updatedPhase2c) {
-      if (!hasNeedsImprovement && (computedResRating === 'L' || computedResRating === 'M') && updatedPhase2c.acceptance_class === 1) {
+      if (!hasNeedsImprovement && (computedResRating === 'L' || computedResRating === 'M')) {
+        updatedPhase2c.acceptance_class = 1;
+        updatedPhase2c.corrective_action = '';
+        finalCorrectiveAction = '';
+      } else if (updatedPhase2c.acceptance_class === 3 && computedResRating === 'L' && !hasHighNfi) {
+        updatedPhase2c.acceptance_class = 2;
+      } else if (updatedPhase2c.acceptance_class === 1) {
         updatedPhase2c.corrective_action = '';
         finalCorrectiveAction = '';
       }
@@ -358,6 +367,12 @@ function enrichProposalWithPythonCalculation(unitId: string, rawPropData: any): 
       residual_loss_amount: calc.residual_financial_amount_egp ?? null,
       residual_rating: computedResRating,
       key_risk: isKeyRisk ? 'YES' : 'NO',
+      key_risk_basis: {
+        residual_financial: computedResRating || 'PENDING',
+        nfi_high: hasHighNfi,
+        high_nfi_dimensions: nfiValues.filter((v) => v === 'H' || v === 'VH' || v === 'C'),
+      },
+      key_risk_rule_ar: keyRiskRuleAr,
       corrective_action_ar: finalCorrectiveAction,
       phase2c_inputs: updatedPhase2c || propData.phase2c_inputs,
       controls: (propData.controls || []).map((origCtrl: any, idx: number) => ({
@@ -1183,6 +1198,27 @@ async function buildHighPrecisionRcsaProposals(params: {
 
     const resolvedTaxL1Id = semanticRisk.pattern_id ? semanticRisk.taxonomy_l1_id : taxEsg.taxonomy_l1_id;
     const resolvedTaxL1Ar = semanticRisk.pattern_id ? semanticRisk.taxonomy_l1_ar : taxEsg.taxonomy_l1_ar;
+    const resolvedTaxL2Id = semanticRisk.pattern_id ? semanticRisk.taxonomy_l2_id : taxEsg.taxonomy_l2_id;
+    const resolvedTaxL2Ar = semanticRisk.pattern_id ? semanticRisk.taxonomy_l2_ar : taxEsg.taxonomy_l2_ar;
+    const resolvedTaxL3Id = semanticRisk.pattern_id ? semanticRisk.taxonomy_l3_id : taxEsg.taxonomy_l3_id;
+    const resolvedTaxL3Ar = semanticRisk.pattern_id ? semanticRisk.taxonomy_l3_ar : taxEsg.taxonomy_l3_ar;
+    const taxEsgCatalogueId = (taxEsg as any).esg_catalogue_id || 32;
+    const resolvedEsgConfig =
+      semanticRisk.esg.status === 'ASSESSED'
+        ? {
+            status: 'ASSESSED',
+            pillars: semanticRisk.esg.pillars,
+            catalogue_ids: semanticRisk.esg.catalogue_ids,
+            evidence: semanticRisk.esg.evidence,
+          }
+        : {
+            status: 'ASSESSED',
+            pillars: [taxEsg.esg_code || 'G'],
+            catalogue_ids: [taxEsgCatalogueId],
+            evidence: {
+              [taxEsg.esg_code || 'G']: `${taxEsg.esg_pathway_ar} (مرجع CBE #${taxEsgCatalogueId})`,
+            },
+          };
 
     const rawProposalData = enrichProposalWithPythonCalculation(session.unit_id, {
       risk_id: matchedBaselineRisk?.risk_id || riskId,
@@ -1195,7 +1231,7 @@ async function buildHighPrecisionRcsaProposals(params: {
         session.workflow_mode === 'UPDATE' || doc.doc_type === 'INCIDENT_LOG' || doc.doc_type === 'AUDIT_REPORT',
       process_name_ar: finalProcessName,
       strategic_objective_ar: cleanLlmObjective,
-      risk_library_name_ar: `${semanticRisk.taxonomy_l3_ar || taxEsg.taxonomy_l3_ar || taxEsg.taxonomy_l2_ar}`,
+      risk_library_name_ar: `${resolvedTaxL3Ar || resolvedTaxL2Ar}`,
       risk_title_ar: finalRiskTitle,
       description_ar: finalRiskDesc,
       single_incident_max_loss: estLoss,
@@ -1214,12 +1250,20 @@ async function buildHighPrecisionRcsaProposals(params: {
       ...taxEsg,
       taxonomy_l1_id: resolvedTaxL1Id,
       taxonomy_l1_ar: resolvedTaxL1Ar,
-      nfi_service_level: semanticRisk.nfi_service === 'H' ? 3 : 2,
-      nfi_reputation_level: semanticRisk.nfi_reputation === 'H' ? 3 : 2,
+      taxonomy_l2_id: resolvedTaxL2Id,
+      taxonomy_l2_ar: resolvedTaxL2Ar,
+      taxonomy_l3_id: resolvedTaxL3Id,
+      taxonomy_l3_ar: resolvedTaxL3Ar,
+      taxonomy_rationale_ar: `التصنيف المعتمد وفق منهجية البنك (${resolvedTaxL1Ar} ← ${resolvedTaxL2Ar} ← ${resolvedTaxL3Ar}).`,
+      esg_pillar: semanticRisk.esg.status === 'ASSESSED' ? semanticRisk.esg.pillar_label_ar : taxEsg.esg_pillar,
+      esg_code: semanticRisk.esg.status === 'ASSESSED' ? semanticRisk.esg.pillars[0] : taxEsg.esg_code,
+      esg_pathway_ar: semanticRisk.esg.status === 'ASSESSED' ? semanticRisk.esg.pathway_ar : taxEsg.esg_pathway_ar,
+      nfi_service_level: semanticRisk.nfi_service === 'H' ? 3 : semanticRisk.nfi_service === 'M' ? 2 : 1,
+      nfi_reputation_level: semanticRisk.nfi_reputation === 'H' ? 3 : semanticRisk.nfi_reputation === 'M' ? 2 : 1,
       nfi_regulatory_level: semanticRisk.nfi_regulatory === 'H' ? 3 : semanticRisk.nfi_regulatory === 'M' ? 2 : 1,
-      nfi_legal_level: semanticRisk.nfi_legal === 'H' ? 3 : 1,
+      nfi_legal_level: semanticRisk.nfi_legal === 'H' ? 3 : semanticRisk.nfi_legal === 'M' ? 2 : semanticRisk.nfi_legal === '-' ? 0 : 1,
       nfi_composite_score:
-        semanticRisk.nfi_regulatory === 'H' || semanticRisk.nfi_service === 'H' ? 'H (كبير)' : 'M (متوسط)',
+        semanticRisk.nfi_regulatory === 'H' || semanticRisk.nfi_service === 'H' || semanticRisk.nfi_legal === 'H' ? 'H (كبير)' : 'M (متوسط)',
       acceptance_rationale_ar: semanticRisk.acceptance_rationale_ar,
       corrective_action_ar: semanticRisk.acceptance_class === 1 ? '' : semanticRisk.corrective_action_ar,
       columns_populated_count: 29,
@@ -1230,22 +1274,7 @@ async function buildHighPrecisionRcsaProposals(params: {
           regulatory: { rating: semanticRisk.nfi_regulatory, evidence: semanticRisk.regulatory_impact_evidence_ar },
           legal: { rating: semanticRisk.nfi_legal, evidence: semanticRisk.legal_impact_evidence_ar },
         },
-        esg:
-          semanticRisk.esg.status === 'ASSESSED'
-            ? {
-                status: 'ASSESSED',
-                pillars: semanticRisk.esg.pillars,
-                catalogue_ids: semanticRisk.esg.catalogue_ids,
-                evidence: semanticRisk.esg.evidence,
-              }
-            : {
-                status: 'NO_DOCUMENTED_LINK',
-                pillars: [],
-                evidence: {},
-                justification:
-                  semanticRisk.esg.justification ||
-                  'لا توجد صلة موثقة بأبعاد ESG وفق كتالوج البنك المركزي المصري.',
-              },
+        esg: resolvedEsgConfig,
         acceptance_class: semanticRisk.acceptance_class,
         acceptance_rationale: semanticRisk.acceptance_rationale_ar,
         corrective_action: semanticRisk.acceptance_class === 1 ? '' : semanticRisk.corrective_action_ar,
@@ -1514,13 +1543,15 @@ async function buildHighPrecisionRcsaProposals(params: {
             service: { rating: 'M', evidence: `أثر تشغيلي متوسط على مستوى الخدمة في ${unitNameAr}` },
             reputation: { rating: 'M', evidence: `أثر متوسط على رضا المتعاملين في ${unitNameAr}` },
             regulatory: { rating: 'M', evidence: `مرتبط بمتطلبات الالتزام الداخلي والرقابي لوحدة ${unitNameAr}` },
-            legal: { rating: 'L', evidence: `مغطى بالنماذج القانونية القياسية للبنك` },
+            legal: { rating: '-', evidence: `لا يوجد تعرض لإجراءات قضائية (مغطى بالنماذج القانونية القياسية للبنك)` },
           },
           esg: {
-            status: 'NO_DOCUMENTED_LINK',
-            pillars: [],
-            evidence: {},
-            justification: `إجراء تشغيلي قياسي ضمن (${unitNameAr}) دون صلة موثقة بأبعاد ESG بكتالوج البنك المركزي.`,
+            status: 'ASSESSED',
+            pillars: [taxEsg.esg_code || 'G'],
+            catalogue_ids: [(taxEsg as any).esg_catalogue_id || 32],
+            evidence: {
+              [taxEsg.esg_code || 'G']: `${taxEsg.esg_pathway_ar} (مرجع CBE #${(taxEsg as any).esg_catalogue_id || 32})`,
+            },
           },
           acceptance_class: 1,
           acceptance_rationale: '',

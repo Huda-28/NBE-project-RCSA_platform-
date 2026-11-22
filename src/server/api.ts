@@ -655,8 +655,9 @@ apiRouter.post('/hitl/assessments/:id/risks/:riskId/phase2c', authenticate, (req
       .get(req.params.id, req.params.riskId) as any;
     const selectedL1 = JSON.parse(riskInput.current_draft_input_json).taxonomy_l1_ar || null;
     const correctFinancialRating = calc.annualized_financial_rating || 'PENDING';
+    const correctResidualRating = calc.continuous_residual_rating || null;
     // Taxonomy and financial results must come from persisted risk data, not the request body.
-    const output = invokePhase2C({ ...inputs, taxonomy_l1_ar: selectedL1, financial_rating: correctFinancialRating });
+    const output = invokePhase2C({ ...inputs, taxonomy_l1_ar: selectedL1, financial_rating: correctFinancialRating, residual_financial_rating: correctResidualRating });
     const prior = db.prepare('SELECT inputs_json, result_json FROM phase2c_risk_assessments WHERE assessment_id = ? AND risk_id = ?')
       .get(req.params.id, req.params.riskId) as any;
     runInTransaction(() => {
@@ -707,6 +708,7 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
       if (!saved) {
         const inhRating = c.annualized_financial_rating || 'H';
         const resRating = c.continuous_residual_rating || 'L';
+        const nfiHigh = ['service', 'reputation', 'regulatory', 'legal'].some((dim) => ['H', 'VH', 'C'].includes(String(d[`nfi_${dim}`] || '')));
         phase2c[risk.risk_id] = {
           inputs: {
             corrective_action: d.active_corrective_action_ar || '',
@@ -714,7 +716,7 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
           },
           result: {
             ready_for_export: true,
-            key_risk: d.inherent_nfi_applicable === 'YES' || ['H', 'VH', 'C'].includes(inhRating) ? 'YES' : 'NO',
+            key_risk: d.inherent_nfi_applicable || (['H', 'VH', 'C'].includes(resRating) || nfiHigh ? 'YES' : 'NO'),
             nfi_dimensions: {
               service: d.nfi_service || '-',
               reputation: d.nfi_reputation || '-',
@@ -732,7 +734,8 @@ apiRouter.get('/hitl/assessments/:id/export-xlsx', authenticate, (req: Authentic
       }
       const inputs = JSON.parse(saved.inputs_json);
       const output = invokePhase2C({ ...inputs, taxonomy_l1_ar: risk.current_draft_input?.taxonomy_l1_ar,
-        financial_rating: risk.calculated_output.annualized_financial_rating || 'PENDING' });
+        financial_rating: risk.calculated_output.annualized_financial_rating || 'PENDING',
+        residual_financial_rating: risk.calculated_output.continuous_residual_rating || null });
       if (isApproved && !output.ready_for_export)
         return res.status(409).json({ error: `المخاطرة ${risk.risk_id} غير جاهزة للتصدير.` });
       phase2c[risk.risk_id] = { inputs, result: output };
@@ -869,6 +872,7 @@ function assembleOfficialReportDataForAssessment(assessmentId: string): {
         ...inputs,
         taxonomy_l1_ar: risk.current_draft_input?.taxonomy_l1_ar,
         financial_rating: risk.calculated_output?.annualized_financial_rating || 'PENDING',
+        residual_financial_rating: risk.calculated_output?.continuous_residual_rating || null,
       });
       phase2c[risk.risk_id] = { inputs, result: output };
     } catch {
@@ -899,7 +903,7 @@ apiRouter.get('/hitl/assessments/:id/export-report-model', authenticate, (req: A
     if (!isUserAuthorizedForBU(req.user!, bundle.assessment.unit_id, ['MAKER', 'CHECKER', 'AUDITOR', 'RISK_ADMIN'])) {
       return res.status(403).json({ error: 'لا تملك حق الاطلاع على هذه الوحدة التنظيمية.' });
     }
-    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
+    const theme = req.query.theme === 'reference_burgundy' ? 'reference_burgundy' : 'nbe_emerald';
     const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
     const html = buildOfficialRcsaReportHtml(bundle.reportModel, {
       theme,
@@ -929,7 +933,7 @@ apiRouter.get('/hitl/assessments/:id/export-pdf', authenticate, (req: Authentica
       return res.status(409).json({ error: 'لا يوجد تقييم مخاطر صالح للتصدير.' });
     }
 
-    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
+    const theme = req.query.theme === 'reference_burgundy' ? 'reference_burgundy' : 'nbe_emerald';
     const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
     const html = buildOfficialRcsaReportHtml(reportModel, {
       theme,
@@ -1233,7 +1237,7 @@ apiRouter.post('/guided-rcsa/units/:unitId/create-draft', authenticate, (req: Au
 
 apiRouter.post('/workflow/sessions', authenticate, (req: AuthenticatedRequest, res) => {
   try {
-    const { unit_id, workflow_mode, base_assessment_id, session_title, use_historical_sources } = req.body;
+    const { unit_id, workflow_mode, base_assessment_id, session_title, use_historical_sources, preload_baseline_risks } = req.body;
     if (!unit_id || !workflow_mode || !['NEW', 'UPDATE'].includes(workflow_mode)) {
       return res.status(400).json({ error: 'معرف الوحدة ونمط التقييم (NEW أو UPDATE) مطلوبان.' });
     }
@@ -1244,6 +1248,7 @@ apiRouter.post('/workflow/sessions', authenticate, (req: AuthenticatedRequest, r
       baseAssessmentId: base_assessment_id,
       sessionTitle: session_title,
       useHistoricalSources: use_historical_sources,
+      preloadBaselineRisks: preload_baseline_risks,
     });
     res.status(201).json({ session });
   } catch (err: any) {

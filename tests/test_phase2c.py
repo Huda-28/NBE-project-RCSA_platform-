@@ -33,5 +33,12 @@ class Phase2CValidationTests(unittest.TestCase):
     def test_no_mandatory_action_for_adequate_control(self):
         p=self.base(); p['corrective_action']='تطوير مطلوب'
         with self.assertRaises(InputValidationError): evaluate_phase2c(p)
+    def test_residual_financial_determines_key_risk(self):
+        p=self.base(); p['financial_rating']='H'; p['residual_financial_rating']='L'
+        r=evaluate_phase2c(p)
+        self.assertEqual(r['key_risk'], 'NO')
+        self.assertEqual(r['key_risk_basis'], 'RESIDUAL_FINANCIAL_AND_NFI')
+        p2=self.base(); p2['financial_rating']='L'; p2['residual_financial_rating']='H'
+        self.assertEqual(evaluate_phase2c(p2)['key_risk'], 'YES')
 
 if __name__=='__main__': unittest.main()
