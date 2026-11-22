@@ -23,6 +23,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
+import { ExecutiveAnalyticsSection } from '../components/ExecutiveAnalyticsSection.js';
 
 interface DashboardPageProps {
   onNavigate?: (next: Partial<AppNavigationState> & { page: PageId }) => void;
@@ -219,6 +220,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
+      {/* Interactive Executive Analytics & 5x5 NBE Risk Heatmap */}
+      {data.executive_analytics && (
+        <ExecutiveAnalyticsSection
+          units={data.bu_summaries.map((s) => s.unit)}
+          selectedUnitId={selectedBU}
+          onSelectUnitFilter={(id) => setSelectedBU(id)}
+          analyticsData={data.executive_analytics}
+          onNavigate={onNavigate}
+        />
+      )}
+
       {/* Business Units Comparison Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {data.bu_summaries.map((rawSummary) => {
@@ -232,8 +244,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           return (
             <div
               key={bu.id}
-              onClick={() => setSelectedBU(bu.id)}
-              className={`rounded-2xl border transition-all cursor-pointer p-4 sm:p-5 flex flex-col justify-between ${
+              className={`rounded-2xl border transition-all p-4 sm:p-5 flex flex-col justify-between ${
                 isSelected
                   ? 'bg-white border-[#006547] ring-2 ring-[#006547]/20 shadow-md'
                   : 'bg-white border-[#DCDAD5] hover:border-[#006547]/50 shadow-xs'
@@ -242,7 +253,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               <div>
                 {/* BU Header */}
                 <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#E5E3DE]">
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBU(bu.id)}
+                    aria-pressed={isSelected}
+                    className="flex items-center gap-2.5 min-w-0 text-right cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006547] rounded-xl"
+                  >
                     <div
                       className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
                         isSelected
@@ -256,7 +272,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                       <h3 className="text-sm font-extrabold text-[#09331F] truncate">{bu.name_ar}</h3>
                       <div className="text-[10px] text-slate-500 font-mono tabular-nums">{bu.code}</div>
                     </div>
-                  </div>
+                  </button>
                   <span
                     className={`text-[11px] font-bold shrink-0 ${
                       approvedAsm

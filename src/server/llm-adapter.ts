@@ -661,3 +661,218 @@ export async function generateStructuredRcsaProposalsWithLlm(params: {
   return null;
 }
 
+export interface ProposalQaCritique {
+  qa_passed: boolean;
+  qa_score_pct: number;
+  checked_rules_count: number;
+  passed_rules_count: number;
+  auto_repaired_issues: string[];
+  warnings: string[];
+  loss_calibration_alert?: string;
+}
+
+const VALID_STRATEGIC_OBJECTIVES_SET = new Set([
+  'التركيز على العملاء و تعظيم الأرباح',
+  'التحول الرقمي و تفعيل الذكاء الاصطناعي',
+  'النمو المربح و المستدام',
+  'الكفاءة و الامان والمرونة',
+  'الشمول المالي',
+]);
+
+function qaStripLocationNoise(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/صفحة\s*\d+\s*[•·\-–—|]*\s*مقطع\s*\(\s*\d+\s*\)\s*:?\s*/gi, '')
+    .replace(/مقطع\s*(?:رقم)?\s*\(?\d+\)?\s*:?\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function qaStripMechanismLeakage(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/ضابط\s+رقابي\s+(?:وقائي|مانع|كاشف|تصحيحي)\s*[-–—:]*\s*(?:آلي|الي|شبه آلي|نصف آلي|يدوي)?\s*[:\-–—]?\s*/gi, '')
+    .replace(/\((?:Preventive|Detective|Corrective|Automated|Semi-Automated|Manual)\)/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Self-Critique QA Evaluator Pass (NBE 8-Page Methodology Compliance & Loss Calibration):
+ * Audits and auto-repairs extracted RCSA risk/control fields before presenting to the Maker,
+ * while strictly keeping ratings, RRF, and approvals under deterministic Python engine ownership.
+ */
+export function evaluateAndRefineRcsaProposalQa<T extends Record<string, any>>(
+  proposalData: T,
+  context?: { historicalMaxLossEgp?: number; incidentSummaryAr?: string }
+): T & { qa_critique: ProposalQaCritique } {
+  const repaired: Record<string, any> = { ...proposalData };
+  const autoRepairedIssues: string[] = [];
+  const warnings: string[] = [];
+  let checkedRules = 0;
+  let passedRules = 0;
+
+  // Rule 1: No "احتمال..." prefix in risk description or title
+  checkedRules++;
+  const rawDesc = String(repaired.description_ar || repaired.risk_description || '').trim();
+  if (/^(?:احتمال|احتمالية)\s+/i.test(rawDesc)) {
+    const fixedDesc = rawDesc.replace(/^(?:احتمال|احتمالية)\s+/i, '').trim();
+    repaired.description_ar = fixedDesc;
+    autoRepairedIssues.push('إزالة كلمة "احتمال" من بداية وصف المخاطرة لصياغة الحدث التشغيلي مباشرة.');
+  }
+  passedRules++;
+
+  // Rule 2: No PDF page/chunk location markers leaked into titles, process, or descriptions
+  checkedRules++;
+  const cleanTitle = qaStripLocationNoise(String(repaired.risk_title_ar || ''));
+  const cleanProc = qaStripLocationNoise(String(repaired.process_name_ar || ''));
+  if (cleanTitle !== String(repaired.risk_title_ar || '').trim()) {
+    repaired.risk_title_ar = cleanTitle || repaired.risk_title_ar;
+    autoRepairedIssues.push('تنظيف مسمى الخطر من إشارات أرقام الصفحات والمقاطع.');
+  }
+  if (cleanProc !== String(repaired.process_name_ar || '').trim()) {
+    repaired.process_name_ar = cleanProc || repaired.process_name_ar;
+    autoRepairedIssues.push('تنظيف اسم العملية من علامات المقاطع النصية.');
+  }
+  passedRules++;
+
+  // Rule 3: Cause + Event + Impact completeness in risk description
+  checkedRules++;
+  const activeDesc = String(repaired.description_ar || '');
+  const hasCauseOrImpact =
+    /(نتيجة|بسبب|إثر|مما يؤدي|يؤدي إلى|خسائر|غرامات|تأثر|مخالفات|تعطل|ارتداد)/.test(activeDesc) ||
+    activeDesc.length >= 65;
+  if (hasCauseOrImpact) {
+    passedRules++;
+  } else {
+    warnings.push('يفضل توضيح السبب التشغيلي والأثر المترتب على المخاطرة بشكل أكثر تفصيلاً.');
+  }
+
+  // Rule 4: Strategic Objective strictly belongs to NBE 5 official objectives
+  checkedRules++;
+  const obj = String(repaired.strategic_objective_ar || '').trim();
+  if (!VALID_STRATEGIC_OBJECTIVES_SET.has(obj)) {
+    repaired.strategic_objective_ar = 'الكفاءة و الامان والمرونة';
+    autoRepairedIssues.push('ضبط الهدف الاستراتيجي ليطابق قائمة الأهداف الخمسة المعتمدة بمنهجية البنك.');
+  }
+  passedRules++;
+
+  // Rule 5: Controls present & clean of mechanism/type leakage + valid NBE frequency (not Per Transaction)
+  checkedRules++;
+  const controls: any[] = Array.isArray(repaired.controls) ? repaired.controls : [];
+  if (controls.length > 0) {
+    repaired.controls = controls.map((c) => {
+      const nextC = { ...c };
+      const origDesc = String(nextC.description_ar || nextC.control_description || '');
+      const cleanedCtrlDesc = qaStripMechanismLeakage(qaStripLocationNoise(origDesc));
+      if (cleanedCtrlDesc !== origDesc.trim()) {
+        nextC.description_ar = cleanedCtrlDesc || origDesc;
+        autoRepairedIssues.push('إزالة تسميات النوع والآلية من داخل نص الضابط الرقابي التزاماً بقواعد العرض.');
+      }
+      const freqStr = String(nextC.control_frequency_raw || nextC.control_frequency || '');
+      if (/per\s*transaction|per\s*event/i.test(freqStr)) {
+        nextC.control_frequency_raw = 'Multiple times a day\nعدة مرات في اليوم';
+        autoRepairedIssues.push('استبدال دورية الضابط غير المعتمدة (Per Transaction) بالدورية الرسمية (عدة مرات في اليوم).');
+      }
+      return nextC;
+    });
+    passedRules++;
+  } else {
+    warnings.push('المخاطرة لا تتضمن ضوابط رقابية مرتبطة حتى الآن.');
+  }
+
+  // Rule 6: Control design diversity (Preventive + Detective coverage)
+  checkedRules++;
+  const types = new Set(
+    (repaired.controls || []).map((c: any) => String(c.design_classification || c.control_type || 'PREVENTIVE').toUpperCase())
+  );
+  if (types.size >= 2 || (repaired.controls || []).length >= 2) {
+    passedRules++;
+  } else {
+    warnings.push('يوصى بإضافة ضابط كاشف (Detective) بجانب الضابط المانع لتحقيق تغطية رقابية متكاملة.');
+  }
+
+  // Rule 7: Historical Loss Calibration check against real unit incidents
+  checkedRules++;
+  let lossCalibrationAlert: string | undefined;
+  const histMax = Number(context?.historicalMaxLossEgp || 0);
+  const estImpact = Number(repaired.financial_impact_amount || repaired.single_incident_max_loss || 0);
+  if (histMax > 0 && estImpact > 0 && estImpact < histMax * 0.75) {
+    lossCalibrationAlert = `تنبيه معايرة الخسائر التاريخية: التقدير المالي الفردي (${estImpact.toLocaleString()} ج.م) أقل من أعلى خسارة فعلية مسجلة بالوحدة (${histMax.toLocaleString()} ج.م${context?.incidentSummaryAr ? ` — ${context.incidentSummaryAr}` : ''}). يُنصح بمراجعة التقدير مع المراجع المستقل.`;
+    warnings.push(lossCalibrationAlert);
+  } else {
+    passedRules++;
+  }
+
+  const qaScorePct = Math.round((passedRules / checkedRules) * 100);
+  return {
+    ...(repaired as T),
+    qa_critique: {
+      qa_passed: warnings.length === 0,
+      qa_score_pct: qaScorePct,
+      checked_rules_count: checkedRules,
+      passed_rules_count: passedRules,
+      auto_repaired_issues: Array.from(new Set(autoRepairedIssues)),
+      warnings,
+      loss_calibration_alert: lossCalibrationAlert,
+    },
+  };
+}
+
+/**
+ * Optional LLM Self-Critique Pass on structured RCSA items before deterministic QA & Python recalculation.
+ * Safely returns original items when offline or in test mode.
+ */
+export async function runLlmSelfCritiquePass(params: {
+  unitNameAr: string;
+  items: LlmExtractedRcsaItem[];
+  modelProfile?: QwenModelProfileId | string;
+}): Promise<LlmExtractedRcsaItem[]> {
+  const { unitNameAr, items, modelProfile } = params;
+  if (!items || items.length === 0 || process.env.NODE_ENV === 'test') {
+    return items;
+  }
+  const chosenOption = resolveQwenModelProfile(modelProfile);
+  const status = getLlmConfigStatus(chosenOption.id);
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!status.isConfigured && !(geminiKey && geminiKey.trim().length > 0)) {
+    return items;
+  }
+
+  const critiqueSystemPrompt = `أنت مدقق جودة RCSA (QA Critic Agent) بالبنك الأهلي المصري لوحدة (${unitNameAr}).
+راجع مصفوفة المخاطر والضوابط التالية وأعد نفس المصفوفة مصححة:
+1) تأكد ألا يبدأ أي وصف خطر بكلمة "احتمال" وأن يتضمن السبب + الحدث + الأثر.
+2) تأكد من خلو نصوص الضوابط من كلمات مثل "ضابط وقائي - آلي".
+3) تأكد من وجود ضابطين على الأقل (وقائي + كاشف) لكل خطر إن أمكن.
+4) أعد نفس JSON المصفوفة بنفس الحقول بدون اختراع تقييمات مالية أو RRF.`;
+
+  const itemsJson = JSON.stringify(items.slice(0, 8));
+
+  if (geminiKey && geminiKey.trim().length > 0) {
+    try {
+      const ai = new GoogleGenAI({
+        apiKey: geminiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+      });
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: `راجع وحسّن العناصر التالية وأعد JSON Array:\n${itemsJson}`,
+        config: {
+          systemInstruction: critiqueSystemPrompt,
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: 'application/json',
+        },
+      });
+      const parsed = parseResilientLlmJson((response.text || '').trim());
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch {
+      return items;
+    }
+  }
+
+  return items;
+}
+
+

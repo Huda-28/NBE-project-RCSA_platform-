@@ -2555,6 +2555,73 @@ export function countMandatoryRemediationActionsForAssessment(assessmentId: stri
   return count;
 }
 
+export function listMandatoryRemediationActionsForAssessment(assessmentId: string): Array<{
+  id: string;
+  risk_id: string;
+  risk_code: string;
+  risk_description: string;
+  title: string;
+  assigned_owner: string;
+  target_completion_date: string;
+  current_status: string;
+}> {
+  try {
+    ensureAssessmentPackagesPopulated(assessmentId);
+  } catch {
+    // Ignore if assessment cannot be populated
+  }
+
+  const pkgRows = db
+    .prepare(
+      `SELECT p.risk_id, p.current_draft_input_json, p.calculated_output_json, p.package_full_json,
+              r.risk_code, r.risk_description
+       FROM hitl_risk_packages p
+       LEFT JOIN risks r ON r.id = p.risk_id
+       WHERE p.assessment_id = ?
+       ORDER BY p.display_order ASC`
+    )
+    .all(assessmentId) as any[];
+
+  const results: Array<{
+    id: string;
+    risk_id: string;
+    risk_code: string;
+    risk_description: string;
+    title: string;
+    assigned_owner: string;
+    target_completion_date: string;
+    current_status: string;
+  }> = [];
+
+  for (const row of pkgRows) {
+    const draft = JSON.parse(row.current_draft_input_json || '{}');
+    const calc = JSON.parse(row.calculated_output_json || '{}');
+    const pkg = JSON.parse(row.package_full_json || '{}');
+    if (!isRiskMandatoryRemediationRequired(draft, calc, pkg)) continue;
+
+    const rec = pkg?.corrective_action_recommendation || {};
+    const title =
+      String(draft?.active_corrective_action_ar || '').trim() ||
+      String(rec?.recommended_action_ar || '').trim() ||
+      String(rec?.reason_ar || '').trim() ||
+      'إجراء تصحيحي إلزامي لمعالجة الفجوة الرقابية';
+
+    const residualRating = String(calc?.continuous_residual_rating || '').toUpperCase();
+    results.push({
+      id: `hitl-ap-${assessmentId}-${row.risk_id}`,
+      risk_id: row.risk_id,
+      risk_code: row.risk_code || pkg?.risk_code || row.risk_id,
+      risk_description: draft?.risk_description || row.risk_description || '',
+      title,
+      assigned_owner: String(draft?.action_owner_ar || 'مسؤول الوحدة التنظيمية'),
+      target_completion_date: String(draft?.target_completion_date || '2026-12-31'),
+      current_status: residualRating === 'VH' || residualRating === 'C' ? 'DELAYED' : 'IN_PROGRESS',
+    });
+  }
+
+  return results;
+}
+
 /**
  * Retrieve complete historical RCSA registry for a Business Unit (Phase 2D.1 Section 2).
  */

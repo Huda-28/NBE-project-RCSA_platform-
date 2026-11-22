@@ -32,6 +32,7 @@ import {
   checkerApproveAssessment,
   checkerReturnAssessment,
   countMandatoryRemediationActionsForAssessment,
+  listMandatoryRemediationActionsForAssessment,
   getUnitAssessmentsHistory,
   compareUnitAssessmentVersions,
   getGuidedAssessmentUnitContext,
@@ -232,6 +233,11 @@ apiRouter.get('/dashboard', authenticate, (req: AuthenticatedRequest, res) => {
   let pendingCheckerReviewsCount = 0;
   let openRemediationActionsCount = 0;
 
+  const allRiskRecords: any[] = [];
+  const controlAggMap = new Map<string, any>();
+  const allIncidentRecords: any[] = [];
+  const allActionPlanRecords: any[] = [];
+
   const bu_summaries = bus.map(bu => {
     // Latest approved
     const latestApprovedRaw = db.prepare(`
@@ -273,21 +279,100 @@ apiRouter.get('/dashboard', authenticate, (req: AuthenticatedRequest, res) => {
     const latestDraft = enrichAssessmentWithDates(latestDraftRaw);
 
     // Risk counts and distribution on latest approved (or latest draft if no approved)
-    const activeAssessmentId = latestApproved?.id || latestDraft?.id;
+    const activeAssessment = latestApproved || latestDraft;
+    const activeAssessmentId = activeAssessment?.id;
     let counts = { low: 0, medium: 0, high: 0, very_high: 0 };
     let risksCount = 0;
     let mandatoryActionsForBu = 0;
 
     if (activeAssessmentId) {
       const risks = db.prepare(`
-        SELECT residual_risk_rating FROM risks WHERE assessment_id = ?
-      `).all(activeAssessmentId) as { residual_risk_rating: string }[];
+        SELECT r.*, rt.name_ar as taxonomy_l1_name_ar
+        FROM risks r
+        LEFT JOIN risk_taxonomy rt ON rt.taxonomy_id = r.taxonomy_l1_id
+        WHERE r.assessment_id = ?
+      `).all(activeAssessmentId) as any[];
       risksCount = risks.length;
+
       risks.forEach(r => {
         if (r.residual_risk_rating === 'L') counts.low++;
         else if (r.residual_risk_rating === 'M') counts.medium++;
         else if (r.residual_risk_rating === 'H') counts.high++;
         else if (r.residual_risk_rating === 'VH' || r.residual_risk_rating === 'C') counts.very_high++;
+
+        const linkedCtrls = db.prepare(`
+          SELECT c.*, rc.control_status
+          FROM risk_controls rc
+          JOIN controls c ON c.id = rc.control_id
+          WHERE rc.risk_id = ?
+        `).all(r.id) as any[];
+
+        const linkedPlans = db.prepare(`
+          SELECT * FROM action_plans WHERE risk_id = ?
+        `).all(r.id) as any[];
+
+        allRiskRecords.push({
+          risk_id: r.id,
+          risk_code: r.risk_code,
+          unit_id: bu.id,
+          unit_name_ar: bu.name_ar,
+          unit_code: bu.code,
+          assessment_id: activeAssessmentId,
+          assessment_status: activeAssessment?.status || 'INCOMPLETE_DRAFT',
+          process_name: r.process_name,
+          risk_description: r.risk_description,
+          taxonomy_l1_id: r.taxonomy_l1_id || 'L1-08',
+          taxonomy_l1_ar: r.taxonomy_l1_name_ar || r.taxonomy_l1_id || '8_ تنفيذ العمليات المصرفية',
+          financial_impact_level: r.financial_impact_level ?? null,
+          inherent_frequency_level: r.inherent_frequency_level ?? null,
+          financial_impact_amount: r.financial_impact_amount ?? null,
+          expected_annual_loss: r.expected_annual_loss ?? null,
+          inherent_risk_rating: r.inherent_risk_rating ?? null,
+          residual_loss_amount: r.residual_loss_amount ?? null,
+          residual_risk_rating: r.residual_risk_rating ?? null,
+          applied_max_rrf: r.applied_max_rrf ?? null,
+          controls_count: linkedCtrls.length,
+          action_plans_count: linkedPlans.length,
+        });
+
+        for (const c of linkedCtrls) {
+          const ctrlKey = `${bu.id}::${c.control_code || c.id}`;
+          const existingCtrl = controlAggMap.get(ctrlKey) || {
+            control_id: c.id,
+            control_code: c.control_code,
+            control_description: c.control_description,
+            control_type: c.control_type,
+            control_method: c.control_method,
+            control_frequency: c.control_frequency,
+            raw_efficiency_rating: c.raw_efficiency_rating,
+            rrf_value: Number(c.rrf_value || 0),
+            unit_id: bu.id,
+            unit_name_ar: bu.name_ar,
+            linked_risk_ids: [] as string[],
+            linked_risk_codes: [] as string[],
+          };
+          if (!existingCtrl.linked_risk_ids.includes(r.id)) {
+            existingCtrl.linked_risk_ids.push(r.id);
+            existingCtrl.linked_risk_codes.push(r.risk_code);
+          }
+          controlAggMap.set(ctrlKey, existingCtrl);
+        }
+
+        for (const ap of linkedPlans) {
+          allActionPlanRecords.push({
+            id: ap.id,
+            risk_id: r.id,
+            risk_code: r.risk_code,
+            risk_description: r.risk_description,
+            unit_id: bu.id,
+            unit_name_ar: bu.name_ar,
+            assessment_id: activeAssessmentId,
+            title: ap.title,
+            assigned_owner: ap.assigned_owner,
+            target_completion_date: ap.target_completion_date,
+            current_status: ap.current_status || 'PENDING',
+          });
+        }
       });
 
       // Count mandatory corrective actions from HITL risk packages or action_plans
@@ -295,7 +380,48 @@ apiRouter.get('/dashboard', authenticate, (req: AuthenticatedRequest, res) => {
       if (activeActiontargetId) {
         mandatoryActionsForBu = countMandatoryRemediationActionsForAssessment(activeActiontargetId);
         openRemediationActionsCount += mandatoryActionsForBu;
+
+        const existingRiskIdsWithPlans = new Set(allActionPlanRecords.map((ap) => ap.risk_id));
+        const hitlActions = listMandatoryRemediationActionsForAssessment(activeActiontargetId);
+        for (const item of hitlActions) {
+          if (!existingRiskIdsWithPlans.has(item.risk_id)) {
+            allActionPlanRecords.push({
+              id: item.id,
+              risk_id: item.risk_id,
+              risk_code: item.risk_code,
+              risk_description: item.risk_description,
+              unit_id: bu.id,
+              unit_name_ar: bu.name_ar,
+              assessment_id: activeActiontargetId,
+              title: item.title,
+              assigned_owner: item.assigned_owner,
+              target_completion_date: item.target_completion_date,
+              current_status: item.current_status,
+            });
+            existingRiskIdsWithPlans.add(item.risk_id);
+          }
+        }
       }
+    }
+
+    // Historical incidents for loss calibration analytics
+    try {
+      const unitIncidents = db.prepare(`
+        SELECT unit_id, incident_code, event_summary_ar, net_loss_amount, mapped_l1_id
+        FROM historical_incidents
+        WHERE unit_id = ?
+      `).all(bu.id) as any[];
+      for (const inc of unitIncidents) {
+        allIncidentRecords.push({
+          unit_id: inc.unit_id,
+          incident_code: inc.incident_code,
+          event_summary_ar: inc.event_summary_ar,
+          net_loss_amount: Number(inc.net_loss_amount || 0),
+          mapped_l1_id: inc.mapped_l1_id || null,
+        });
+      }
+    } catch {
+      // Ignore if historical_incidents table is not seeded yet
     }
 
     // Total assessments count for this BU
@@ -335,6 +461,12 @@ apiRouter.get('/dashboard', authenticate, (req: AuthenticatedRequest, res) => {
       high_critical_risks: bu_summaries.reduce((sum, b) => sum + b.distribution.high + b.distribution.very_high, 0),
       pending_checker_reviews: pendingCheckerReviewsCount,
       open_remediation_actions: openRemediationActionsCount,
+    },
+    executive_analytics: {
+      risk_records: allRiskRecords,
+      control_records: Array.from(controlAggMap.values()),
+      incident_records: allIncidentRecords,
+      action_plan_records: allActionPlanRecords,
     },
   });
 });

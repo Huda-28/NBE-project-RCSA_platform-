@@ -372,5 +372,76 @@ describe('Phase 3B — Real Evidence-Grounded Conversational RCSA Agent & Qwen R
     assert.ok(parsed && Array.isArray(parsed.items), 'parseResilientLlmJson must strip <think>, fences, and trailing commas');
     assert.equal(parsed.items[0].chunk_id, 'CHK-99');
   });
+
+  test('15. Verify Cross-Lingual Vector + BM25 + RRF Fusion and Self-Critique QA Evaluator Pass', async () => {
+    const {
+      computeLocalMultilingualSemanticVector,
+      cosineSimilarity,
+      fuseBm25AndVectorWithRrf,
+    } = await import('../src/server/rag-service.js');
+    const { evaluateAndRefineRcsaProposalQa } = await import('../src/server/llm-adapter.js');
+
+    // 1. Cross-lingual semantic vector captures Arabic <-> English banking concept proximity
+    const arVec = computeLocalMultilingualSemanticVector('تسوية فروقات حسابات النوسترو والمقاصة اليومية');
+    const enVec = computeLocalMultilingualSemanticVector('Nostro settlement reconciliation and clearing breaks');
+    const unrelatedVec = computeLocalMultilingualSemanticVector('صيانة أجهزة التكييف والمباني الإدارية');
+    const crossLingualSim = cosineSimilarity(arVec, enVec);
+    const unrelatedSim = cosineSimilarity(arVec, unrelatedVec);
+    assert.ok(
+      crossLingualSim > unrelatedSim,
+      `Cross-lingual banking similarity (${crossLingualSim.toFixed(3)}) must exceed unrelated text similarity (${unrelatedSim.toFixed(3)})`
+    );
+
+    // 2. Reciprocal Rank Fusion (RRF) merges BM25 and Vector rankings favoring consensus documents
+    const bm25List = [{ id: 'D1' }, { id: 'D2' }, { id: 'D3' }];
+    const vecList = [{ id: 'D2' }, { id: 'D4' }, { id: 'D1' }];
+    const fused = fuseBm25AndVectorWithRrf(bm25List, vecList, (x) => x.id, 60);
+    assert.ok(
+      fused[0].item.id === 'D1' || fused[0].item.id === 'D2',
+      'RRF consensus top rank must be D1 or D2 present in both rankings'
+    );
+    assert.ok(fused[0].rrf_score > fused[fused.length - 1].rrf_score);
+
+    // 3. Self-Critique QA Evaluator auto-repairs NBE methodology defects and flags historical loss calibration
+    const rawProposal = {
+      risk_id: 'RSK-QA-01',
+      process_name_ar: 'صفحة 2 • مقطع (1): تنفيذ التحويلات الصادرة',
+      strategic_objective_ar: 'هدف غير معتمد',
+      risk_title_ar: 'مقطع (1): أخطاء إدخال بيانات السويفت',
+      description_ar: 'احتمال حدوث خطأ إدخال يؤدي إلى ارتداد الحوالة وخسائر مالية',
+      financial_impact_amount: 50000,
+      controls: [
+        {
+          control_id: 'CTL-QA-01',
+          description_ar: 'ضابط رقابي وقائي - آلي: فحص صيغة IBAN قبل الإرسال',
+          control_frequency_raw: 'Per Transaction',
+          design_classification: 'PREVENTIVE',
+        },
+      ],
+    };
+
+    const audited = evaluateAndRefineRcsaProposalQa(rawProposal, {
+      historicalMaxLossEgp: 300000,
+      incidentSummaryAr: 'حادث تحويل خاطئ',
+    });
+
+    assert.equal(audited.description_ar.startsWith('احتمال'), false, 'QA must remove "احتمال" prefix');
+    assert.equal(audited.process_name_ar.includes('صفحة 2'), false, 'QA must clean location noise from process');
+    assert.equal(
+      audited.controls[0].description_ar.includes('ضابط رقابي وقائي'),
+      false,
+      'QA must strip mechanism leakage from control description'
+    );
+    assert.equal(
+      audited.controls[0].control_frequency_raw.includes('Per Transaction'),
+      false,
+      'QA must replace invalid Per Transaction frequency'
+    );
+    assert.ok(audited.qa_critique.auto_repaired_issues.length >= 3, 'QA must log auto-repaired items');
+    assert.ok(
+      Boolean(audited.qa_critique.loss_calibration_alert),
+      'QA must warn when estimated loss is significantly lower than historical incident loss'
+    );
+  });
 });
 

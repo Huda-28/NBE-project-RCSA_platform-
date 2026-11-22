@@ -387,6 +387,12 @@ export function initDatabase() {
     // Column already exists
   }
 
+  try {
+    db.exec("ALTER TABLE document_chunks ADD COLUMN embedding_json TEXT");
+  } catch {
+    // Column already exists
+  }
+
   runInTransaction(() => {
     seedInitialData();
     ensureAllBusinessUnitsAndPermissions();

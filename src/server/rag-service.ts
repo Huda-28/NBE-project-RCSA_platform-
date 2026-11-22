@@ -1,4 +1,5 @@
 import path from 'path';
+import { GoogleGenAI } from '@google/genai';
 import { db } from './db.js';
 
 export interface CitationReference {
@@ -497,19 +498,202 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
   };
 }
 
+const SEMANTIC_VECTOR_DIMS = 192;
+
+function fnv1aHash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 /**
- * Hybrid BM25 IDF + Arabic morphological stem + bilingual banking synonym + bi-gram phrase + numeric RAG search.
+ * Compute a deterministic 192-dimension multilingual semantic vector encoding:
+ * - Dims [0..23]: Banking & Operational Risk Concept Clusters (Arabic + English cross-lingual projection)
+ * - Dims [24..191]: Hashed Arabic/English morphological stems + character 3-grams
  */
-export function searchRelevantCitations(
+export function computeLocalMultilingualSemanticVector(text: string): number[] {
+  const vec = new Array<number>(SEMANTIC_VECTOR_DIMS).fill(0);
+  if (!text || !text.trim()) return vec;
+
+  const norm = normalizeTextForRag(text);
+  const { stems, bigrams } = tokenizeRagQuery(text);
+
+  // 1. Cross-lingual concept cluster projection (Dims 0..23)
+  BANKING_SYNONYM_CLUSTERS.forEach((cluster, idx) => {
+    const dim = idx % 24;
+    let hits = 0;
+    for (const cTerm of cluster) {
+      if (norm.includes(cTerm)) hits++;
+    }
+    if (hits > 0) {
+      vec[dim] += 2.2 * Math.min(3, hits);
+    }
+  });
+
+  // 2. Stem & bi-gram hashed projections (Dims 24..191)
+  const bucketSize = SEMANTIC_VECTOR_DIMS - 24;
+  for (const s of stems) {
+    const h = fnv1aHash(s);
+    const dim = 24 + (h % bucketSize);
+    const sign = (h & 1) === 0 ? 1 : -1;
+    vec[dim] += sign * 1.4;
+  }
+  for (const bg of bigrams) {
+    const h = fnv1aHash(bg);
+    const dim = 24 + (h % bucketSize);
+    const sign = (h & 1) === 0 ? 1 : -1;
+    vec[dim] += sign * 1.8;
+  }
+
+  // 3. Character 3-gram projections for Arabic morphological resilience
+  const compact = norm.replace(/\s+/g, ' ');
+  for (let i = 0; i <= compact.length - 3; i++) {
+    const tri = compact.slice(i, i + 3);
+    if (tri.trim().length < 2) continue;
+    const h = fnv1aHash(tri);
+    const dim = 24 + (h % bucketSize);
+    const sign = (h & 1) === 0 ? 1 : -1;
+    vec[dim] += sign * 0.35;
+  }
+
+  // L2 Normalize
+  let normSq = 0;
+  for (let i = 0; i < vec.length; i++) normSq += vec[i] * vec[i];
+  const mag = Math.sqrt(normSq);
+  if (mag > 0) {
+    for (let i = 0; i < vec.length; i++) vec[i] /= mag;
+  }
+  return vec;
+}
+
+export function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  if (!vecA || !vecB || vecA.length === 0 || vecA.length !== vecB.length) return 0;
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    const a = vecA[i];
+    const b = vecB[i];
+    dot += a * b;
+    magA += a * a;
+    magB += b * b;
+  }
+  const denom = Math.sqrt(magA) * Math.sqrt(magB);
+  return denom > 0 ? dot / denom : 0;
+}
+
+/**
+ * Reciprocal Rank Fusion (RRF): Combines BM25 lexical ranking and Dense Vector semantic ranking.
+ * score(d) = 1 / (k + rank_bm25(d)) + 1 / (k + rank_vec(d))
+ */
+export function fuseBm25AndVectorWithRrf<T>(
+  bm25Ranked: T[],
+  vectorRanked: T[],
+  getKey: (item: T) => string,
+  k = 60
+): Array<{ item: T; rrf_score: number; bm25_rank?: number; vector_rank?: number }> {
+  const fused = new Map<string, { item: T; rrf_score: number; bm25_rank?: number; vector_rank?: number }>();
+
+  bm25Ranked.forEach((item, idx) => {
+    const key = getKey(item);
+    const rank = idx + 1;
+    const entry = fused.get(key) || { item, rrf_score: 0 };
+    entry.bm25_rank = rank;
+    entry.rrf_score += 1 / (k + rank);
+    fused.set(key, entry);
+  });
+
+  vectorRanked.forEach((item, idx) => {
+    const key = getKey(item);
+    const rank = idx + 1;
+    const entry = fused.get(key) || { item, rrf_score: 0 };
+    entry.vector_rank = rank;
+    entry.rrf_score += 1 / (k + rank);
+    fused.set(key, entry);
+  });
+
+  return Array.from(fused.values()).sort((a, b) => b.rrf_score - a.rrf_score);
+}
+
+/**
+ * Call Gemini `gemini-embedding-2` server-side when GEMINI_API_KEY is configured and not in unit test mode.
+ */
+async function embedTextsWithGemini(texts: string[]): Promise<number[][] | null> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey || !geminiKey.trim() || process.env.NODE_ENV === 'test' || texts.length === 0) {
+    return null;
+  }
+  try {
+    const ai = new GoogleGenAI({
+      apiKey: geminiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+    const result = await ai.models.embedContent({
+      model: 'gemini-embedding-2',
+      contents: texts.map((t) => t.slice(0, 4000)),
+    });
+    if (result?.embeddings && result.embeddings.length === texts.length) {
+      return result.embeddings.map((e) => e.values || []);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getChunkStoredEmbedding(chunkId: string): number[] | null {
+  try {
+    const row = db.prepare('SELECT embedding_json FROM document_chunks WHERE id = ?').get(chunkId) as
+      | { embedding_json?: string | null }
+      | undefined;
+    if (row?.embedding_json) {
+      const parsed = JSON.parse(row.embedding_json);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function saveChunkEmbedding(chunkId: string, vec: number[]) {
+  try {
+    db.prepare('UPDATE document_chunks SET embedding_json = ? WHERE id = ?').run(JSON.stringify(vec), chunkId);
+  } catch {
+    // ignore if readonly or missing
+  }
+}
+
+interface ScoredCandidate {
+  key: string;
+  citation: CitationReference;
+  bm25Score: number;
+  directLexicalMatches: number;
+  rawText: string;
+}
+
+function buildBm25AndLocalCandidates(
   sessionId: string,
   unitId: string,
-  query: string,
-  topK = 5
-): CitationReference[] {
+  query: string
+): {
+  bundle: RagContextBundle;
+  candidates: ScoredCandidate[];
+  isOpenDomainFrameworkQuery: boolean;
+  isBroadFileOrAnalysisRequest: boolean;
+  queryVecLocal: number[];
+} {
   const bundle = assembleRagContextBundle(sessionId, unitId);
   const { rawTerms, stems, expandedSynonyms, bigrams } = tokenizeRagQuery(query);
   const normQuery = normalizeTextForRag(query);
-  const citations: Array<CitationReference & { score: number }> = [];
+  const queryVecLocal = computeLocalMultilingualSemanticVector(query);
 
   // Build corpus-wide Document Frequency (DF) for BM25 IDF weighting
   const allCorpusNormTexts: string[] = [];
@@ -543,8 +727,13 @@ export function searchRelevantCitations(
   const isOpenDomainFrameworkQuery = Boolean(
     normQuery.match(/بازل\s*3|خطوط الدفاع الثلاث|three lines of defense/)
   );
+  const isBroadFileOrAnalysisRequest = Boolean(
+    normQuery.match(/ملف|مستند|داتا|بيانات|ملخص|لخص|محتوي|شوف|اقرا|فهمت|مرفوع|تحليل|استخراج|مصفوف|rcsa/)
+  );
 
-  // 1. Search in session document chunks (highest priority for user's uploaded files)
+  const candidates: ScoredCandidate[] = [];
+
+  // 1. Session document chunks
   for (const doc of bundle.session_documents) {
     for (const chunk of doc.chunks) {
       const rawText = chunk.content_text || '';
@@ -554,7 +743,6 @@ export function searchRelevantCitations(
       let score = 0;
       let directLexicalMatches = 0;
 
-      // Exact substring match with IDF boost
       for (const t of rawTerms) {
         if (lowerRaw.includes(t) || normText.includes(t)) {
           const idf = stemIdfMap.get(t) ?? 1.2;
@@ -563,7 +751,6 @@ export function searchRelevantCitations(
         }
       }
 
-      // Stem match with IDF boost
       for (const s of stems) {
         if (normText.includes(s)) {
           const idf = stemIdfMap.get(s) ?? 1.0;
@@ -572,14 +759,12 @@ export function searchRelevantCitations(
         }
       }
 
-      // Bi-gram phrase proximity bonus
       for (const bg of bigrams) {
         if (normText.includes(bg)) {
           score += 6;
         }
       }
 
-      // Bilingual banking domain synonym expansion (only if not a theoretical open-domain framework question)
       if (!isOpenDomainFrameworkQuery && (directLexicalMatches > 0 || expandedSynonyms.length > 0)) {
         let synMatches = 0;
         for (const syn of expandedSynonyms) {
@@ -592,12 +777,10 @@ export function searchRelevantCitations(
         }
       }
 
-      // Multi-word full phrase bonus
       if (normQuery.length > 6 && normText.includes(normQuery)) {
         score += 12;
       }
 
-      // Numeric/financial bonus if query asks about money, numbers, loss, or impact AND already has a lexical match
       if (
         directLexicalMatches > 0 &&
         normQuery.match(/مبلغ|قيمه|خسار|مالي|جنيه|كم|عدد|نسبه|ساعه|يوم|حد/) &&
@@ -606,9 +789,9 @@ export function searchRelevantCitations(
         score += 3.5;
       }
 
-      // Always include chunks if query is general summary/analysis or if score > 0
-      if (score > 0 || stems.length === 0) {
-        citations.push({
+      candidates.push({
+        key: `CHUNK::${chunk.id}`,
+        citation: {
           document_id: doc.id,
           chunk_id: chunk.id,
           title_ar: doc.title_ar,
@@ -617,22 +800,26 @@ export function searchRelevantCitations(
           quote_text: extractBestContextWindow(rawText, [...rawTerms, ...stems], 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
-          relevance_score: Number((score + 2).toFixed(2)),
-          score: score + 2,
-        });
-      }
+          relevance_score: Number((score > 0 ? score + 2 : 0).toFixed(2)),
+        },
+        bm25Score: score,
+        directLexicalMatches,
+        rawText: `${chunk.section_title || ''} ${rawText}`,
+      });
     }
   }
 
-  // 2. Search in unit historical incidents
+  // 2. Unit historical incidents
   for (const inc of bundle.incidents) {
     const rawText = `${inc.event_type || ''} ${inc.description || ''} ${inc.cause || ''}`;
     const normText = normalizeTextForRag(rawText);
     let score = 0;
+    let directLexicalMatches = 0;
     for (const s of stems) {
       if (normText.includes(s)) {
         const idf = stemIdfMap.get(s) ?? 1.0;
         score += 2.5 * idf;
+        directLexicalMatches++;
       }
     }
     for (const bg of bigrams) {
@@ -640,30 +827,36 @@ export function searchRelevantCitations(
     }
     if (normQuery.match(/حادث|حوادث|خسار|فعلي|تاريخ/)) {
       score += 4;
+      directLexicalMatches++;
     }
-    if (score > 0 || stems.length === 0) {
-      citations.push({
+    candidates.push({
+      key: `INCIDENT::${inc.id}`,
+      citation: {
         document_id: `INCIDENT-${inc.id}`,
         title_ar: `حادث تشغيلي: ${inc.event_type || inc.id}`,
         file_name: `سجل الحوادث (${inc.id})`,
         section_title: `صافي الخسارة: ${Number(inc.loss_amount_egp || 0).toLocaleString()} ج.م`,
         quote_text: inc.description || 'حادث تشغيلي مسجل بسجل الخسائر التاريخية',
         doc_type: 'INCIDENT_LOG',
-        relevance_score: Number((score + 1.5).toFixed(2)),
-        score: score + 1.5,
-      });
-    }
+        relevance_score: Number((score > 0 ? score + 1.5 : 0).toFixed(2)),
+      },
+      bm25Score: score,
+      directLexicalMatches,
+      rawText,
+    });
   }
 
-  // 3. Search in unit audit findings
+  // 3. Unit audit findings
   for (const af of bundle.audit_findings) {
     const rawText = `${af.title_ar || ''} ${af.details_ar || ''} ${af.root_causes_ar || ''} ${af.corrective_action_ar || ''}`;
     const normText = normalizeTextForRag(rawText);
     let score = 0;
+    let directLexicalMatches = 0;
     for (const s of stems) {
       if (normText.includes(s)) {
         const idf = stemIdfMap.get(s) ?? 1.0;
         score += 2.5 * idf;
+        directLexicalMatches++;
       }
     }
     for (const bg of bigrams) {
@@ -671,30 +864,79 @@ export function searchRelevantCitations(
     }
     if (normQuery.match(/تفتيش|مراجع|ملاحظ|رقاب|فجو/)) {
       score += 4;
+      directLexicalMatches++;
     }
-    if (score > 0) {
-      citations.push({
+    candidates.push({
+      key: `AUDIT::${af.id}`,
+      citation: {
         document_id: `AUDIT-${af.id}`,
         title_ar: `ملاحظة تفتيش: ${af.title_ar}`,
         file_name: `تقرير التفتيش الداخلي (${af.finding_number || af.id})`,
         section_title: `الأثر: ${(af.impact_ar || 'ملاحظة رقابية').slice(0, 80)}`,
         quote_text: `${af.details_ar} — الإجراء التصحيحي: ${af.corrective_action_ar}`.slice(0, 900),
         doc_type: 'AUDIT_REPORT',
-        relevance_score: Number((score + 1.5).toFixed(2)),
-        score: score + 1.5,
-      });
-    }
+        relevance_score: Number((score > 0 ? score + 1.5 : 0).toFixed(2)),
+      },
+      bm25Score: score,
+      directLexicalMatches,
+      rawText,
+    });
   }
 
-  // If no lexical match found, ONLY fall back to returning top chunks if the user is explicitly asking a broad question about the uploaded files/summary/RCSA extraction.
-  // For any question outside the RAG index, return [] so the LLM exercises its elevated open-domain authority instead of dumping unrelated chunks.
-  const isBroadFileOrAnalysisRequest = Boolean(
-    normQuery.match(/ملف|مستند|داتا|بيانات|ملخص|لخص|محتوي|شوف|اقرا|فهمت|مرفوع|تحليل|استخراج|مصفوف|rcsa/)
-  );
-  if (citations.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
+  return {
+    bundle,
+    candidates,
+    isOpenDomainFrameworkQuery,
+    isBroadFileOrAnalysisRequest,
+    queryVecLocal,
+  };
+}
+
+/**
+ * Synchronous Hybrid BM25 IDF + Multilingual Semantic Vector + Reciprocal Rank Fusion (RRF) search.
+ */
+export function searchRelevantCitations(
+  sessionId: string,
+  unitId: string,
+  query: string,
+  topK = 5
+): CitationReference[] {
+  const {
+    bundle,
+    candidates,
+    isOpenDomainFrameworkQuery,
+    isBroadFileOrAnalysisRequest,
+    queryVecLocal,
+  } = buildBm25AndLocalCandidates(sessionId, unitId, query);
+
+  if (isOpenDomainFrameworkQuery) {
+    // Only return matches if explicit Basel 3 / Three Lines of Defense text exists in BM25
+    const directHits = candidates
+      .filter((c) => c.bm25Score > 0)
+      .sort((a, b) => b.bm25Score - a.bm25Score);
+    return directHits.slice(0, topK).map((c) => c.citation);
+  }
+
+  const bm25Hits = candidates
+    .filter((c) => c.bm25Score > 0)
+    .sort((a, b) => b.bm25Score - a.bm25Score);
+
+  const vectorHits = candidates
+    .map((c) => ({
+      cand: c,
+      sim: cosineSimilarity(queryVecLocal, computeLocalMultilingualSemanticVector(c.rawText)),
+    }))
+    .filter((v) => v.sim >= 0.34)
+    .sort((a, b) => b.sim - a.sim)
+    .map((v) => v.cand);
+
+  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60);
+
+  if (fused.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
+    const fallbackCitations: CitationReference[] = [];
     for (const doc of bundle.session_documents) {
       for (const chunk of doc.chunks.slice(0, 6)) {
-        citations.push({
+        fallbackCitations.push({
           document_id: doc.id,
           chunk_id: chunk.id,
           title_ar: doc.title_ar,
@@ -704,14 +946,130 @@ export function searchRelevantCitations(
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
           relevance_score: 1,
-          score: 1,
         });
       }
     }
+    return fallbackCitations.slice(0, topK);
   }
 
-  citations.sort((a, b) => b.score - a.score);
-  return citations.slice(0, topK).map(({ score, ...c }) => c);
+  return fused.slice(0, topK).map((f) => ({
+    ...f.item.citation,
+    relevance_score: Number((f.item.citation.relevance_score || f.rrf_score * 100).toFixed(2)),
+  }));
+}
+
+/**
+ * Asynchronous SOTA Hybrid RAG Search:
+ * Combines BM25 IDF lexical scoring + Gemini `gemini-embedding-2` (or local semantic vector fallback)
+ * via Reciprocal Rank Fusion (RRF), caching document chunk vectors in SQLite.
+ */
+export async function searchRelevantCitationsHybrid(
+  sessionId: string,
+  unitId: string,
+  query: string,
+  topK = 5
+): Promise<CitationReference[]> {
+  const {
+    bundle,
+    candidates,
+    isOpenDomainFrameworkQuery,
+    isBroadFileOrAnalysisRequest,
+    queryVecLocal,
+  } = buildBm25AndLocalCandidates(sessionId, unitId, query);
+
+  if (isOpenDomainFrameworkQuery) {
+    const directHits = candidates
+      .filter((c) => c.bm25Score > 0)
+      .sort((a, b) => b.bm25Score - a.bm25Score);
+    return directHits.slice(0, topK).map((c) => c.citation);
+  }
+
+  const bm25Hits = candidates
+    .filter((c) => c.bm25Score > 0)
+    .sort((a, b) => b.bm25Score - a.bm25Score);
+
+  // Attempt dense cross-lingual Gemini embeddings when API key is configured in runtime
+  let vectorHits: ScoredCandidate[] = [];
+  const geminiQueryRes = await embedTextsWithGemini([query]);
+  const queryGeminiVec = geminiQueryRes?.[0];
+
+  if (queryGeminiVec && queryGeminiVec.length > 0) {
+    const chunkCandsMissingEmb: ScoredCandidate[] = [];
+    const chunkVecMap = new Map<string, number[]>();
+
+    for (const c of candidates) {
+      if (c.citation.chunk_id) {
+        const cached = getChunkStoredEmbedding(c.citation.chunk_id);
+        if (cached && cached.length === queryGeminiVec.length) {
+          chunkVecMap.set(c.key, cached);
+        } else {
+          chunkCandsMissingEmb.push(c);
+        }
+      }
+    }
+
+    if (chunkCandsMissingEmb.length > 0) {
+      const batchToEmbed = chunkCandsMissingEmb.slice(0, 24);
+      const batchVectors = await embedTextsWithGemini(batchToEmbed.map((c) => c.rawText));
+      if (batchVectors && batchVectors.length === batchToEmbed.length) {
+        batchToEmbed.forEach((cand, idx) => {
+          const vec = batchVectors[idx];
+          if (vec && vec.length > 0 && cand.citation.chunk_id) {
+            chunkVecMap.set(cand.key, vec);
+            saveChunkEmbedding(cand.citation.chunk_id, vec);
+          }
+        });
+      }
+    }
+
+    vectorHits = candidates
+      .map((c) => {
+        const docVec = chunkVecMap.get(c.key);
+        const sim = docVec
+          ? cosineSimilarity(queryGeminiVec, docVec)
+          : cosineSimilarity(queryVecLocal, computeLocalMultilingualSemanticVector(c.rawText));
+        return { cand: c, sim };
+      })
+      .filter((v) => v.sim >= 0.42)
+      .sort((a, b) => b.sim - a.sim)
+      .map((v) => v.cand);
+  } else {
+    vectorHits = candidates
+      .map((c) => ({
+        cand: c,
+        sim: cosineSimilarity(queryVecLocal, computeLocalMultilingualSemanticVector(c.rawText)),
+      }))
+      .filter((v) => v.sim >= 0.34)
+      .sort((a, b) => b.sim - a.sim)
+      .map((v) => v.cand);
+  }
+
+  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60);
+
+  if (fused.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
+    const fallbackCitations: CitationReference[] = [];
+    for (const doc of bundle.session_documents) {
+      for (const chunk of doc.chunks.slice(0, 6)) {
+        fallbackCitations.push({
+          document_id: doc.id,
+          chunk_id: chunk.id,
+          title_ar: doc.title_ar,
+          file_name: doc.file_name,
+          section_title: chunk.section_title || `مقطع رقم ${chunk.chunk_index}`,
+          quote_text: chunk.content_text.slice(0, 1400),
+          page_number: chunk.page_number || 1,
+          doc_type: doc.doc_type,
+          relevance_score: 1,
+        });
+      }
+    }
+    return fallbackCitations.slice(0, topK);
+  }
+
+  return fused.slice(0, topK).map((f) => ({
+    ...f.item.citation,
+    relevance_score: Number((f.item.citation.relevance_score || f.rrf_score * 100).toFixed(2)),
+  }));
 }
 
 /**

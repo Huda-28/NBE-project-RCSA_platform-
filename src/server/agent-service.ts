@@ -6,6 +6,7 @@ import { getWorkflowSession, updateWorkflowSession } from './workflow-session-se
 import {
   assembleRagContextBundle,
   searchRelevantCitations,
+  searchRelevantCitationsHybrid,
   matchBestTaxonomyAndEsg,
   extractMonetaryAmountsFromText,
   normalizeTextForRag,
@@ -16,6 +17,8 @@ import {
   generateLlmCompletion,
   generateAgentAutonomousCompletion,
   generateStructuredRcsaProposalsWithLlm,
+  evaluateAndRefineRcsaProposalQa,
+  runLlmSelfCritiquePass,
   getLlmConfigStatus,
   resolveQwenModelProfile,
   stripForbiddenLlmFields,
@@ -1003,9 +1006,8 @@ async function buildHighPrecisionRcsaProposals(params: {
     ];
   };
 
-  // Phase 1: LLM-First Structured Extraction on Uploaded Chunks (when an LLM is configured)
-  // Followed by Core SOP Pattern Coverage & Semantic Chunk Extraction for any remaining slots
-  const llmExtractedItems =
+  // Phase 1: LLM-First Structured Extraction + Self-Critique Pass on Uploaded Chunks
+  const rawLlmItems =
     unindexedDocChunks.length > 0
       ? await generateStructuredRcsaProposalsWithLlm({
           unitNameAr: session.unit?.name_ar || 'الوحدة التنظيمية',
@@ -1018,6 +1020,15 @@ async function buildHighPrecisionRcsaProposals(params: {
           modelProfile,
         })
       : null;
+
+  const llmExtractedItems =
+    Array.isArray(rawLlmItems) && rawLlmItems.length > 0
+      ? await runLlmSelfCritiquePass({
+          unitNameAr: session.unit?.name_ar || 'الوحدة التنظيمية',
+          items: rawLlmItems,
+          modelProfile,
+        })
+      : rawLlmItems;
 
   const llmItemByChunkId = new Map<string, any>();
   if (Array.isArray(llmExtractedItems)) {
@@ -1549,7 +1560,15 @@ async function buildHighPrecisionRcsaProposals(params: {
     }
   }
 
-  return generatedProposals;
+  // Final Self-Critique QA Evaluator Pass across all generated proposals (NBE 8-Page compliance + Loss Calibration)
+  const topIncident = ragBundle.incidents[0];
+  return generatedProposals.map((prop) => ({
+    ...prop,
+    data: evaluateAndRefineRcsaProposalQa(prop.data, {
+      historicalMaxLossEgp: maxUnitIncidentLoss,
+      incidentSummaryAr: topIncident?.event_type || undefined,
+    }),
+  }));
 }
 
 export async function sendAgentMessage(
@@ -1601,8 +1620,8 @@ export async function sendAgentMessage(
     VALUES (?, ?, ?, 'USER', ?, ?, datetime('now'))
   `).run(userMsgId, sessionId, session.unit_id, userMessageText, activeProfile);
 
-  // 2. Retrieve RAG context & citations using Qwen model's topK depth
-  const citations = searchRelevantCitations(sessionId, session.unit_id, userMessageText, qOption.rag_top_k);
+  // 2. Retrieve SOTA Hybrid RAG context & citations (Vector + BM25 + RRF Fusion)
+  const citations = await searchRelevantCitationsHybrid(sessionId, session.unit_id, userMessageText, qOption.rag_top_k);
   const ragBundle = assembleRagContextBundle(sessionId, session.unit_id);
   const existingState = getAgentSessionState(sessionId, user);
 

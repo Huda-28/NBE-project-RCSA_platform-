@@ -1867,6 +1867,27 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                             </div>
                           )}
 
+                          {/* Self-Critique QA & Historical Loss Calibration Verification */}
+                          {data.qa_critique && (
+                            <div className="pt-1.5 border-t border-[#E5E3DE] text-[10px] space-y-1">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-slate-700 font-mono tabular-nums">
+                                <span className="font-bold text-[#006547]">
+                                  فحص الجودة المنهجي (Self-Critique QA): {data.qa_critique.passed_rules_count}/{data.qa_critique.checked_rules_count} ({data.qa_critique.qa_score_pct}%)
+                                </span>
+                                {Array.isArray(data.qa_critique.auto_repaired_issues) && data.qa_critique.auto_repaired_issues.length > 0 && (
+                                  <span className="text-slate-600">
+                                    تصحيح تلقائي ({data.qa_critique.auto_repaired_issues.length})
+                                  </span>
+                                )}
+                              </div>
+                              {data.qa_critique.loss_calibration_alert && (
+                                <div className="p-2 rounded-lg bg-[#FEF6E6] border border-[#F5D38E] text-[#78350F] leading-relaxed font-sans">
+                                  {data.qa_critique.loss_calibration_alert}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* Inline Edit Form when editingProposalId === p.id */}
                           {isEditing && (
                             <div className="p-3 bg-white rounded-xl border border-[#006547] space-y-2.5 text-xs">

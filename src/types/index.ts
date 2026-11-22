@@ -147,6 +147,13 @@ export interface AuditEvent {
   change_summary: string;
 }
 
+import type {
+  DashboardRiskRecord,
+  DashboardControlRecord,
+  DashboardIncidentRecord,
+  DashboardActionPlanRecord,
+} from '../utils/dashboardAnalytics.js';
+
 export interface DashboardSummary {
   bu_summaries: Array<{
     unit: BusinessUnit;
@@ -171,5 +178,11 @@ export interface DashboardSummary {
     high_critical_risks: number;
     pending_checker_reviews: number;
     open_remediation_actions: number;
+  };
+  executive_analytics?: {
+    risk_records: DashboardRiskRecord[];
+    control_records: DashboardControlRecord[];
+    incident_records: DashboardIncidentRecord[];
+    action_plan_records: DashboardActionPlanRecord[];
   };
 }
