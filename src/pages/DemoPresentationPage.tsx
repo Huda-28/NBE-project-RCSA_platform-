@@ -87,12 +87,15 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
       const target = e.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
 
+      const isMethodology = activeDeck === 'methodology';
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        goNext();
+        if (isMethodology) goPrev();
+        else goNext();
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
-        goPrev();
+        if (isMethodology) goNext();
+        else goPrev();
       } else if (e.key === 'g' || e.key === 'G') {
         setShowOverview((prev) => !prev);
       } else if (e.key === 'n' || e.key === 'N') {
@@ -104,7 +107,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goNext, goPrev]);
+  }, [activeDeck, goNext, goPrev]);
 
   const renderSlideBody = (activeSlide: DemoSlide) => {
     switch (activeSlide.layout) {
@@ -1036,7 +1039,8 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
             aria-selected={activeDeck === 'methodology'}
             onClick={() => handleSelectDeck('methodology')}
             data-testid="deck-tab-methodology"
-            className={`px-4 py-2.5 rounded-xl border text-right transition-all cursor-pointer flex items-center justify-between gap-3 ${
+            dir="ltr"
+            className={`px-4 py-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
               activeDeck === 'methodology'
                 ? 'bg-[#09331F] text-white border-[#09331F] shadow-xs'
                 : 'bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border-[#DCDAD5]'
@@ -1044,14 +1048,14 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
           >
             <div>
               <div className="text-xs sm:text-sm font-extrabold">
-                المنهجية والنماذج وتطور الأداء (12 شريحة)
+                Methodology, Models &amp; Evolution (EN · 13 Slides)
               </div>
               <div
                 className={`text-[11px] mt-0.5 ${
                   activeDeck === 'methodology' ? 'text-emerald-100/90' : 'text-slate-600'
                 }`}
               >
-                معادلات بايثون الحتمية + Hybrid RAG (RRF) + قفزات V1→V4 وأمن AI
+                Python Decimal + Hybrid RAG (RRF) + Best-Practice V1→V4 &amp; Academic References
               </div>
             </div>
             <span
@@ -1061,14 +1065,19 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
                   : 'bg-white text-[#006547] border border-[#DCDAD5]'
               }`}
             >
-              12
+              13
             </span>
           </button>
         </div>
       </div>
 
       {/* Top Executive Presenter Bar */}
-      <div className="bg-white border border-[#DCDAD5] rounded-2xl p-3.5 sm:px-5 sm:py-3.5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div
+        dir={activeDeck === 'methodology' ? 'ltr' : 'rtl'}
+        className={`bg-white border border-[#DCDAD5] rounded-2xl p-3.5 sm:px-5 sm:py-3.5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${
+          activeDeck === 'methodology' ? 'text-left' : 'text-right'
+        }`}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center font-mono font-extrabold text-sm shrink-0 tabular-nums">
             {slide.indexLabel}
@@ -1078,19 +1087,28 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               <span>
                 {activeDeck === 'executive'
                   ? 'العرض التعريفي للمنصة (غير تقني)'
-                  : 'المنهجية وهندسة النماذج وتطور الأداء (Deep Dive)'}
+                  : 'Methodology, Hybrid Models & Evolution (Deep Dive)'}
               </span>
               <span className="text-slate-300">·</span>
               <span>{slide.section}</span>
             </div>
             <h1 className="text-sm sm:text-base font-extrabold text-[#09331F] truncate">
-              شريحة {slide.number} من {totalSlides}: {slide.title}
+              {activeDeck === 'executive'
+                ? `شريحة ${slide.number} من ${totalSlides}: ${slide.title}`
+                : `Slide ${slide.number} of ${totalSlides}: ${slide.title}`}
             </h1>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <HoverTooltip description="فتح فهرس كل الشرائح للقفز السريع لأي موضوع" side="bottom">
+          <HoverTooltip
+            description={
+              activeDeck === 'executive'
+                ? 'فتح فهرس كل الشرائح للقفز السريع لأي موضوع'
+                : 'Toggle full 13-slide overview index to jump to any section'
+            }
+            side="bottom"
+          >
             <button
               type="button"
               onClick={() => setShowOverview((prev) => !prev)}
@@ -1103,11 +1121,18 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>فهرس الشرائح</span>
+              <span>{activeDeck === 'executive' ? 'فهرس الشرائح' : 'Slide Overview'}</span>
             </button>
           </HoverTooltip>
 
-          <HoverTooltip description="إظهار أو إخفاء نقاط الحديث وإجابات أسئلة المراجعين" side="bottom">
+          <HoverTooltip
+            description={
+              activeDeck === 'executive'
+                ? 'إظهار أو إخفاء نقاط الحديث وإجابات أسئلة المراجعين'
+                : 'Show or hide presenter notes and committee Q&A talking points'
+            }
+            side="bottom"
+          >
             <button
               type="button"
               onClick={() => setShowNotes((prev) => !prev)}
@@ -1120,26 +1145,41 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               }`}
             >
               <MessageSquareText className="w-3.5 h-3.5 text-[#006547]" />
-              <span>ملاحظات المُقدّم</span>
+              <span>{activeDeck === 'executive' ? 'ملاحظات المُقدّم' : 'Presenter Notes'}</span>
             </button>
           </HoverTooltip>
 
-          <HoverTooltip description="تكبير مساحة العرض التقديمي وإخفاء القوائم الجانبية" side="bottom">
+          <HoverTooltip
+            description={
+              activeDeck === 'executive'
+                ? 'تكبير مساحة العرض التقديمي وإخفاء القوائم الجانبية'
+                : 'Expand slide view to full-screen focus mode'
+            }
+            side="bottom"
+          >
             <button
               type="button"
               onClick={() => setIsFocusMode((prev) => !prev)}
-              aria-label={isFocusMode ? 'إنهاء وضع التركيز' : 'وضع التركيز الكامل'}
+              aria-label={
+                activeDeck === 'executive'
+                  ? isFocusMode
+                    ? 'إنهاء وضع التركيز'
+                    : 'وضع التركيز الكامل'
+                  : isFocusMode
+                    ? 'Exit focus mode'
+                    : 'Enter focus mode'
+              }
               className="min-h-9 px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               {isFocusMode ? (
                 <>
                   <Minimize2 className="w-3.5 h-3.5 text-[#006547]" />
-                  <span>خروج</span>
+                  <span>{activeDeck === 'executive' ? 'خروج' : 'Exit'}</span>
                 </>
               ) : (
                 <>
                   <Maximize2 className="w-3.5 h-3.5 text-[#006547]" />
-                  <span>تركيز</span>
+                  <span>{activeDeck === 'executive' ? 'تركيز' : 'Focus'}</span>
                 </>
               )}
             </button>
@@ -1149,7 +1189,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
             description={
               activeDeck === 'executive'
                 ? 'تنزيل نسخة PDF جاهزة للطباعة أو الإرسال للمراجعين (13 شريحة)'
-                : 'تنزيل نسخة PDF لعرض المنهجية وتطور الأداء (12 شريحة)'
+                : 'Download 13-slide 16:9 PDF deck (Methodology, Models & References)'
             }
             side="bottom"
           >
@@ -1168,7 +1208,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               className="min-h-9 px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 transition-colors whitespace-nowrap"
             >
               <FileDown className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>تنزيل PDF للعرض</span>
+              <span>{activeDeck === 'executive' ? 'تنزيل PDF للعرض' : 'Download Deck PDF'}</span>
             </a>
           </HoverTooltip>
         </div>
@@ -1177,20 +1217,27 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
       {/* Slide Overview Grid Drawer */}
       {showOverview && (
         <div
-          className="bg-white border border-[#DCDAD5] rounded-2xl p-4 shadow-sm"
+          dir={activeDeck === 'methodology' ? 'ltr' : 'rtl'}
+          className={`bg-white border border-[#DCDAD5] rounded-2xl p-4 shadow-sm ${
+            activeDeck === 'methodology' ? 'text-left' : 'text-right'
+          }`}
           data-testid="demo-overview-grid"
         >
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#EFECE6]">
             <div className="flex items-center gap-2 text-xs font-extrabold text-[#09331F]">
               <Layers className="w-4 h-4 text-[#006547]" />
-              <span>فهرس العرض الكامل ({totalSlides} شريحة) — اضغط للانتقال الفوري</span>
+              <span>
+                {activeDeck === 'executive'
+                  ? `فهرس العرض الكامل (${totalSlides} شريحة) — اضغط للانتقال الفوري`
+                  : `Full Slide Index (${totalSlides} Slides) — Click any card to jump`}
+              </span>
             </div>
             <button
               type="button"
               onClick={() => setShowOverview(false)}
               className="text-xs font-bold text-slate-600 hover:text-[#09331F] cursor-pointer"
             >
-              إغلاق
+              {activeDeck === 'executive' ? 'إغلاق' : 'Close'}
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -1204,7 +1251,9 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
                     setCurrentIndex(idx);
                     setShowOverview(false);
                   }}
-                  className={`text-right p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`${
+                    activeDeck === 'methodology' ? 'text-left' : 'text-right'
+                  } p-3 rounded-xl border transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-[#09331F] text-white border-[#09331F]'
                       : 'bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border-[#DCDAD5]'
@@ -1228,8 +1277,15 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
 
       {/* Main Slide Stage */}
       <section
-        aria-label={`الشريحة ${slide.number}: ${slide.title}`}
-        className="bg-white border border-[#DCDAD5] rounded-2xl p-5 sm:p-7 shadow-xs space-y-5"
+        dir={activeDeck === 'methodology' ? 'ltr' : 'rtl'}
+        aria-label={
+          activeDeck === 'executive'
+            ? `الشريحة ${slide.number}: ${slide.title}`
+            : `Slide ${slide.number}: ${slide.title}`
+        }
+        className={`bg-white border border-[#DCDAD5] rounded-2xl p-5 sm:p-7 shadow-xs space-y-5 ${
+          activeDeck === 'methodology' ? 'text-left' : 'text-right'
+        }`}
       >
         {(activeDeck === 'executive'
           ? (slide as DemoSlide).layout !== 'cover'
@@ -1251,7 +1307,11 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
 
             {slide.jumpTarget && onNavigate && (
               <HoverTooltip
-                description="الانتقال فوراً إلى هذه الشاشة داخل المنصة الحية لتجربتها أمام الحضور"
+                description={
+                  activeDeck === 'executive'
+                    ? 'الانتقال فوراً إلى هذه الشاشة داخل المنصة الحية لتجربتها أمام الحضور'
+                    : 'Jump straight to this live screen in the running platform'
+                }
                 side="bottom"
               >
                 <button
@@ -1286,8 +1346,12 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               data-testid="demo-prev-slide"
               className="min-h-10 px-4 py-2 rounded-xl border border-[#DCDAD5] bg-[#F8F8F6] hover:bg-[#EFECE6] disabled:opacity-40 disabled:cursor-not-allowed text-[#09331F] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <ChevronRight className="w-4 h-4 text-[#006547]" />
-              <span>الشريحة السابقة</span>
+              {activeDeck === 'methodology' ? (
+                <ChevronLeft className="w-4 h-4 text-[#006547]" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-[#006547]" />
+              )}
+              <span>{activeDeck === 'executive' ? 'الشريحة السابقة' : 'Previous Slide'}</span>
             </button>
 
             <button
@@ -1297,8 +1361,12 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               data-testid="demo-next-slide"
               className="min-h-10 px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <span>الشريحة التالية</span>
-              <ChevronLeft className="w-4 h-4 text-[#F79C1E]" />
+              <span>{activeDeck === 'executive' ? 'الشريحة التالية' : 'Next Slide'}</span>
+              {activeDeck === 'methodology' ? (
+                <ChevronRight className="w-4 h-4 text-[#F79C1E]" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 text-[#F79C1E]" />
+              )}
             </button>
           </div>
 
@@ -1309,7 +1377,11 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
                 key={s.id}
                 type="button"
                 onClick={() => setCurrentIndex(idx)}
-                aria-label={`الانتقال إلى الشريحة ${s.number}: ${s.title}`}
+                aria-label={
+                  activeDeck === 'executive'
+                    ? `الانتقال إلى الشريحة ${s.number}: ${s.title}`
+                    : `Jump to Slide ${s.number}: ${s.title}`
+                }
                 className={`h-2 rounded-full transition-all cursor-pointer ${
                   idx === currentIndex
                     ? 'w-7 bg-[#006547]'
@@ -1333,7 +1405,9 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               }
               className="text-[#006547] hover:underline font-bold"
             >
-              عرض جميع الشرائح للطباعة ↗
+              {activeDeck === 'executive'
+                ? 'عرض جميع الشرائح للطباعة ↗'
+                : 'Open All 13 Slides (Print View) ↗'}
             </a>
           </div>
         </div>
@@ -1342,7 +1416,10 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
       {/* Presenter Talking Points & Anticipated Bank Reviewer Question */}
       {showNotes && (
         <aside
-          className="bg-[#FAF9F6] border border-[#DCDAD5] rounded-2xl p-4 sm:p-5 space-y-3"
+          dir={activeDeck === 'methodology' ? 'ltr' : 'rtl'}
+          className={`bg-[#FAF9F6] border border-[#DCDAD5] rounded-2xl p-4 sm:p-5 space-y-3 ${
+            activeDeck === 'methodology' ? 'text-left' : 'text-right'
+          }`}
           data-testid="demo-presenter-notes"
         >
           <div className="flex items-center justify-between gap-2">
@@ -1351,21 +1428,26 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               <span>
                 {activeDeck === 'executive'
                   ? 'دليل الشرح للمُقدّم (بلغة مصرفية غير تقنية)'
-                  : 'دليل العرض المنهجي والتقني (للمنهجية والنماذج وتدقيق النموذج)'}
+                  : 'Methodology & Technical Presenter Notes'}
               </span>
             </div>
             <span className="text-[11px] text-slate-500">
-              اختصارات لوحة المفاتيح: الأسهم للتنقل · G للفهرس · N للملاحظات
+              {activeDeck === 'executive'
+                ? 'اختصارات لوحة المفاتيح: الأسهم للتنقل · G للفهرس · N للملاحظات'
+                : 'Shortcuts: Arrow Keys to Navigate · G Overview · N Notes'}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">{slide.presenterNotes}</p>
           {slide.keyQuestion && slide.keyAnswer && (
             <div className="bg-white border border-[#DCDAD5] rounded-xl p-3.5 text-xs space-y-1">
               <div className="font-extrabold text-[#006547]">
-                سؤال متوقع من المراجع: {slide.keyQuestion}
+                {activeDeck === 'executive'
+                  ? `سؤال متوقع من المراجع: ${slide.keyQuestion}`
+                  : `Anticipated Committee Question: ${slide.keyQuestion}`}
               </div>
               <div className="text-slate-700 leading-relaxed">
-                <strong>الإجابة:</strong> {slide.keyAnswer}
+                <strong>{activeDeck === 'executive' ? 'الإجابة:' : 'Answer:'}</strong>{' '}
+                {slide.keyAnswer}
               </div>
             </div>
           )}

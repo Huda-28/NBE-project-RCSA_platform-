@@ -294,7 +294,8 @@ export type MethodologyLayoutKind =
   | 'qa_self_critique'
   | 'ai_security_lineage'
   | 'before_after_metrics'
-  | 'testing_roadmap';
+  | 'testing_roadmap'
+  | 'references';
 
 export interface MethodologySlide {
   id: string;
@@ -311,51 +312,114 @@ export interface MethodologySlide {
 }
 
 export const FINANCIAL_BANDS_TABLE = [
-  { code: 'L', labelAr: 'منخفض', rangeAr: 'حتى 150,000 ج.م', anchorEgp: '50,000' },
-  { code: 'M', labelAr: 'متوسط', rangeAr: '150,001 – 500,000 ج.م', anchorEgp: '151,000' },
-  { code: 'H', labelAr: 'مرتفع', rangeAr: '500,001 – 1,500,000 ج.م', anchorEgp: '501,000' },
-  { code: 'VH', labelAr: 'مرتفع جداً', rangeAr: '1,500,001 – 3,000,000 ج.م', anchorEgp: '1,501,000' },
-  { code: 'C', labelAr: 'كارثي / حرج', rangeAr: 'أكثر من 3,000,000 ج.م', anchorEgp: '3,001,000' },
+  { code: 'L', labelEn: 'Low', rangeEn: 'Up to 150,000 EGP', anchorEgp: '50,000' },
+  { code: 'M', labelEn: 'Medium', rangeEn: '150,001 – 500,000 EGP', anchorEgp: '151,000' },
+  { code: 'H', labelEn: 'High', rangeEn: '500,001 – 1,500,000 EGP', anchorEgp: '501,000' },
+  { code: 'VH', labelEn: 'Very High', rangeEn: '1,500,001 – 3,000,000 EGP', anchorEgp: '1,501,000' },
+  { code: 'C', labelEn: 'Critical', rangeEn: 'Above 3,000,000 EGP', anchorEgp: '3,001,000' },
 ] as const;
 
 export const RRF_MATRIX_ROWS = [
-  { methodAr: 'ضابط آلي (Automated)', preventive: '95%', detective: '85%', corrective: '50%' },
-  { methodAr: 'ضابط شبه آلي (Semi-Auto)', preventive: '90%', detective: '80%', corrective: '40%' },
-  { methodAr: 'ضابط يدوي (Manual)', preventive: '75%', detective: '60%', corrective: '30%' },
+  { methodEn: 'Automated Control', preventive: '95%', detective: '85%', corrective: '50%' },
+  { methodEn: 'Semi-Automated Control', preventive: '90%', detective: '80%', corrective: '40%' },
+  { methodEn: 'Manual Control', preventive: '75%', detective: '60%', corrective: '30%' },
 ] as const;
 
 export const MODEL_EVOLUTION_MILESTONES = [
   {
-    stage: 'V1 · المرحلة الأولية',
+    stage: 'V1 · Initial Baseline',
     commitRef: 'Baseline (4301a33)',
-    retrieval: 'بحث نصي مباشر بكلمات مفتاحية دون تطبيع جذري أو متجهات دلالية.',
-    contextAndTokens: 'نافذة مقطع 240 حرفاً · استجابات محدودة ومقيدة بنماذج صغيرة (0.5B).',
-    qaAndCompliance: 'استخلاص استرشادي أساسي؛ تعرض لتسرب أرقام الصفحات وبداية "احتمال...".',
-    outcome: 'معدل استدعاء محدود وضعف في دقة الصياغة المصرفية وتغطية الجداول الطويلة.',
+    retrieval: 'Direct keyword substring lookup (LIKE) without Arabic morphological repair or dense embeddings.',
+    contextAndTokens: '240-character chunk window; constrained outputs from a small 0.5B parameter model.',
+    qaAndCompliance: 'Basic heuristic extraction; vulnerable to leaked page markers and weak hedging ("Probability...").',
+    outcome: 'Low recall on long banking SOPs and inconsistent table/control wording.',
   },
   {
-    stage: 'V2 · الذاكرة وتوسيع RAG',
+    stage: 'V2 · RAG & Memory Upgrade',
     commitRef: 'Upgrade (8c5c335)',
-    retrieval: 'إضافة BM25 وتفكيك الجذور العربية + 9 مجموعات مرادفات مصرفية ثنائية اللغة.',
-    contextAndTokens: 'توسيع نافذة السياق إلى 1,400 حرف (×5.8) + رفع التوليد إلى 4,096 توكن.',
-    qaAndCompliance: 'الانتقال إلى LLM-First Extraction + ذاكرة محادثة متعددة الأدوار (Multi-Turn).',
-    outcome: 'قفزة كبيرة في فهم الفقرات الكاملة والردود التحليلية عبر أدوار الحوار.',
+    retrieval: 'Added custom BM25 ranking with Arabic stemming + 9 bilingual operational risk synonym clusters.',
+    contextAndTokens: 'Expanded retrieval window to 1,400 chars (5.8x) and generation budget to 4,096 tokens.',
+    qaAndCompliance: 'Transitioned to LLM-First structured extraction with multi-turn conversational memory.',
+    outcome: 'Major leap in paragraph comprehension and analytical coherence across follow-up turns.',
   },
   {
-    stage: 'V3 · معمارية SOTA الهجينة',
-    commitRef: 'SOTA (13160f5)',
-    retrieval: 'Hybrid Vector (192-dim + gemini-embedding-2) + BM25 بدمج RRF (k=60).',
-    contextAndTokens: 'وضعان معايران: سريع (qwen3:1.7b / LOW) ودقيق (qwen3.5:4b / HIGH) + Schema.',
-    qaAndCompliance: 'تمريرتين QA Self-Critique (8 قواعد حتمية + مدقق ذاتي LLM) + معايرة الخسائر.',
-    outcome: 'انضباط تام لصياغة المخاطر والضوابط وتقليص الأخطاء التركيبية بنسبة جذرية.',
+    stage: 'V3 · Industry Best-Practice Hybrid AI',
+    commitRef: 'Hybrid RAG + QA (13160f5)',
+    retrieval: 'Hybrid dense embeddings (192-dim + gemini-embedding-2) fused with BM25 via RRF (k=60).',
+    contextAndTokens: 'Dual calibrated model profiles: Fast (qwen3:1.7b / LOW) and Accurate (qwen3.5:4b / HIGH) + Schema.',
+    qaAndCompliance: 'Two-pass QA self-critique (8 deterministic banking rules + LLM refinement pass) + loss checks.',
+    outcome: 'Disciplined risk/control phrasing, strict evidence citations, and steep drop in schema errors.',
   },
   {
-    stage: 'V4 · المعايرة النهائية للبنك',
-    commitRef: 'Client Calibration (d8379bd)',
-    retrieval: 'ربط مباشر مع 84 عقدة بازل L1-L3 و34 حالة ESG CBE + وضع المصدر المزدوج.',
-    contextAndTokens: 'حماية جدار الأمان: PII Redaction + Prompt Injection Quarantine + Strip Forbidden Fields.',
-    qaAndCompliance: 'تصحيح Key Risk (المتبقي فقط)، "-" للبعد القضائي، توحيد فئات القبول 1–4، وتنبيه PDF المصور.',
-    outcome: 'تطابق كامل مع ملاحظات مراجعي البنك الأهلي المصري واعتماد 82+87 اختبار تحقق.',
+    stage: 'V4 · NBE Reviewer Calibration',
+    commitRef: 'Bank Calibration (d8379bd)',
+    retrieval: 'Bound directly to 84 Basel L1–L3 nodes and 34 CBE ESG cases + Dual-Source continuation mode.',
+    contextAndTokens: 'Full security perimeter: PII Redaction, Prompt-Injection Quarantine, and 15-field stripping.',
+    qaAndCompliance: 'Residual-only Key Risk, "-" legal NFI justification, 1–4 acceptability rules, and scanned-PDF OCR alerts.',
+    outcome: 'Full alignment with NBE reviewer feedback and backed by 82 Node.js + 87 Python regression tests.',
+  },
+] as const;
+
+export const METHODOLOGY_REFERENCES = [
+  {
+    category: 'Information Retrieval & RAG Architecture',
+    items: [
+      {
+        citation: 'Cormack, G. V., Clarke, C. L. A., & Buettcher, S. (2009)',
+        title: 'Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods (SIGIR ’09)',
+        roleInSystem: 'Governs Hybrid RAG rank fusion in rag-service.ts using constant k = 60 across dense vectors and BM25.',
+      },
+      {
+        citation: 'Robertson, S., & Zaragoza, H. (2009)',
+        title: 'The Probabilistic Relevance Framework: BM25 and Beyond (Foundations & Trends in IR)',
+        roleInSystem: 'Forms the lexical scoring leg paired with custom Arabic/English banking synonym expansion.',
+      },
+      {
+        citation: 'Lewis, P., Perez, E., Piktus, A., et al. (2020)',
+        title: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (NeurIPS 2020)',
+        roleInSystem: 'Core evidence-grounding pattern requiring verbatim policy quotes and page numbers per proposal.',
+      },
+    ],
+  },
+  {
+    category: 'Model Reasoning, Self-Critique & AI Security',
+    items: [
+      {
+        citation: 'Madaan, A., Tandon, N., Gupta, P., et al. (2023)',
+        title: 'Self-Refine: Iterative Refinement with Self-Feedback (NeurIPS 2023)',
+        roleInSystem: 'Basis for Accurate mode runLlmSelfCritiquePass reviewing 8 RCSA QA rules prior to Maker sign-off.',
+      },
+      {
+        citation: 'Qwen Team (2025) & Google Gemini Developer Docs (2025)',
+        title: 'Qwen3 Technical Report (arXiv:2505.09388) & gemini-embedding-2 / Structured Schema Outputs',
+        roleInSystem: 'Powers qwen3:1.7b / qwen3.5:4b profiles, <think> parsing, 192-dim dense vectors, and JSON outputs.',
+      },
+      {
+        citation: 'OWASP Foundation (2025) & NIST (2023)',
+        title: 'OWASP Top 10 for LLM Applications (LLM01 / LLM02) & NIST AI Risk Management Framework (AI 100-1)',
+        roleInSystem: 'Informs EG IBAN/National ID/PAN redaction, prompt-injection quarantine, and strict human-in-the-loop separation.',
+      },
+    ],
+  },
+  {
+    category: 'Banking Regulation & Primary NBE Methodology',
+    items: [
+      {
+        citation: 'Basel Committee on Banking Supervision (BCBS)',
+        title: 'Principles for the Sound Management of Operational Risk (PSMOR) & Event Type Taxonomy (L1/L2/L3)',
+        roleInSystem: 'Defines the 7 Level-1 operational risk categories and 84 hierarchical L1→L2→L3 taxonomy nodes.',
+      },
+      {
+        citation: 'Central Bank of Egypt (CBE)',
+        title: 'Sustainable Finance & Environmental/Social/Governance (ESG) Operational Risk Catalogue',
+        roleInSystem: 'Provides the 34 standardized E/S/G risk cases integrated across extraction, QA, and official exports.',
+      },
+      {
+        citation: 'National Bank of Egypt (NBE) — Operational Risk Division',
+        title: 'NBE RCSA Methodology Slides (Pages 3–6), Official 29-Column Template (C–AE), & Reviewer Calibration Notes',
+        roleInSystem: 'Authoritative source for EI880:EI884 anchors, 3×3 RRF matrix, 4×5 NFI ("-"), and residual-only Key Risk.',
+      },
+    ],
   },
 ] as const;
 
@@ -364,162 +428,178 @@ export const METHODOLOGY_SLIDES: MethodologySlide[] = [
     id: 'deep-cover',
     number: 1,
     indexLabel: '01',
-    section: 'المنهجية وهندسة النماذج',
-    title: 'تشريح المنهجية المصرفية، هندسة النماذج، ورحلة تطوير الأداء (SOTA)',
+    section: 'Methodology & Model Architecture',
+    title: 'Quantitative RCSA Methodology, Hybrid AI Models & Performance Evolution',
     subtitle:
-      'عرض تقني-منهجي معمق يوضح كيف تجمع المنصة بين محرك الاحتساب الحتمي (Python Decimal) ومعمارية الذكاء الهجين (Hybrid Vector+BM25 RRF + QA Self-Critique).',
+      'An in-depth technical and methodological walkthrough of how the platform combines a deterministic Python Decimal calculation engine with industry best-practice Hybrid RAG (Vector + BM25 RRF + Self-Critique QA).',
     layout: 'deep_cover',
-    jumpTarget: { label: 'فتح وكيل الذكاء الاصطناعي', page: 'agent' },
+    jumpTarget: { label: 'Open AI Risk Agent', page: 'agent' },
     presenterNotes:
-      'هذا العرض موجه للجان المنهجية، التدقيق التقني، وفرق المخاطر والنماذج: يربط كل قاعدة من قواعد البنك الثمانية ومعادلات Excel بمكونات التنفيذ الفعلية، ويستعرض مسار التحسين من المرحلة V1 حتى V4 SOTA.',
-    keyQuestion: 'ما المبدأ الهندسي الأساسي الذي بُنيت عليه المنصة؟',
+      'Designed for model risk committees, internal audit, and methodology reviewers: maps every NBE rule and Excel formula directly to the running code, and traces the V1-to-V4 model upgrade path grounded in established research.',
+    keyQuestion: 'What is the foundational engineering principle behind this platform?',
     keyAnswer:
-      'مبدأ الفصل الحاسم بين الفهم والاستخلاص (دور LLM/RAG) وبين الاحتساب والتصنيف والاعتماد (دور محرك بايثون الحتمي والإنسان).',
+      'Strict separation of concerns: Hybrid RAG and LLMs extract and cite qualitative policy evidence, while the deterministic Python Decimal engine and human reviewers control 100% of ratings, RRF, and approvals.',
   },
   {
     id: 'dual-architecture',
     number: 2,
     indexLabel: '02',
-    section: 'المعمارية الهجينة',
-    title: 'المعمارية ثنائية المحرك: الذكاء اللغوي للاستخلاص والمحرك الحتمي للحساب',
+    section: 'Dual-Engine Architecture',
+    title: 'Strict Separation: Deterministic Python Engine vs. Advisory Hybrid AI',
     subtitle:
-      'النموذج اللغوي لا يحسب أرقاماً ولا يحدد RRF ولا يعتمد مخاطرة؛ كل مخرجاته تمر بجدار تطهير قبل دخول محرك بايثون المعتمد.',
+      'The language model never calculates loss figures, assigns RRF percentages, or approves risks; every model payload passes a 15-field sanitizer before deterministic computation.',
     layout: 'dual_architecture',
-    jumpTarget: { label: 'استعراض مصفوفة RCSA', page: 'rcsa-table' },
+    jumpTarget: { label: 'Inspect 29-Column Matrix', page: 'rcsa-table' },
     presenterNotes:
-      'أشر إلى تدفق البيانات في الشريحة: المستندات تدخل الاستخلاص وRAG، ثم LLM يقترح نصوصاً مهيكلة بـ JSON Schema، ثم دالة stripForbiddenLlmFields تحذف قسراً أي درجات أو RRF قد يحاول النموذج كتابتها، وأخيراً يحسب Python Decimal القيم النهائية.',
-    keyQuestion: 'ماذا يحدث لو حاول النموذج اللغوي كتابة تصنيف High أو RRF 95% في إجابته؟',
+      'Walk reviewers through the contract: documents flow into Hybrid RAG retrieval, the LLM generates schema-bound text with verbatim quotes, stripForbiddenLlmFields removes any restricted rating fields, and Python Decimal computes the official figures.',
+    keyQuestion: 'What happens if the LLM attempts to output a High rating or 95% RRF?',
     keyAnswer:
-      'تقوم دالة stripForbiddenLlmFields بإسقاط 15 حقلاً محظوراً فوراً وتسجيل الحادثة في السجل، ثم يُمرر الصف لمحرك بايثون للاحتساب الرسمي.',
+      'stripForbiddenLlmFields immediately drops all 15 forbidden calculation and approval fields, logs the sanitization event, and delegates scoring strictly to the Python engine.',
   },
   {
     id: 'phase2a-financial',
     number: 3,
     indexLabel: '03',
-    section: 'محرك الحسابات (Phase 2A)',
-    title: 'المنهجية المالية والخطر الكامن: الشرائح الخمس، المراجع، ومعايرة الحوادث',
+    section: 'Calculation Engine (Phase 2A)',
+    title: 'Financial Impact Bands, Official Anchors (EI880:EI884) & Historical Calibration',
     subtitle:
-      'احتساب دقيق باستخدام Decimal خالٍ من أخطاء الفاصلة العائمة، مطابق لصفحات المنهجية (3، 5، 6) وخلايا القالب الرسمي (EI880:EI884).',
+      'Exact Decimal arithmetic free of floating-point drift, implementing NBE methodology pages 3, 5, and 6 alongside automatic historical loss benchmarking.',
     layout: 'phase2a_financial',
-    jumpTarget: { label: 'رؤية تنبيهات المعايرة في اللوحة', page: 'dashboard' },
+    jumpTarget: { label: 'View Loss Alerts in Dashboard', page: 'dashboard' },
     presenterNotes:
-      'اعرض جدول الشرائح الخمس والمبالغ المرجعية الرسمية (50K، 151K، 501K، 1,501K، 3,001K) التي تمنع القيم العشوائية مثل 250K، ثم اشرح كيف يقارن النظام التقدير بسجل الحوادث التاريخية للوحدة ويرفع تنبيهاً إذا قل عن 75%.',
+      'Highlight the five official EGP impact bands and exact EI880:EI884 reference anchors (50K, 151K, 501K, 1.501M, 3.001M) that prevent arbitrary inputs, plus the automatic <75% historical loss alert.',
   },
   {
     id: 'phase2b-controls',
     number: 4,
     indexLabel: '04',
-    section: 'محرك الضوابط (Phase 2B)',
-    title: 'تقييم الضوابط، مصفوفة 3×3 لمعامل الخفض (RRF)، والخطر المتبقي',
+    section: 'Controls Engine (Phase 2B)',
+    title: 'Control Evaluation, 3×3 Official RRF Matrix & Residual Risk Calculation',
     subtitle:
-      'تطبيق قاعدة أعلى معامل خفض مؤهل (MAX RRF) للضوابط المنفذة ذات الصلة فقط، مع استبعاد الضوابط المقترحة (0%) وتوحيد الدوريات السبع.',
+      'Conservative MAX RRF selection over relevant IMPLEMENTED controls only, enforcing 0% reduction for PROPOSED controls and the seven official control frequencies.',
     layout: 'phase2b_controls',
-    jumpTarget: { label: 'مراجعة الضوابط في المصفوفة', page: 'rcsa-table' },
+    jumpTarget: { label: 'Review Controls in Matrix', page: 'rcsa-table' },
     presenterNotes:
-      'تأكد من إبراز المصفوفة 3×3 بالكامل (Automated 95/85/50 · Semi-Auto 90/80/40 · Manual 75/60/30) والتأكيد على أننا نأخذ MAX وليس الجمع، وأن الضابط المقترح مستقبلاً لا يخفض الخطر الحالي، مع تنظيف نص الضابط من عبارات النوع والآلية.',
+      'Emphasize why the engine takes MAX RRF rather than adding controls together—preventing artificial risk understatement—and why future PROPOSED controls receive 0% credit until implemented.',
   },
   {
     id: 'phase2c-nfi-esg',
     number: 5,
     indexLabel: '05',
-    section: 'الحوكمة المنهجية (Phase 2C)',
-    title: 'مصفوفة الشريحة 4 (NFI 4×5)، تصنيف بازل (84)، ESG (34)، وقاعدة Key Risk',
+    section: 'Governance Rules (Phase 2C)',
+    title: 'Slide 4 NFI (4×5 + "-"), Basel Taxonomy (84), CBE ESG (34) & Residual Key Risk',
     subtitle:
-      'تحقق حتمي من الأدلة لكل بُعد غير مالي، تطبيق مبدأ الأكثر تحوطاً، وحساب Key Risk حصرياً من الأثر المتبقي بعد الضوابط.',
+      'Deterministic validation of non-financial evidence, worst-case aggregation across dimensions, and strict enforcement of NBE residual-only Key Risk criteria.',
     layout: 'phase2c_nfi_esg',
-    jumpTarget: { label: 'فتح إعداد التقييم الموجه', page: 'backend-rcsa' },
+    jumpTarget: { label: 'Open Guided Assessment Wizard', page: 'backend-rcsa' },
     presenterNotes:
-      'سلط الضوء على إصلاحات المراجعين في phase2c.py: خيار "-" يتطلب مبرراً مكتوباً لعدم التعرض، قاعدة Key Risk تفحص residual_financial_rating وNFI فقط (وليس الكامن)، ويمنع النظام اختيار الفئة (1) مقبولة مع وجود خطة تصحيحية.',
+      'Point out key NBE reviewer calibrations enforced in phase2c.py: the "-" NFI option requires written rationale, Key Risk evaluates residual financial and NFI ratings only, and Category 1 acceptability is blocked when an action plan exists.',
   },
   {
     id: 'evolution-timeline',
     number: 6,
     indexLabel: '06',
-    section: 'رحلة تطوير النماذج',
-    title: 'رحلة ترقية أداء النماذج: من الأداء المحدود (V1) إلى معمارية SOTA (V4)',
+    section: 'Model Performance Journey',
+    title: 'Evolution from V1 Weak Baseline to V4 Industry Best-Practice Architecture',
     subtitle:
-      'توثيق المراحل الأربع التي عالجت ضعف الاستخلاص الأولي عبر ترقية الاسترجاع، حجم السياق، النماذج، وخطوة التدقيق الذاتي.',
+      'How four tracked engineering iterations resolved weak recall, context truncation, and schema errors until reaching full banking calibration.',
     layout: 'evolution_timeline',
-    jumpTarget: { label: 'تجربة الوكيل المحدّث', page: 'agent' },
+    jumpTarget: { label: 'Test the Upgraded AI Agent', page: 'agent' },
     presenterNotes:
-      'هذه الشريحة تجيب مباشرة عن سؤال: ماذا غيّرنا عندما لاحظنا ضعف أداء النموذج؟ اتبع الجدول من V1 (نافذة 240 حرفاً + بحث حرفي + 0.5B) إلى V2 (8c5c335) إلى V3 SOTA (13160f5) ثم V4 معايرة البنك (d8379bd).',
+      'This slide directly documents the journey requested by reviewers: tracing every commit from V1 (4301a33: 240-char naive search + 0.5B model) through V2 (8c5c335) and V3 Hybrid RAG + Self-Critique (13160f5) to V4 Bank Calibration (d8379bd).',
   },
   {
     id: 'rag-hybrid-rrf',
     number: 7,
     indexLabel: '07',
-    section: 'تطوير البحث والاسترجاع',
-    title: 'تشريح محرك Hybrid RAG: إصلاح العربية + BM25 IDF + متجهات + دمج RRF',
+    section: 'Hybrid Retrieval Engineering',
+    title: 'Inside Hybrid RAG: Arabic Repair + BM25 IDF + Dense Vectors + RRF (k=60)',
     subtitle:
-      'كيف نجح النظام في استرجاع الفقرات والجداول العربية والإنجليزية بدقة عالية وتجاوز مشكلات كسور PDF ومرادفات المصارف.',
+      'How the retrieval pipeline overcomes broken Arabic PDF font ligatures and matches cross-lingual operational risk terminology with high precision.',
     layout: 'rag_hybrid_rrf',
-    jumpTarget: { label: 'فحص قاعدة المعرفة في الوكيل', page: 'agent' },
+    jumpTarget: { label: 'Inspect Knowledge Base in Agent', page: 'agent' },
     presenterNotes:
-      'اشرح المسارين المتوازيين في rag-service.ts: مسار BM25 المعزز بـ 30+ قاعدة إصلاح للام-ألف (مثل المالحظة ← الملاحظة) و9 مجموعات مرادفات مصرفية، ومسار المتجهات الهجين (192-dim محلي + gemini-embedding-2 مخزن في SQLite)، ثم دمجهما بمعادلة RRF (k=60).',
+      'Explain the two parallel legs in rag-service.ts: lexical BM25 enriched with 30+ Arabic Lam-Alef fixes and 9 banking synonym clusters, fused via Cormack et al. (2009) RRF (k=60) with gemini-embedding-2 and 192-dim dense vectors cached in SQLite.',
   },
   {
     id: 'llm-profiles-prompting',
     number: 8,
     indexLabel: '08',
-    section: 'ترقية النماذج والتوجيه',
-    title: 'هندسة النماذج الثنائية (سريع / دقيق)، Few-Shot Gold Standard، وتنقية JSON',
+    section: 'Model Tuning & Parsing',
+    title: 'Dual Calibrated Model Profiles (Fast vs. Accurate) & Resilient JSON Parsing',
     subtitle:
-      'استبدال النماذج الضعيفة بملفين مضبوطين بدقة وتوجيه صارم مقترن بمثال مرجعي ذهبي ومحلل JSON مقاوم لأخطاء التوليد.',
+      'Replacing undersized baseline inference with role-matched Qwen3 / Qwen3.5 profiles, gold-standard few-shot prompting, and fault-tolerant JSON recovery.',
     layout: 'llm_profiles_prompting',
-    jumpTarget: { label: 'مقارنة الوضع السريع والدقيق', page: 'agent' },
+    jumpTarget: { label: 'Compare Fast & Accurate Modes', page: 'agent' },
     presenterNotes:
-      'وضّح لماذا غيّرنا الإعداد من نموذج 0.5B قديم إلى ملفين متدرجين (qwen3:1.7b / LOW للاستعلام الفوري، وqwen3.5:4b / HIGH للتحليل العميق 4096 توكن)، وكيف تضمن generateStructuredRcsaProposalsWithLlm مخرجات JSON صالحة عبر parseResilientLlmJson.',
+      'Contrast Fast mode (qwen3:1.7b / LOW thinking for interactive Q&A) with Accurate mode (qwen3.5:4b / HIGH thinking, 4,096 tokens, 16 chunks) and show how parseResilientLlmJson safely strips <think> traces and repairs output syntax.',
   },
   {
     id: 'qa-self-critique',
     number: 9,
     indexLabel: '09',
-    section: 'التدقيق الذاتي وجودة المخرجات',
-    title: 'بوابة الجودة المزدوجة (QA Self-Critique): 8 قواعد فحص وإصلاح تلقائي',
+    section: 'Output Quality Assurance',
+    title: 'Dual Quality Gate: 8 Deterministic NBE Rules + Self-Refinement Critique Pass',
     subtitle:
-      'مراجعة ذاتية مزدوجة (نموذج مدقق + فاحص حتمي من 8 قواعد) تنظف كل مقترح وتتحقق من تاريخ الخسائر قبل عرضه للموظف.',
+      'Every AI proposal undergoes automated quality scoring (0–100), regulatory rule verification, and iterative refinement before reaching the Maker.',
     layout: 'qa_self_critique',
-    jumpTarget: { label: 'معاينة التقييم الآلي للمقترحات', page: 'agent' },
+    jumpTarget: { label: 'Inspect Automated QA Scores', page: 'agent' },
     presenterNotes:
-      'استعرض القواعد الثماني في evaluateAndRefineRcsaProposalQa وكيف تمنع أكثر أخطاء النماذج شيوعاً: بدء الوصف بـ"احتمال"، تسرب رقم الصفحة، الخروج عن الأهداف الاستراتيجية الـ5، واستخدام Per Transaction.',
+      'Review the 8 checks in evaluateAndRefineRcsaProposalQa—including stripping weak "Probability..." openers, verifying verbatim quotes, validating L1–L3 hierarchy, and triggering runLlmSelfCritiquePass in Accurate mode.',
   },
   {
     id: 'ai-security-lineage',
     number: 10,
     indexLabel: '10',
-    section: 'أمن النماذج وتتبع المصدر',
-    title: 'أمن الذكاء الاصطناعي المصرفي: حماية PII، صد حقن الأوامر، وتتبع النسب',
+    section: 'AI Security & Data Lineage',
+    title: 'Banking AI Guardrails: PII Redaction, Injection Quarantine & 5-Badge Lineage',
     subtitle:
-      'دفاعات أمان متعددة الطبقات تحمي بيانات عملاء البنك وتمنع التلاعب بالوثائق وتوثق أصل كل خلية أمام المراجع.',
+      'Defense-in-depth aligned with OWASP LLM Top 10 and NIST AI RMF protecting customer identifiers, blocking embedded document attacks, and auditing every cell.',
     layout: 'ai_security_lineage',
-    jumpTarget: { label: 'مراجعة سجل التدقيق المركزي', page: 'audit' },
+    jumpTarget: { label: 'Inspect Central Audit Trail', page: 'audit' },
     presenterNotes:
-      'هذه الشريحة أساسية لفرق أمن المعلومات والالتزام: redactBankingPii يطمس IBAN والرقم القومي والبطاقات، quarantinePromptInjection يعزل أي أوامر خبيثة داخل الملفات المرفوعة، مع حارس PDF المصور (سكان) وأوسمة التمييز الخمسة.',
+      'Crucial for InfoSec review: redactBankingPii masks EG IBANs, 14-digit National IDs, and 16-digit PANs before inference; quarantinePromptInjection neutralizes untrusted SOP instructions; and 5 matrix provenance badges track human vs. AI edits.',
   },
   {
     id: 'before-after-metrics',
     number: 11,
     indexLabel: '11',
-    section: 'تقييم التحسن',
-    title: 'أثر الترقية: مقارنة قدرات النموذج وجودة المخرجات قبل التطوير وبعد SOTA',
+    section: 'Architectural Uplift',
+    title: 'Verified Capability Comparison: V1 Baseline vs. V4 Industry Best-Practice Build',
     subtitle:
-      'قياس واضح للفارق العملي عبر 6 محاور هندسية ومنهجية تفسر القفزة في دقة الاستخلاص وثبات المصفوفة النهائية.',
+      'An honest, strictly repository-verified before/after comparison across retrieval, reasoning depth, security, and regulatory alignment.',
     layout: 'before_after_metrics',
     presenterNotes:
-      'راجع الجدول المقارن: نافذة السياق زادت من 240 إلى 1400 حرف (×5.8)، حد التوليد ارتفع إلى 4096 توكن، الاسترجاع تحول لدمج Vector+BM25 RRF، ودخلت بوابة QA ذات الـ8 قواعد لإغلاق فجوات الالتزام المنهجي.',
+      'Highlight concrete measurable changes implemented in code: 5.8x context expansion (240 → 1,400 chars), 4,096-token budget, Vector+BM25 RRF fusion, 8-rule QA gate, 15 forbidden fields stripped, and Dual-Source historical continuation.',
   },
   {
     id: 'testing-roadmap',
     number: 12,
     indexLabel: '12',
-    section: 'التحقق والجودة والجاهزية',
-    title: 'حوكمة التحقق الشامل (169+ اختبار تحقق) وخارطة الجاهزية الإنتاجية للبنك',
+    section: 'Verification & Production Readiness',
+    title: 'Automated Verification Suite (169 Tests) & On-Premises Banking Roadmap',
     subtitle:
-      'ضمان جودة عبر حزم اختبارات آلية مزدوجة (Node.js + Python Decimal) وفحص متصفح حقيقي، مع مسار واضح للنشر داخل البنية المصرفية.',
+      'Dual-stack TypeScript and Python verification ensuring mathematical stability alongside a clear path to air-gapped institutional deployment.',
     layout: 'testing_roadmap',
-    jumpTarget: { label: 'مراجعة الوحدات وسجل التدقيق', page: 'business-units' },
+    jumpTarget: { label: 'Review Units & Audit Trail', page: 'business-units' },
     presenterNotes:
-      'اختم بملخص التحقق الهندسي الفعلي: 82 اختبار Node.js + 87 اختبار Python unittest + TypeScript check + Playwright verification، ثم وضح متطلبات الانتقال من بيئة التقييم إلى بيئة البنك الإنتاجية (Ollama محلي + WORM Storage + OCR).',
+      'Summarize real verified test coverage (82 Node.js tests + 87 Python unit tests + browser E2E) and outline institutional scaling: local air-gapped Ollama, AD/LDAP SSO, Loss DB sync, and WORM audit archiving.',
+  },
+  {
+    id: 'references',
+    number: 13,
+    indexLabel: '13',
+    section: 'References & Sources',
+    title: 'Research Papers, AI Governance Frameworks & Banking Regulatory Sources',
+    subtitle:
+      'Peer-reviewed publications, security standards, and primary NBE / CBE / Basel methodological sources underpinning the platform design.',
+    layout: 'references',
+    presenterNotes:
+      'Close with transparent attribution: every retrieval algorithm (BM25, RRF k=60, Dense RAG, Self-Refine), security control (OWASP LLM Top 10, NIST AI RMF), and risk formula traces directly to established literature and official NBE/CBE/BCBS standards.',
+    keyQuestion: 'What external research and standards validate the V4 architecture?',
+    keyAnswer:
+      'Hybrid retrieval follows Cormack et al. (2009) RRF and Robertson & Zaragoza (2009) BM25; self-critique builds on Madaan et al. (2023); guardrails align with OWASP LLM Top 10 & NIST AI RMF; and scoring implements BCBS PSMOR, CBE ESG, and official NBE RCSA specifications.',
   },
 ];
+
 

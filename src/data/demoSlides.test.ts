@@ -7,6 +7,7 @@ import {
   FINANCIAL_BANDS_TABLE,
   RRF_MATRIX_ROWS,
   MODEL_EVOLUTION_MILESTONES,
+  METHODOLOGY_REFERENCES,
 } from './demoSlides.js';
 
 const VALID_TARGET_PAGES = new Set([
@@ -65,8 +66,8 @@ test('ROLE_MATRIX_SUMMARY covers all 4 bank governance roles with demo IDs', () 
   });
 });
 
-test('METHODOLOGY_SLIDES contains 12 sequential deep-dive slides with exact technical/model fidelity', () => {
-  assert.equal(METHODOLOGY_SLIDES.length, 12);
+test('METHODOLOGY_SLIDES contains 13 English deep-dive slides without SOTA branding', () => {
+  assert.equal(METHODOLOGY_SLIDES.length, 13);
 
   METHODOLOGY_SLIDES.forEach((slide, idx) => {
     assert.equal(slide.number, idx + 1, `Deep slide ${slide.id} should have number ${idx + 1}`);
@@ -79,16 +80,20 @@ test('METHODOLOGY_SLIDES contains 12 sequential deep-dive slides with exact tech
     }
   });
 
-  const allText = METHODOLOGY_SLIDES.map((s) => `${s.title} ${s.subtitle} ${s.presenterNotes}`).join(' ');
+  const allText = METHODOLOGY_SLIDES.map(
+    (s) => `${s.section} ${s.title} ${s.subtitle} ${s.presenterNotes} ${s.keyQuestion || ''} ${s.keyAnswer || ''}`
+  ).join(' ');
+  assert.doesNotMatch(allText, /\bsota\b/i, 'METHODOLOGY_SLIDES must not use the term SOTA');
   assert.match(allText, /RRF/);
   assert.match(allText, /BM25/);
   assert.match(allText, /gemini-embedding-2/);
   assert.match(allText, /qwen3\.5:4b/);
   assert.match(allText, /stripForbiddenLlmFields/);
   assert.match(allText, /Key Risk/);
+  assert.match(allText, /Cormack/);
 });
 
-test('Methodology & Model Evolution tables match exact authoritative RCSA engine parameters', () => {
+test('Methodology tables, evolution milestones & references match exact parameters and omit SOTA', () => {
   assert.equal(FINANCIAL_BANDS_TABLE.length, 5);
   assert.equal(FINANCIAL_BANDS_TABLE[0].anchorEgp, '50,000');
   assert.equal(FINANCIAL_BANDS_TABLE[4].anchorEgp, '3,001,000');
@@ -102,4 +107,17 @@ test('Methodology & Model Evolution tables match exact authoritative RCSA engine
   assert.match(MODEL_EVOLUTION_MILESTONES[1].commitRef, /8c5c335/);
   assert.match(MODEL_EVOLUTION_MILESTONES[2].commitRef, /13160f5/);
   assert.match(MODEL_EVOLUTION_MILESTONES[3].commitRef, /d8379bd/);
+  assert.doesNotMatch(JSON.stringify(MODEL_EVOLUTION_MILESTONES), /\bsota\b/i);
+
+  assert.equal(METHODOLOGY_REFERENCES.length, 3);
+  const refsText = JSON.stringify(METHODOLOGY_REFERENCES);
+  assert.doesNotMatch(refsText, /\bsota\b/i);
+  assert.match(refsText, /Cormack/);
+  assert.match(refsText, /Robertson/);
+  assert.match(refsText, /Lewis/);
+  assert.match(refsText, /Madaan/);
+  assert.match(refsText, /OWASP/);
+  assert.match(refsText, /NIST/);
+  assert.match(refsText, /Basel/);
+  assert.match(refsText, /Central Bank of Egypt/);
 });
