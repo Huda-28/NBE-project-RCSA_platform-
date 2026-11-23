@@ -23,23 +23,56 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
-import { DEMO_SLIDES, ROLE_MATRIX_SUMMARY, DemoSlide } from '../data/demoSlides.js';
+import {
+  DEMO_SLIDES,
+  ROLE_MATRIX_SUMMARY,
+  DemoSlide,
+  METHODOLOGY_SLIDES,
+  MethodologySlide,
+} from '../data/demoSlides.js';
 import type { PageId } from '../components/Sidebar.js';
 import type { AppNavigationState } from '../App.js';
 import { HoverTooltip } from '../components/HoverTooltip.js';
+import { MethodologySlideBody } from '../components/MethodologySlidesRenderer.js';
+
+export type DemoDeckKind = 'executive' | 'methodology';
 
 interface DemoPresentationPageProps {
   onNavigate?: (next: Partial<AppNavigationState> & { page: PageId }) => void;
 }
 
 export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNavigate }) => {
+  const [activeDeck, setActiveDeck] = useState<DemoDeckKind>(() => {
+    if (typeof window !== 'undefined') {
+      const deckParam = new URLSearchParams(window.location.search).get('deck');
+      if (deckParam === 'methodology') return 'methodology';
+    }
+    return 'executive';
+  });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showNotes, setShowNotes] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
 
-  const slide = DEMO_SLIDES[currentIndex] || DEMO_SLIDES[0];
-  const totalSlides = DEMO_SLIDES.length;
+  const activeSlides: Array<DemoSlide | MethodologySlide> =
+    activeDeck === 'executive' ? DEMO_SLIDES : METHODOLOGY_SLIDES;
+  const slide = activeSlides[currentIndex] || activeSlides[0];
+  const totalSlides = activeSlides.length;
+
+  const handleSelectDeck = useCallback((deck: DemoDeckKind) => {
+    setActiveDeck(deck);
+    setCurrentIndex(0);
+    setShowOverview(false);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (deck === 'methodology') {
+        url.searchParams.set('deck', 'methodology');
+      } else {
+        url.searchParams.delete('deck');
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
 
   const goNext = useCallback(() => {
     setCurrentIndex((prev) => Math.min(totalSlides - 1, prev + 1));
@@ -955,6 +988,85 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
       dir="rtl"
       data-testid="demo-presentation-page"
     >
+      {/* Deck Switcher Bar */}
+      <div
+        className="bg-white border border-[#DCDAD5] rounded-2xl p-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-xs"
+        role="tablist"
+        aria-label="اختيار العرض التقديمي"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeDeck === 'executive'}
+            onClick={() => handleSelectDeck('executive')}
+            data-testid="deck-tab-executive"
+            className={`px-4 py-2.5 rounded-xl border text-right transition-all cursor-pointer flex items-center justify-between gap-3 ${
+              activeDeck === 'executive'
+                ? 'bg-[#09331F] text-white border-[#09331F] shadow-xs'
+                : 'bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border-[#DCDAD5]'
+            }`}
+          >
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold">
+                العرض التنفيذي (لغير التقنيين · 13 شريحة)
+              </div>
+              <div
+                className={`text-[11px] mt-0.5 ${
+                  activeDeck === 'executive' ? 'text-emerald-100/90' : 'text-slate-600'
+                }`}
+              >
+                رحلة التقييم والأدوار والمصفوفة والمخرجات للمراجعين والإدارات
+              </div>
+            </div>
+            <span
+              className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md tabular-nums shrink-0 ${
+                activeDeck === 'executive'
+                  ? 'bg-white/15 text-[#F79C1E]'
+                  : 'bg-white text-[#006547] border border-[#DCDAD5]'
+              }`}
+            >
+              13
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeDeck === 'methodology'}
+            onClick={() => handleSelectDeck('methodology')}
+            data-testid="deck-tab-methodology"
+            className={`px-4 py-2.5 rounded-xl border text-right transition-all cursor-pointer flex items-center justify-between gap-3 ${
+              activeDeck === 'methodology'
+                ? 'bg-[#09331F] text-white border-[#09331F] shadow-xs'
+                : 'bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border-[#DCDAD5]'
+            }`}
+          >
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold">
+                المنهجية والنماذج وتطور الأداء (12 شريحة)
+              </div>
+              <div
+                className={`text-[11px] mt-0.5 ${
+                  activeDeck === 'methodology' ? 'text-emerald-100/90' : 'text-slate-600'
+                }`}
+              >
+                معادلات بايثون الحتمية + Hybrid RAG (RRF) + قفزات V1→V4 وأمن AI
+              </div>
+            </div>
+            <span
+              className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md tabular-nums shrink-0 ${
+                activeDeck === 'methodology'
+                  ? 'bg-white/15 text-[#F79C1E]'
+                  : 'bg-white text-[#006547] border border-[#DCDAD5]'
+              }`}
+            >
+              12
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Executive Presenter Bar */}
       <div className="bg-white border border-[#DCDAD5] rounded-2xl p-3.5 sm:px-5 sm:py-3.5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -963,7 +1075,11 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
           </div>
           <div className="min-w-0">
             <div className="text-[11px] font-bold text-[#006547] flex items-center gap-2">
-              <span>العرض التعريفي للمنصة (غير تقني)</span>
+              <span>
+                {activeDeck === 'executive'
+                  ? 'العرض التعريفي للمنصة (غير تقني)'
+                  : 'المنهجية وهندسة النماذج وتطور الأداء (Deep Dive)'}
+              </span>
               <span className="text-slate-300">·</span>
               <span>{slide.section}</span>
             </div>
@@ -1029,10 +1145,25 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
             </button>
           </HoverTooltip>
 
-          <HoverTooltip description="تنزيل نسخة PDF جاهزة للطباعة أو الإرسال للمراجعين (13 شريحة)" side="bottom">
+          <HoverTooltip
+            description={
+              activeDeck === 'executive'
+                ? 'تنزيل نسخة PDF جاهزة للطباعة أو الإرسال للمراجعين (13 شريحة)'
+                : 'تنزيل نسخة PDF لعرض المنهجية وتطور الأداء (12 شريحة)'
+            }
+            side="bottom"
+          >
             <a
-              href="/NBE_RCSA_Executive_Demo_AR.pdf"
-              download="NBE_RCSA_Executive_Demo_AR.pdf"
+              href={
+                activeDeck === 'executive'
+                  ? '/NBE_RCSA_Executive_Demo_AR.pdf'
+                  : '/NBE_RCSA_Methodology_Models_Journey.pdf'
+              }
+              download={
+                activeDeck === 'executive'
+                  ? 'NBE_RCSA_Executive_Demo_AR.pdf'
+                  : 'NBE_RCSA_Methodology_Models_Journey.pdf'
+              }
               data-testid="demo-download-pdf"
               className="min-h-9 px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 transition-colors whitespace-nowrap"
             >
@@ -1052,7 +1183,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#EFECE6]">
             <div className="flex items-center gap-2 text-xs font-extrabold text-[#09331F]">
               <Layers className="w-4 h-4 text-[#006547]" />
-              <span>فهرس العرض الكامل (13 شريحة) — اضغط للانتقال الفوري</span>
+              <span>فهرس العرض الكامل ({totalSlides} شريحة) — اضغط للانتقال الفوري</span>
             </div>
             <button
               type="button"
@@ -1063,7 +1194,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-            {DEMO_SLIDES.map((s, idx) => {
+            {activeSlides.map((s, idx) => {
               const isSelected = idx === currentIndex;
               return (
                 <button
@@ -1100,7 +1231,9 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
         aria-label={`الشريحة ${slide.number}: ${slide.title}`}
         className="bg-white border border-[#DCDAD5] rounded-2xl p-5 sm:p-7 shadow-xs space-y-5"
       >
-        {slide.layout !== 'cover' && (
+        {(activeDeck === 'executive'
+          ? (slide as DemoSlide).layout !== 'cover'
+          : (slide as MethodologySlide).layout !== 'deep_cover') && (
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-4 border-b border-[#EFECE6]">
             <div className="space-y-1 max-w-4xl">
               <div className="text-xs font-bold text-[#006547] flex items-center gap-2">
@@ -1135,7 +1268,13 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
           </div>
         )}
 
-        <div>{renderSlideBody(slide)}</div>
+        <div>
+          {activeDeck === 'executive' ? (
+            renderSlideBody(slide as DemoSlide)
+          ) : (
+            <MethodologySlideBody slide={slide as MethodologySlide} />
+          )}
+        </div>
 
         {/* Bottom Slide Controls & Progress */}
         <div className="pt-4 border-t border-[#EFECE6] flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1165,7 +1304,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
 
           {/* Minimal dot-free step bar */}
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
-            {DEMO_SLIDES.map((s, idx) => (
+            {activeSlides.map((s, idx) => (
               <button
                 key={s.id}
                 type="button"
@@ -1187,7 +1326,11 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
               {slide.number} / {totalSlides}
             </span>
             <a
-              href="/demo-presentation.html"
+              href={
+                activeDeck === 'executive'
+                  ? '/demo-presentation.html'
+                  : '/methodology-models-presentation.html'
+              }
               className="text-[#006547] hover:underline font-bold"
             >
               عرض جميع الشرائح للطباعة ↗
@@ -1205,7 +1348,11 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-extrabold text-[#09331F]">
               <MessageSquareText className="w-4 h-4 text-[#006547]" />
-              <span>دليل الشرح للمُقدّم (بلغة مصرفية غير تقنية)</span>
+              <span>
+                {activeDeck === 'executive'
+                  ? 'دليل الشرح للمُقدّم (بلغة مصرفية غير تقنية)'
+                  : 'دليل العرض المنهجي والتقني (للمنهجية والنماذج وتدقيق النموذج)'}
+              </span>
             </div>
             <span className="text-[11px] text-slate-500">
               اختصارات لوحة المفاتيح: الأسهم للتنقل · G للفهرس · N للملاحظات

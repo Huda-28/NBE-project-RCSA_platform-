@@ -1,0 +1,1280 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>المنهجية والنماذج وتطور الأداء (Deep Dive) | منصة RCSA — البنك الأهلي المصري</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #e9ebe7;
+        color: #0f172a;
+        direction: rtl;
+      }
+
+      .toolbar {
+        position: relative;
+        z-index: 50;
+        background: #09331f;
+        color: #ffffff;
+        border-bottom: 2px solid #f79c1e;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+
+      .btn-primary {
+        background: #006547;
+        border-color: #f79c1e;
+      }
+
+      .deck {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 24px 0 48px;
+      }
+
+      .slide {
+        width: 1280px;
+        height: 720px;
+        background: #ffffff;
+        border: 1px solid #dcdad5;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 30px 42px 22px;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .slide:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .slide-cover {
+        background: #09331f;
+        color: #ffffff;
+        border-color: #09331f;
+        padding: 38px 46px 26px;
+      }
+
+      .slide-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 1px solid #efece6;
+        padding-bottom: 12px;
+        margin-bottom: 14px;
+      }
+
+      .kicker {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #006547;
+        margin-bottom: 3px;
+      }
+
+      .kicker-num {
+        color: #9a5b00;
+        font-variant-numeric: tabular-nums;
+      }
+
+      h1.cover-title {
+        font-size: 33px;
+        font-weight: 800;
+        line-height: 1.3;
+        margin: 0;
+        color: #ffffff;
+      }
+
+      h2.slide-title {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.3;
+        margin: 0;
+        color: #09331f;
+      }
+
+      p.slide-subtitle {
+        font-size: 13px;
+        color: #475569;
+        margin: 4px 0 0;
+        line-height: 1.5;
+      }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .nbe-logo-header {
+        height: 38px;
+        width: 156px;
+        object-fit: contain;
+        display: block;
+      }
+
+      .slide-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #64748b;
+        border-top: 1px solid #efece6;
+        padding-top: 9px;
+        margin-top: 12px;
+      }
+
+      .slide-cover .slide-footer {
+        color: rgba(255, 255, 255, 0.72);
+        border-top-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #dcdad5;
+        border-radius: 13px;
+        padding: 14px;
+      }
+
+      .card-soft {
+        background: #f8f8f6;
+        border: 1px solid #dcdad5;
+        border-radius: 13px;
+        padding: 14px;
+      }
+
+      .card-forest {
+        background: #09331f;
+        color: #ffffff;
+        border: 1px solid #09331f;
+        border-radius: 13px;
+        padding: 16px;
+      }
+
+      .card-rose {
+        background: #fff5f5;
+        border: 1px solid #fecdd3;
+        border-radius: 13px;
+        padding: 14px;
+      }
+
+      .card-emerald {
+        background: #f2fbf6;
+        border: 1px solid #a7f3d0;
+        border-radius: 13px;
+        padding: 14px;
+      }
+
+      .card-amber {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 13px;
+        padding: 14px;
+      }
+
+      .card-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #09331f;
+        margin: 0 0 6px;
+      }
+
+      .card-forest .card-title {
+        color: #f79c1e;
+      }
+
+      .card-text {
+        font-size: 12px;
+        color: #334155;
+        line-height: 1.6;
+        margin: 0;
+      }
+
+      .card-forest .card-text {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .num-big {
+        font-size: 26px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: #f79c1e;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      table.nbe-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11.5px;
+      }
+
+      table.nbe-table th {
+        background: #09331f;
+        color: #ffffff;
+        font-weight: 800;
+        padding: 7px 10px;
+        text-align: right;
+        border: 1px solid #09331f;
+      }
+
+      table.nbe-table td {
+        padding: 7px 10px;
+        border: 1px solid #e5e3de;
+        color: #1e293b;
+        vertical-align: middle;
+      }
+
+      table.nbe-table tr:nth-child(even) td {
+        background: #faf9f6;
+      }
+
+      ul.clean-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      ul.clean-list li {
+        font-size: 11.8px;
+        line-height: 1.55;
+        color: #1e293b;
+        background: #ffffff;
+        border: 1px solid #e5e3de;
+        border-radius: 9px;
+        padding: 8px 11px;
+      }
+
+      .formula-box {
+        background: #f8f8f6;
+        border: 1px solid #dcdad5;
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #09331f;
+        direction: ltr;
+        text-align: center;
+      }
+
+      @media print {
+        body {
+          background: #ffffff;
+        }
+        .toolbar {
+          display: none !important;
+        }
+        .deck {
+          padding: 0;
+          gap: 0;
+        }
+        .slide {
+          border: none;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div style="font-size: 13px; font-weight: 800">
+        منصة RCSA — البنك الأهلي المصري · المنهجية والنماذج وتطور الأداء (12 شريحة)
+      </div>
+      <div class="toolbar-actions">
+        <a class="btn" href="/?page=demo&amp;deck=methodology">العودة للمنصة التفاعلية</a>
+        <a class="btn" href="/demo-presentation.html">العرض التنفيذي لغير التقنيين (13 شريحة)</a>
+        <a class="btn" href="/NBE_RCSA_Methodology_Models_Journey.pdf" download>تنزيل نسخة PDF</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">طباعة / حفظ PDF</button>
+      </div>
+    </div>
+
+    <main class="deck">
+      <!-- Slide 01: Deep Cover -->
+      <section class="slide slide-cover">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 32px">
+          <div style="max-width: 800px">
+            <div style="color: #f79c1e; font-size: 13px; font-weight: 800; margin-bottom: 12px">
+              التوثيق المنهجي العميق · هندسة النماذج وتطور الأداء (Deep Dive)
+            </div>
+            <h1 class="cover-title">
+              المنهجية الكمية والنماذج الهجينة ورحلة تطوير الأداء في منصة RCSA
+            </h1>
+            <p style="font-size: 15px; color: rgba(255, 255, 255, 0.88); line-height: 1.7; margin-top: 12px">
+              شرح تفصيلي لازدواجية المحرك الحتمي (Python Decimal) مع منظومة البحث الهجين (Hybrid Vector + BM25 + RRF)،
+              وكيف تطوّر أداء النموذج من النسخة المرجعية الأولى V1 إلى منصة V4 SOTA.
+            </p>
+          </div>
+          <div
+            style="
+              background: rgba(255, 255, 255, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 16px;
+              padding: 18px 22px;
+              text-align: center;
+              min-width: 245px;
+            "
+          >
+            <img
+              src="/assets/nbe-logo-white.png"
+              alt="البنك الأهلي المصري"
+              style="height: 58px; width: auto; object-fit: contain; margin-bottom: 8px"
+            />
+            <div style="font-size: 12px; font-weight: 800; color: #ffffff">
+              لجان المنهجية والنماذج والتدقيق
+            </div>
+            <div class="mono" style="font-size: 11px; color: #f79c1e; margin-top: 4px">
+              SOTA Hybrid RAG · Python Decimal
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-4" style="margin-top: 22px">
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 14px">
+            <div class="num-big mono">k=60</div>
+            <div style="font-size: 13px; font-weight: 800; margin-top: 4px">دمج الترتيب الهجين RRF</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              الجمع الرياضي بين متجهات المعنى 192-dim وبحث الكلمات BM25
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 14px">
+            <div class="num-big mono">3×3</div>
+            <div style="font-size: 13px; font-weight: 800; margin-top: 4px">مصفوفة معامل الخفض RRF</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              من 30% يدوي تصحيحي إلى 95% آلي وقائي بمعادلات Python Decimal
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 14px">
+            <div class="num-big mono">8</div>
+            <div style="font-size: 13px; font-weight: 800; margin-top: 4px">قواعد فحص QA الذاتي</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              مراجعة ذاتية إلزامية قبل عرض أي مقترح ذكي على الموظف
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 14px">
+            <div class="num-big mono">V1→V4</div>
+            <div style="font-size: 13px; font-weight: 800; margin-top: 4px">أربع مراحل تحوّل قياسية</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              من استخراج نصي أولي في V1 إلى وكيل RAG هجين ومعاير بنكياً في V4
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 16px">
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e">1. فصل الحسابات عن LLM</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.85); margin-top: 4px">
+              منع النماذج اللغوية تماماً من كتابة التقييمات أو معاملات RRF؛ كل الحسابات بيد محرك Python Decimal.
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e">2. تشريح تطور الأداء V1→V4</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.85); margin-top: 4px">
+              توثيق كل ترقية برمجية من commit 4301a33 حتى V4 d8379bd وما حلّته في دقة الاسترجاع والالتزام.
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e">3. أمن البيانات والحتمية</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.85); margin-top: 4px">
+              تنقيح IBAN والرقم القومي المصري، عزل Prompt Injection، وشطب 15 حقلاً حسابياً محظوراً من مخرجات LLM.
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>البنك الأهلي المصري — قطاع المخاطر التشغيلية | التوثيق المنهجي وهندسة النماذج</span>
+          <span class="mono">01 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 02: Dual Architecture -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">02 / 12</span> · المعمارية المزدوجة</div>
+            <h2 class="slide-title">
+              الفصل الصارم: محرك بايثون الحتمي مقابل الوكيل الذكي
+            </h2>
+            <p class="slide-subtitle">
+              القاعدة الهندسية الذهبية في المنصة: النموذج اللغوي يقترح السرد والمطابقة المرجعية بالدليل فقط، بينما محرك Python يتولى 100% من الأرقام والدرجات.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card-emerald">
+              <div class="card-title">1. الوكيل الاستشاري (TypeScript + Hybrid RAG + LLM)</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>قراءة وفهرسة المستندات:</strong> استخلاص نصوص PDF وWord وExcel وتقسيمها لفقرات متداخلة مع حفظ المتجهات في SQLite.</li>
+                <li><strong>المقترح الموثّق بالدليل:</strong> توليد وصف الحدث والسبب والأثر والمطالبة برقم الصفحة والفقرة المقتبسة (<span class="mono">evidence_quote</span>).</li>
+                <li><strong>مطابقة المعايير:</strong> ربط كل خطر بتصنيف بازل L1–L3 (84 بنداً) وقائمة استدامة المركزي CBE ESG (34 بنداً).</li>
+                <li><strong>حاجز الشطب الإلزامي (<span class="mono">stripForbiddenLlmFields</span>):</strong> حذف فوري لـ 15 حقلاً محظوراً من استجابة النموذج اللغوي قبل عرضها أو تخزينها.</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-color: #09331f; border-width: 1.5px">
+              <div class="card-title">2. محرك الحسابات الحتمي (<span class="mono">rcsa_engine · Python Decimal</span>)</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>المرحلة 2A (الأثر الكامن):</strong> حساب <span class="mono">Avg Impact × Frequency = Inherent EAL</span> وتعيين الدرجة الكامنة (<span class="mono">VL..C</span>).</li>
+                <li><strong>المرحلة 2B (الضوابط والمتبقي):</strong> تطبيق مصفوفة RRF 3×3 (بأعلى ضابط منفذ <span class="mono">MAX</span>) وحساب الخسارة المتبقية والتقييم.</li>
+                <li><strong>المرحلة 2C (NFI وKey Risk):</strong> حساب أعلى درجة للأبعاد الأربعة (5–1 أو «-» للبعد غير المطبق)، وتحديد Key Risk من المتبقي فقط.</li>
+                <li><strong>المرحلة 2D (الأولوية وخطة المعالجة):</strong> ترتيب الأولوية وفق حد التحمّل المصرفي ومقارنة الخسائر التاريخية.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card-forest">
+            <div class="card-title" style="margin-bottom: 8px">الحقول الحسابية الـ 15 المحظور توليدها عبر الذكاء الاصطناعي:</div>
+            <div class="mono" style="font-size: 11.5px; color: #e2e8f0; direction: ltr; text-align: left; line-height: 1.7">
+              inherent_eal · inherent_rating · inherent_risk_score · rrf_applied · rrf_percentage · residual_eal · residual_rating · residual_risk_score · control_effectiveness_rating · overall_nfi_score · overall_nfi_rating · is_key_risk · key_risk · approval_status · approved_by
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر التقني: docs/AI_AGENT_INTEGRATION_CONTRACT.md · src/server/proposal-extractor.ts</span>
+          <span class="mono">02 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 03: Phase 2A -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">03 / 12</span> · المرحلة 2A — المنهجية الكمية</div>
+            <h2 class="slide-title">حساب الخسارة الكامنة وشرائح الأثر المالي والتكرار (Phase 2A)</h2>
+            <p class="slide-subtitle">
+              معايرة الأثر المالي للحدث وتكراره السنوي باستخدام نقاط الارتكاز الرسمية المعتمدة (EI880:EI884) وتقريب Decimal دقيق.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2" style="grid-template-columns: 1.45fr 1fr">
+            <div class="card">
+              <div class="card-title">جدول الشرائح المالية الرسمية ونقاط الارتكاز (EGP)</div>
+              <table class="nbe-table" style="margin-top: 8px">
+                <thead>
+                  <tr>
+                    <th>الرمز</th>
+                    <th>المستوى</th>
+                    <th>النطاق المالي (جنيه مصري)</th>
+                    <th>نقطة الارتكاز المرجعية</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="mono" style="font-weight: 800; color: #006547">L</td>
+                    <td>منخفض</td>
+                    <td>حتى 150,000 ج.م</td>
+                    <td class="mono" style="font-weight: 800">50,000</td>
+                  </tr>
+                  <tr>
+                    <td class="mono" style="font-weight: 800; color: #006547">M</td>
+                    <td>متوسط</td>
+                    <td>150,001 – 500,000 ج.م</td>
+                    <td class="mono" style="font-weight: 800">151,000</td>
+                  </tr>
+                  <tr>
+                    <td class="mono" style="font-weight: 800; color: #006547">H</td>
+                    <td>مرتفع</td>
+                    <td>500,001 – 1,500,000 ج.م</td>
+                    <td class="mono" style="font-weight: 800">501,000</td>
+                  </tr>
+                  <tr>
+                    <td class="mono" style="font-weight: 800; color: #006547">VH</td>
+                    <td>مرتفع جداً</td>
+                    <td>1,500,001 – 3,000,000 ج.م</td>
+                    <td class="mono" style="font-weight: 800">1,501,000</td>
+                  </tr>
+                  <tr>
+                    <td class="mono" style="font-weight: 800; color: #006547">C</td>
+                    <td>كارثي / حرج</td>
+                    <td>أكثر من 3,000,000 ج.م</td>
+                    <td class="mono" style="font-weight: 800">3,001,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div class="card-forest">
+                <div class="card-title">معادلات الخسارة السنوية الكامنة (EAL)</div>
+                <div class="formula-box" style="margin: 10px 0">
+                  Inherent EAL = Avg Financial Impact × Frequency / Year
+                </div>
+                <p class="card-text">
+                  بعد حساب المتوسط السنوي للخسارة الكامنة عبر <span class="mono">Decimal</span>، يُصنّف المحرك
+                  النتيجة تلقائياً ضمن المصفوفة الكمية 5×5 لتعيين <span class="mono">inherent_rating</span>.
+                </p>
+              </div>
+
+              <div class="card-soft">
+                <div class="card-title">معاملات التكرار السنوي (Frequency Multipliers)</div>
+                <div class="grid-5" style="margin-top: 8px; text-align: center">
+                  <div class="card" style="padding: 8px 4px">
+                    <div class="mono" style="font-weight: 800; color: #006547">0.5</div>
+                    <div style="font-size: 10.5px; color: #475569">كل سنتين</div>
+                  </div>
+                  <div class="card" style="padding: 8px 4px">
+                    <div class="mono" style="font-weight: 800; color: #006547">1.0</div>
+                    <div style="font-size: 10.5px; color: #475569">سنوي</div>
+                  </div>
+                  <div class="card" style="padding: 8px 4px">
+                    <div class="mono" style="font-weight: 800; color: #006547">2.0</div>
+                    <div style="font-size: 10.5px; color: #475569">نصف سنوي</div>
+                  </div>
+                  <div class="card" style="padding: 8px 4px">
+                    <div class="mono" style="font-weight: 800; color: #006547">4.0</div>
+                    <div style="font-size: 10.5px; color: #475569">ربع سنوي</div>
+                  </div>
+                  <div class="card" style="padding: 8px 4px">
+                    <div class="mono" style="font-weight: 800; color: #006547">12.0</div>
+                    <div style="font-size: 10.5px; color: #475569">شهري+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: rcsa_engine/financial_inherent.py (FINANCIAL_IMPACT_BANDS &amp; EI880:EI884)</span>
+          <span class="mono">03 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 04: Phase 2B RRF -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">04 / 12</span> · المرحلة 2B — الضوابط والمتبقي</div>
+            <h2 class="slide-title">مصفوفة معامل خفض المخاطرة 3×3 وقواعد الأهلية (Phase 2B)</h2>
+            <p class="slide-subtitle">
+              تقييم فاعلية الضوابط طبقاً لنموذج البنك الرسمي (<span class="mono">OFFICIAL_RRF_MATRIX</span>) دون جمع متضخم بين الضوابط.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="card">
+            <div class="card-title">مصفوفة RRF الرسمية (أسلوب التنفيذ × طبيعة الضابط الرقابي)</div>
+            <table class="nbe-table" style="margin-top: 8px; text-align: center">
+              <thead>
+                <tr>
+                  <th style="text-align: right">أسلوب التنفيذ (Execution Method)</th>
+                  <th style="text-align: center">وقائي (Preventive)</th>
+                  <th style="text-align: center">اكتشافي (Detective)</th>
+                  <th style="text-align: center">تصحيحي (Corrective)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="text-align: right; font-weight: 800">ضابط آلي (Automated)</td>
+                  <td class="mono" style="font-weight: 800; color: #09331f; background: #ecfdf5">95%</td>
+                  <td class="mono" style="font-weight: 800; color: #09331f; background: #f0fdf4">85%</td>
+                  <td class="mono" style="font-weight: 800; color: #92400e; background: #fffbeb">50%</td>
+                </tr>
+                <tr>
+                  <td style="text-align: right; font-weight: 800">ضابط شبه آلي (Semi-Automated)</td>
+                  <td class="mono" style="font-weight: 800; color: #09331f; background: #ecfdf5">90%</td>
+                  <td class="mono" style="font-weight: 800; color: #09331f; background: #f0fdf4">80%</td>
+                  <td class="mono" style="font-weight: 800; color: #92400e; background: #fffbeb">40%</td>
+                </tr>
+                <tr>
+                  <td style="text-align: right; font-weight: 800">ضابط يدوي (Manual)</td>
+                  <td class="mono" style="font-weight: 800; color: #09331f; background: #f0fdf4">75%</td>
+                  <td class="mono" style="font-weight: 800; color: #92400e; background: #fffbeb">60%</td>
+                  <td class="mono" style="font-weight: 800; color: #9f1239; background: #fff1f2">30%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid-3">
+            <div class="card-emerald">
+              <div class="card-title">قاعدة الاختيار التحوطية (MAX RRF)</div>
+              <p class="card-text">
+                عند وجود عدة ضوابط لنفس الخطر، لا يجمع المحرك النسب حسابياً (ليست <span class="mono">Additive</span>)،
+                بل يأخذ <strong>أعلى معامل مؤهل (MAX)</strong> لتجنب المبالغة الوهمية في تقليص المخاطرة.
+              </p>
+            </div>
+            <div class="card-rose">
+              <div class="card-title">الضوابط المقترحة = 0%</div>
+              <p class="card-text">
+                فقط الضابط ذو الحالة <span class="mono">IMPLEMENTED</span> ومرتبط فعلياً بالخطر يدخل الحساب.
+                أي ضابط حالته <span class="mono">PROPOSED</span> يمنح <strong>0%</strong> حتى إتمام تنفيذه.
+              </p>
+            </div>
+            <div class="card-forest">
+              <div class="card-title">معادلة الخسارة المتبقية</div>
+              <div class="formula-box" style="margin-top: 6px; font-size: 11px">
+                Residual EAL = Inherent EAL × (1 − MAX RRF)
+              </div>
+              <p class="card-text" style="margin-top: 6px">
+                مثال: 600,000 جم مع ضابط شبه آلي وقائي (90%) = 60,000 جم خسارة متبقية.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: rcsa_engine/control_residual.py (OFFICIAL_RRF_MATRIX &amp; eligibility rules)</span>
+          <span class="mono">04 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 05: Phase 2C NFI ESG Key Risk -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">05 / 12</span> · المرحلة 2C — المعايرة والامتثال</div>
+            <h2 class="slide-title">منطق الأثر غير المالي (NFI 4×5) وESG وقاعدة Key Risk</h2>
+            <p class="slide-subtitle">
+              تطبيق ملاحظات مراجعي البنك الأهلي والبنك المركزي في معالجة البعد القضائي واستدامة العمليات وحصر Key Risk في المتبقي.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-title">1. مصفوفة NFI (4 أبعاد × 5 درجات + «-»)</div>
+              <p class="card-text">
+                يقيس المحرك أربعة أبعاد: <strong>توقف الخدمة والعملاء</strong>، <strong>السمعة والثقة العامة</strong>،
+                <strong>الرقابي والبنك المركزي</strong>، و<strong>القانوني والتشريعي</strong> على مقياس من 1 إلى 5.
+              </p>
+              <div class="card-amber" style="margin-top: 10px; padding: 10px">
+                <div style="font-size: 11.5px; font-weight: 800; color: #92400e">خيار «-» للبعد غير المطبق:</div>
+                <div style="font-size: 11px; color: #475569; margin-top: 3px">
+                  يدعم النظام قيمة <span class="mono">"-"/NA</span> في البعد القضائي أو غيره دون احتساب 1 خطأً،
+                  ويحسب النهائي بـ <strong>MAX(الأبعاد المطبقة)</strong>.
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">2. ربط ESG وكتالوج المركزي CBE</div>
+              <p class="card-text">
+                يصنّف الخطر ضمن ركيزة الاستدامة (<span class="mono">E / S / G</span>) وبيان الحالة المرجعية من قائمة الـ
+                <strong>34 بنداً للبنك المركزي</strong> أو خيار «أخرى» لتغطية الحالات المستحدثة.
+              </p>
+              <div class="card-soft" style="margin-top: 10px; padding: 10px">
+                <div style="font-size: 11.5px; font-weight: 800; color: #09331f">التصنيف الهرمي لبازل (84 عقدة):</div>
+                <div style="font-size: 11px; color: #475569; margin-top: 3px">
+                  ربط متسلسل إلزامي (<span class="mono">L1 → L2 → L3</span>) عبر 7 فئات رئيسية و84 مساراً فرعياً معتمداً.
+                </div>
+              </div>
+            </div>
+
+            <div class="card-forest">
+              <div class="card-title">3. قاعدة Key Risk الصارمة (Residual Only)</div>
+              <p class="card-text" style="margin-bottom: 10px">
+                تصحيح حاسم بناءً على ملاحظات البنك: لا يُحسب Key Risk أبداً من الخطر الكامن؛ بل يتحقق شرط
+                <strong>"نعم"</strong> فقط عند:
+              </p>
+              <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9px; padding: 9px; font-size: 11.5px; font-weight: 700; margin-bottom: 8px">
+                (1) الأثر المالي المتبقي ∈ { H, VH, C }
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9px; padding: 9px; font-size: 11.5px; font-weight: 700">
+                (2) أو أقصى بُعد غير مالي (NFI) ∈ { H, VH, C }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: rcsa_engine/phase2c.py · التزام حرفي بقواعد Key Risk وSlide 4 NFI</span>
+          <span class="mono">05 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 06: Evolution Timeline V1 -> V4 -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">06 / 12</span> · رحلة التطور الموثقة</div>
+            <h2 class="slide-title">مسار تطوير أداء النموذج من V1 إلى V4 SOTA (4 قفزات هندسية)</h2>
+            <p class="slide-subtitle">
+              كيف عالجنا ضعف الاسترجاع والهلوسة في النسخة الأولى عبر أربع مراحل موثقة في تاريخ المستودع.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card-rose">
+              <div class="mono" style="font-size: 11px; font-weight: 800; color: #9f1239">V1 · Baseline (4301a33)</div>
+              <div class="card-title" style="margin-top: 4px">استخراج نصي مبدئي</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>المشكلة:</strong> بحث خطي بالـ <span class="mono">LIKE %...%</span> يغفل المصطلحات المرادفة بالسياسات.</li>
+                <li><strong>محدودية السياق:</strong> نوافذ قصيرة دون مقارنة مع الدورات السابقة.</li>
+                <li><strong>المخرج:</strong> JSON خام دون مراجعة جودة أو عزل لحقول التقييم الحسابية.</li>
+              </ul>
+            </div>
+
+            <div class="card-amber">
+              <div class="mono" style="font-size: 11px; font-weight: 800; color: #92400e">V2 · RAG Upgrade (8c5c335)</div>
+              <div class="card-title" style="margin-top: 4px">محرك BM25 + 9 مجموعات مرادفة</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>الإضافة:</strong> محرك BM25 مخصص للمصطلحات المصرفية ثنائية اللغة عبر 9 عناقيد مرادفة.</li>
+                <li><strong>التوسيع:</strong> نافذة التقطيع 1,400 حرف وتمرير سياق المحادثات المتعددة (<span class="mono">4,096</span> tokens).</li>
+                <li><strong>النتيجة:</strong> استرجاع أعلى بكثير للمخاطر المتناثرة عبر عشرات الصفحات.</li>
+              </ul>
+            </div>
+
+            <div class="card-emerald">
+              <div class="mono" style="font-size: 11px; font-weight: 800; color: #065f46">V3 · SOTA Hybrid (13160f5)</div>
+              <div class="card-title" style="margin-top: 4px">بحث هجين RRF + فحص ذاتي QA</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>البحث الهجين:</strong> متجهات <span class="mono">192-dim</span> (<span class="mono">gemini-embedding-2</span> مخزنة في SQLite) + BM25 بدمج RRF (<span class="mono">k=60</span>).</li>
+                <li><strong>جودة المخرجات:</strong> محرك <strong>QA Self-Critique</strong> من 8 قواعد يصحح الأخطاء تلقائياً.</li>
+                <li><strong>الضبط البصري:</strong> محلل JSON مرن يدعم وسوم <span class="mono">&lt;think&gt;</span> في Qwen.</li>
+              </ul>
+            </div>
+
+            <div class="card-forest">
+              <div class="mono" style="font-size: 11px; font-weight: 800; color: #f79c1e">V4 · Bank Calibrated (d8379bd)</div>
+              <div class="card-title" style="margin-top: 4px">معايرة البنك والمصدر المزدوج</div>
+              <ul class="clean-list" style="margin-top: 8px; color: #0f172a">
+                <li><strong>المصدر المزدوج:</strong> دمج تقييم الوحدة المعتمد مع تقارير التدقيق والحوادث الجديدة.</li>
+                <li><strong>الالتزام التنظيمي:</strong> Key Risk من المتبقي، NFI بـ «-»، و84 عقدة بازل + 34 ESG.</li>
+                <li><strong>معايرة تاريخية:</strong> كشف الفجوات (&lt;75%) مقابل سجل الخسائر الفعلية.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>تاريخ المستودع الموثق: 4301a33 → 8c5c335 → 13160f5 → d8379bd</span>
+          <span class="mono">06 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 07: Hybrid RAG + RRF -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">07 / 12</span> · هندسة الاسترجاع RAG الهجين</div>
+            <h2 class="slide-title">الجمع بين المعنى الدلالي والمصطلح الدقيق عبر RRF (k=60)</h2>
+            <p class="slide-subtitle">
+              كيف يضمن <span class="mono">src/server/rag-service.ts</span> العثور على الدليل الصحيح سواء كُتب باللفظ الحرفي أو بصياغة مختلفة في السياسات.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-title">المسار الأول: الاسترجاع اللفظي BM25 + 9 عناقيد</div>
+              <p class="card-text">
+                يقوم بتقطيع النص العربي/الإنجليزي مع تطبيع الألف والتاء المربوطة، ثم يوسّع الاستعلام عبر 9 مجموعات
+                مرادفة مصرفية (مثل: احتيال/تزوير، عطل/انقطاع، امتثال/غسل أموال، أمن سيبراني/اختراق، طرف ثالث/مورد).
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-title">المسار الثاني: متجهات المعنى 192-dim</div>
+              <p class="card-text">
+                توليد متجه دلالي عبر <span class="mono">gemini-embedding-2</span> أو التضمين المحلي المرجعي، وتخزينه في
+                عمود <span class="mono">embedding_json</span> داخل SQLite لمنع إعادة التوليد، وحساب Cosine Similarity
+                أمام الاستعلام.
+              </p>
+            </div>
+            <div class="card-forest">
+              <div class="card-title">معادلة الدمج الترتيبي (Reciprocal Rank Fusion)</div>
+              <div class="formula-box" style="margin: 10px 0">
+                RRF(d) = 1/(60 + rank_vec(d)) + 1/(60 + rank_bm25(d))
+              </div>
+              <p class="card-text">
+                الدمج بالترتيب الرتبي لا يتأثر باختلاف مقياس الدرجات، ويرفع أي فقرة ظهرت في المسارين معاً، ثم يضيف
+                مكافأة للفقرات التي تنطبق على نوع الوثيقة المطلوبة (سياسة، تدقيق، حادثة).
+              </p>
+            </div>
+          </div>
+
+          <div class="card-soft">
+            <div class="card-title">معاملات الفهرسة والتشغيل الموثقة:</div>
+            <div class="grid-4" style="margin-top: 8px; text-align: center">
+              <div class="card" style="padding: 10px">
+                <div class="mono" style="font-size: 16px; font-weight: 800; color: #006547">1,400</div>
+                <div style="font-size: 11px; color: #475569">حرف في النافذة الواحدة</div>
+              </div>
+              <div class="card" style="padding: 10px">
+                <div class="mono" style="font-size: 16px; font-weight: 800; color: #006547">250</div>
+                <div style="font-size: 11px; color: #475569">حرف تداخل بين المقاطع</div>
+              </div>
+              <div class="card" style="padding: 10px">
+                <div class="mono" style="font-size: 16px; font-weight: 800; color: #006547">Top 8 / 16</div>
+                <div style="font-size: 11px; color: #475569">شواهد مسترجعة (سريع / دقيق)</div>
+              </div>
+              <div class="card" style="padding: 10px">
+                <div class="mono" style="font-size: 16px; font-weight: 800; color: #006547">OCR Guard</div>
+                <div style="font-size: 11px; color: #475569">تنبيه تلقائي لملفات السكان</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: src/server/rag-service.ts (BM25 + Dense Vector 192-dim + RRF k=60)</span>
+          <span class="mono">07 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 08: LLM Profiles & Prompting -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">08 / 12</span> · أوضاع التشغيل ومحلل JSON</div>
+            <h2 class="slide-title">تخصيص ملفات النماذج (Fast vs Accurate) ومحلل الاستجابات المرن</h2>
+            <p class="slide-subtitle">
+              توزيع ذكي بين سرعة الدردشة المصرفية ودقة الاستخلاص الهيكلي عبر نماذج Qwen المحلية وبدائل Gemini.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card-soft">
+              <div class="card-title">الوضع السريع (سريع · Fast Profile)</div>
+              <table class="nbe-table" style="margin-top: 8px">
+                <tbody>
+                  <tr>
+                    <td>النموذج الأساسي / البديل</td>
+                    <td class="mono" style="font-weight: 700">qwen3:1.7b / Thinking LOW</td>
+                  </tr>
+                  <tr>
+                    <td>عدد الشواهد (<span class="mono">rag_top_k</span>)</td>
+                    <td class="mono">8 شواهد</td>
+                  </tr>
+                  <tr>
+                    <td>الحرارة وحد الرموز</td>
+                    <td class="mono">temp = 0.15 · max_tokens = 2560</td>
+                  </tr>
+                  <tr>
+                    <td>مهلة التنفيذ</td>
+                    <td class="mono">25 ثانية · للاستفسار الفوري</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card-emerald">
+              <div class="card-title">الوضع الدقيق (دقيق · Accurate Profile)</div>
+              <table class="nbe-table" style="margin-top: 8px">
+                <tbody>
+                  <tr>
+                    <td>النموذج الأساسي / البديل</td>
+                    <td class="mono" style="font-weight: 700">qwen3.5:4b / Thinking HIGH</td>
+                  </tr>
+                  <tr>
+                    <td>عدد الشواهد (<span class="mono">rag_top_k</span>)</td>
+                    <td class="mono">16 شاهداً</td>
+                  </tr>
+                  <tr>
+                    <td>الحرارة وحد الرموز</td>
+                    <td class="mono">temp = 0.10 · max_tokens = 4096</td>
+                  </tr>
+                  <tr>
+                    <td>مهلة التنفيذ</td>
+                    <td class="mono">45 ثانية · لاستخلاص 29 عموداً</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-forest">
+            <div class="card-title">خط أنابيب إصلاح JSON المرن (<span class="mono">parseResilientLlmJson</span>)</div>
+            <div class="grid-4" style="margin-top: 8px">
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 9px; padding: 10px; font-size: 11.5px">
+                <strong>1. شطب الاستدلال:</strong> حذف كتل <span class="mono">&lt;think&gt;...&lt;/think&gt;</span> التي تولدها نماذج التفكير.
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 9px; padding: 10px; font-size: 11.5px">
+                <strong>2. تنظيف الأغلفة:</strong> إزالة أسوار Markdown مثل <span class="mono">```json</span>.
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 9px; padding: 10px; font-size: 11.5px">
+                <strong>3. استخراج الكتلة:</strong> تحديد حدود الكائن الفعلي مع معالجة الفواصل الزائدة.
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 9px; padding: 10px; font-size: 11.5px">
+                <strong>4. التحقق الصارم:</strong> تمرير المخرج على مطهّر الحقول قبل وصوله للمستخدم.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: src/server/llm-adapter.ts (QWEN_MODEL_OPTIONS &amp; parseResilientLlmJson)</span>
+          <span class="mono">08 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 09: QA Self-Critique -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">09 / 12</span> · محرك الجودة والمراجعة الذاتية</div>
+            <h2 class="slide-title">فحص الجودة الحتمي (8 قواعد) والمراجعة الذاتية في الوضع الدقيق</h2>
+            <p class="slide-subtitle">
+              طبقتا تدقيق متكاملتان تضمنان عدم عرض أي مقترح ناقص أو متناقض أو غير مرتبط بشاهد نصي من الوثائق.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">01</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">اكتمال وصف الحدث</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">منع العبارات المبهمة وإلزام وجود صياغة الحدث والسبب والأثر.</div>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">02</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">ربط الشاهد النصي</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">اشتراط <span class="mono">evidence_quote</span> + اسم الملف ورقم الصفحة.</div>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">03</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">تناسق بازل L1→L3</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">التحقق من انتماء التصنيف الفرعي إلى جذره في شجرة 84 عقدة.</div>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">04</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">مطابقة ضوابط CBE</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">ضمان صلاحية كود الضابط وربطه بطبيعته وأسلوب تنفيذه.</div>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">05</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">اتساق أبعاد NFI</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">مراجعة منطقية درجات الخدمة والسمعة والرقابي والقانوني (أو «-»).</div>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-weight: 800; color: #006547">06</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">فحص معايير ESG</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">مطابقة ركيزة الاستدامة مع قائمة البنك المركزي الـ 34.</div>
+            </div>
+            <div class="card-amber">
+              <div class="mono" style="font-weight: 800; color: #92400e">07</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">معايرة الخسائر التاريخية</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">إطلاق تنبيه تلقائي إذا قلّ تقدير الخسارة عن 75% من نظيرتها التاريخية.</div>
+            </div>
+            <div class="card-emerald">
+              <div class="mono" style="font-weight: 800; color: #065f46">08</div>
+              <div style="font-size: 12px; font-weight: 800; color: #09331f; margin-top: 3px">جولة النقد الذاتي (Self-Critique)</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px">في الوضع الدقيق، ينفذ الوكيل <span class="mono">runLlmSelfCritiquePass</span> لإغلاق الفجوات.</div>
+            </div>
+          </div>
+
+          <div class="card-forest">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e">
+              النتيجة العملية داخل الواجهة:
+            </div>
+            <p class="card-text" style="margin-top: 4px">
+              يظهر لكل مقترح ذكي مؤشر جودة (<span class="mono">QA Score 0–100</span>) مع قائمة بالتحذيرات إن وُجدت، ولا يتم
+              اعتماد المقترح إلى مسودة المصفوفة إلا بعد قرار صريح من المعد (<span class="mono">Accept / Edit / Reject</span>).
+            </p>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: src/server/proposal-extractor.ts (evaluateAndRefineRcsaProposalQa &amp; runLlmSelfCritiquePass)</span>
+          <span class="mono">09 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 10: AI Security & Lineage -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">10 / 12</span> · أمن الذكاء الاصطناعي وتوثيق الحقل</div>
+            <h2 class="slide-title">حماية البيانات البنكية (PII Redaction) وعزل حقن الأوامر وشارات المصدر</h2>
+            <p class="slide-subtitle">
+              أربعة خطوط دفاع تحيط باستدعاء النماذج اللغوية لحماية سرية بيانات عملاء البنك وحوكمة كل خلية.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">دفاعات ما قبل وما بعد استدعاء النموذج (AI Guardrails)</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>1. تنقيح بيانات العملاء (<span class="mono">redactBankingPii</span>):</strong> إخفاء أرقام الحسابات البنكية الدولية المصرية (<span class="mono">EG IBAN</span>)، والرقم القومي (14 رقماً)، وبطاقات الدفع (16 رقماً) قبل الإرسال لأي نموذج لغوي.</li>
+                <li><strong>2. عزل حقن الأوامر (<span class="mono">quarantinePromptInjection</span>):</strong> كشف وتحييد محاولات تجاوز التعليمات داخل المستندات المرفوعة وتغليف المحتوى داخل وسوم عزل غير قابلة للتنفيذ.</li>
+                <li><strong>3. شطب الحقول الحسابية (<span class="mono">stripForbiddenLlmFields</span>):</strong> ضمان رياضي ألا يكتب LLM أي درجة خطر أو نسبة خفض RRF أو قرار اعتماد.</li>
+              </ul>
+            </div>
+
+            <div class="card-soft">
+              <div class="card-title">سلسلة نسب الحقول الـ 5 في مصفوفة الـ 29 عموداً</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li><strong>مصدر أصلي (ORIGINAL):</strong> مستورد مباشرة من قالب الوحدة المعتمد دون تغيير.</li>
+                <li><strong>مقترح ذكي (AI_PROPOSED):</strong> مستخرج بالدليل من الوكيل ووافق عليه المعد.</li>
+                <li><strong>تعديل مسودة (EDITED):</strong> عدّله المعد يدوياً مع إبراز المقارنة للمراجع Checker.</li>
+                <li><strong>محرك بايثون (CALCULATED):</strong> ناتج حتمي غير قابل للتعديل اليدوي المباشر.</li>
+                <li><strong>معتمد نهائياً (APPROVED):</strong> مقفل بتاريخ التوثيق وتوقيع المراجع المستقل.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المصدر البرمجي: src/server/llm-adapter.ts · src/server/proposal-extractor.ts · سجل التدقيق Audit Trail</span>
+          <span class="mono">10 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 11: Before/After Enhancement Comparison -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">11 / 12</span> · قياس الأثر الهندسي</div>
+            <h2 class="slide-title">مقارنة شاملة لأداء النموذج والمنظومة: V1 Baseline مقابل V4 SOTA</h2>
+            <p class="slide-subtitle">
+              مقارنة موثقة للقدرات والمعايير الهندسية الفعلية قبل وبعد خطة التطوير دون أي أرقام تسويقية مختلقة.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="card">
+            <table class="nbe-table">
+              <thead>
+                <tr>
+                  <th>البُعد المنهجي / الهندسي</th>
+                  <th>النسخة الأولية (V1 Baseline)</th>
+                  <th>النسخة المطورة (V4 SOTA)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 800">آلية البحث في السياسات</td>
+                  <td>بحث خطي بالكلمة الدقيقة (<span class="mono">LIKE</span>) يفقد المرادفات المصرفية</td>
+                  <td><strong>بحث هجين: متجهات 192-dim + BM25 (9 عناقيد) بدمج RRF (k=60)</strong></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 800">التصنيفات التنظيمية</td>
+                  <td>نصوص حرة غير مقيدة تعرض المراجعة لاختلاف المسميات</td>
+                  <td><strong>ربط إلزامي لـ 84 عقدة بازل (L1–L3) + 34 حالة CBE ESG + «أخرى»</strong></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 800">قاعدة المخاطرة الرئيسية</td>
+                  <td>كانت تتداخل مع الخطر الكامن وتفتقد البعد غير المطبق</td>
+                  <td><strong>Key Risk من المتبقي فقط + مصفوفة NFI 4×5 تدعم «-»</strong></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 800">مراجعة الجودة قبل العرض</td>
+                  <td>تمرير مباشر لمخرجات JSON الخام للموظف</td>
+                  <td><strong>8 قواعد تدقيق + جولة نقد ذاتي + معايرة خسائر تاريخية (&lt;75%)</strong></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 800">حماية الحسابات والأمن</td>
+                  <td>فحص أساسي فقط بدون عزل كامل لحقول الحساب والـ PII</td>
+                  <td><strong>حذف 15 حقلاً محظوراً + تنقيح IBAN/القومي/البطاقات + عزل حقن الأوامر</strong></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 800">استمرارية التقييمات</td>
+                  <td>بناء من مستندات جديدة فقط</td>
+                  <td><strong>3 مسارات شاملة منها المصدر المزدوج (تقييم سابق + وثائق جديدة)</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>المقارنة مبنية بالكامل على الخصائص الفعلية المطبقة والمختبرة في مستودع المنصة</span>
+          <span class="mono">11 / 12</span>
+        </div>
+      </section>
+
+      <!-- Slide 12: Testing & Roadmap -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">12 / 12</span> · التحقق والجاهزية المستقبلية</div>
+            <h2 class="slide-title">منظومة الاختبارات المستمرة وخارطة التشغيل المؤسسي (On-Premises Roadmap)</h2>
+            <p class="slide-subtitle">
+              التحقق الآلي المزدوج (Node.js + Python) لضمان الثبات الرياضي قبل أي تسليم، وتصوّر التوسع داخل البنية التحتية للبنك.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" class="nbe-logo-header" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card-emerald">
+              <div class="card-title">1. منظومة الاختبارات الحتمية</div>
+              <div style="display: flex; align-items: baseline; gap: 10px; margin: 10px 0">
+                <span class="mono" style="font-size: 26px; font-weight: 800; color: #09331f">82 + 87</span>
+                <span style="font-size: 12px; font-weight: 700; color: #065f46">اختباراً آلياً ناجحاً</span>
+              </div>
+              <ul class="clean-list">
+                <li><strong>82 اختبار TypeScript:</strong> RAG وBM25 والأمن والمصفوفة والشرائح.</li>
+                <li><strong>87 اختبار Python Pytest:</strong> Phase 2A / 2B / 2C وتدفق Excel/PDF.</li>
+              </ul>
+            </div>
+
+            <div class="card-soft">
+              <div class="card-title">2. المرحلة الأولى للتوسع: النشر الداخلي المعزول</div>
+              <ul class="clean-list" style="margin-top: 8px">
+                <li>تشغيل نماذج <span class="mono">Ollama (Qwen3 / Qwen3.5)</span> داخل خوادم البنك (<span class="mono">Air-Gapped</span>).</li>
+                <li>الربط مع منظومة الهوية المؤسسية <span class="mono">Active Directory / LDAP SSO</span>.</li>
+                <li>عدم مغادرة أي وثيقة مصرفية لشبكة البنك الداخلية نهائياً.</li>
+              </ul>
+            </div>
+
+            <div class="card-forest">
+              <div class="card-title">3. الحوكمة الرقابية والأرشفة الدائمة</div>
+              <ul class="clean-list" style="margin-top: 8px; color: #0f172a">
+                <li>الربط الآلي المستمر مع قاعدة حوادث الخسائر التشغيلية (<span class="mono">Loss DB</span>).</li>
+                <li>حفظ سجل التدقيق والنسخ المعتمدة على وسائط غير قابلة للتعديل (<span class="mono">WORM</span>).</li>
+                <li>تجهيز تقارير لجان المخاطر والبنك المركزي بضغطة زر.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card-amber" style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+            <div style="font-size: 12.5px; color: #1e293b">
+              <strong style="color: #09331f">الخلاصة المنهجية للجنة:</strong> المنصة تجمع بين انضباط
+              <span class="mono">Python Decimal</span> ومرونة البحث الهجين <span class="mono">Hybrid RAG</span>
+              تحت إشراف بشري كامل وحوكمة <span class="mono">Maker / Checker / Auditor</span>.
+            </div>
+            <div class="mono" style="font-size: 12px; font-weight: 800; color: #09331F; white-space: nowrap">
+              NBE RCSA · Ready for Review
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>البنك الأهلي المصري — قطاع المخاطر التشغيلية | نهاية العرض المنهجي والتقني</span>
+          <span class="mono">12 / 12</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

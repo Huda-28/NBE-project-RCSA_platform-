@@ -110,9 +110,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'demo' as PageId,
       label: 'العرض التقديمي',
-      tooltip: 'عرض تعريفي تفاعلي لغير التقنيين والمراجعين يشرح كافة شاشات المنصة مع نسخة PDF.',
+      tooltip: 'يضم عرضين: العرض التنفيذي لغير التقنيين (13 شريحة) وعرض المنهجية والنماذج وتطور الأداء (12 شريحة) مع نسخ PDF.',
       icon: Presentation,
-      badge: '13',
+      badge: '2',
       group: 'governance',
     },
   ];
