@@ -22,9 +22,9 @@ interface OfficialRcsaReportModalProps {
 }
 
 function getToneBgClass(tone: 'green' | 'yellow' | 'orange' | 'neutral'): string {
-  if (tone === 'green') return 'bg-[#66FF33] text-black font-bold';
+  if (tone === 'green') return 'bg-[#99FF99] text-black font-bold';
   if (tone === 'yellow') return 'bg-[#FFFF00] text-black font-bold';
-  if (tone === 'orange') return 'bg-[#FFCC00] text-black font-bold';
+  if (tone === 'orange') return 'bg-[#F79646] text-black font-bold';
   return 'bg-white text-black';
 }
 
@@ -43,7 +43,7 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
   const [statusToast, setStatusToast] = useState<string | null>(null);
   const [reportModel, setReportModel] = useState<OfficialRcsaReportModel | null>(null);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
-  const [theme, setTheme] = useState<'reference_burgundy' | 'nbe_emerald'>('nbe_emerald');
+  const [theme, setTheme] = useState<'reference_burgundy' | 'nbe_emerald'>('reference_burgundy');
   const [includeExtendedColumns, setIncludeExtendedColumns] = useState<boolean>(false);
   const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -206,9 +206,12 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
     }, 250);
   };
 
-  const headerBgHex = theme === 'nbe_emerald' ? 'bg-[#09331F]' : 'bg-[#7A1C1C]';
-  const subHeaderBgHex = theme === 'nbe_emerald' ? 'bg-[#006547]' : 'bg-[#8B2323]';
+  const headerBgHex = theme === 'nbe_emerald' ? 'bg-[#09331F]' : 'bg-[#963634]';
+  const subHeaderBgHex = theme === 'nbe_emerald' ? 'bg-[#006547]' : 'bg-[#963634]';
   const titleTextColor = theme === 'nbe_emerald' ? 'text-[#09331F]' : 'text-[#C00000]';
+  const chromeBarBg = theme === 'nbe_emerald' ? 'bg-[#09331F]' : 'bg-[#963634]';
+  const chromeBorderColor = theme === 'nbe_emerald' ? 'border-[#09331F]' : 'border-[#963634]';
+  const chromeSubColor = theme === 'nbe_emerald' ? 'text-emerald-200/90' : 'text-rose-100';
 
   return (
     <div
@@ -225,9 +228,9 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
         className="hidden"
       />
 
-      <div className="bg-white w-full max-w-[1620px] max-h-[94vh] rounded-2xl border-2 border-[#09331F] shadow-2xl flex flex-col overflow-hidden">
+      <div className={`bg-white w-full max-w-[1620px] max-h-[94vh] rounded-2xl border-2 ${chromeBorderColor} shadow-2xl flex flex-col overflow-hidden`}>
         {/* Top Modal Control Bar */}
-        <div className="bg-[#09331F] text-white px-5 py-3.5 border-b-3 border-[#F79C1E] flex flex-col lg:flex-row lg:items-center justify-between gap-3 shrink-0">
+        <div className={`${chromeBarBg} text-white px-5 py-3.5 border-b-3 border-[#F79646] flex flex-col lg:flex-row lg:items-center justify-between gap-3 shrink-0`}>
           <div className="flex items-center gap-3">
             <img
               src="/assets/nbe-logo-white.png"
@@ -240,11 +243,11 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
                 <h3 className="text-sm sm:text-base font-extrabold text-white">
                   معاينة وتصدير تقرير RCSA الرسمي المعتمد (PDF / Excel)
                 </h3>
-                <span className="px-2 py-0.5 rounded bg-[#006547] border border-[#F79C1E]/50 text-[#F79C1E] text-[10px] font-bold">
-                  مطابق للنموذج المرجعي للبنك
+                <span className="px-2 py-0.5 rounded bg-white text-[#963634] border border-[#F79646]/60 text-[10px] font-extrabold">
+                  مطابق للقالب الرسمي للبنك
                 </span>
               </div>
-              <p className="text-[11px] text-emerald-200/90 mt-0.5">
+              <p className={`text-[11px] ${chromeSubColor} mt-0.5`}>
                 يتضمن ترويسة الأهداف الاستراتيجية، دمج صفوف الضوابط المتعددة لكل مخاطرة، والتلوين الرقابي التلقائي لفاعلية الضوابط وقرار القبول.
               </p>
             </div>
@@ -254,28 +257,28 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
           <div className="flex items-center gap-2 flex-wrap">
             {/* Theme Switcher */}
             <div className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-xl border border-white/15 text-[11px]">
-              <Palette className="w-3.5 h-3.5 text-[#F79C1E]" />
+              <Palette className="w-3.5 h-3.5 text-[#F79646]" />
+              <button
+                type="button"
+                onClick={() => setTheme('reference_burgundy')}
+                className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                  theme === 'reference_burgundy'
+                    ? 'bg-white text-[#963634] border border-white'
+                    : 'text-white/85 hover:text-white'
+                }`}
+              >
+                القالب الرسمي المرجعي (الافتراضي)
+              </button>
               <button
                 type="button"
                 onClick={() => setTheme('nbe_emerald')}
                 className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
                   theme === 'nbe_emerald'
                     ? 'bg-[#006547] text-[#F79C1E] border border-[#F79C1E]/50'
-                    : 'text-emerald-100 hover:text-white'
+                    : 'text-white/85 hover:text-white'
                 }`}
               >
-                هوية البنك الأخضر (الافتراضي)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('reference_burgundy')}
-                className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
-                  theme === 'reference_burgundy'
-                    ? 'bg-[#7A1C1C] text-white border border-white/40'
-                    : 'text-emerald-100 hover:text-white'
-                }`}
-              >
-                النموذج الأرشيفي (Burgundy)
+                النسق الأخضر (اختياري)
               </button>
             </div>
 
@@ -389,10 +392,10 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
           ) : reportModel ? (
             <div
               data-testid="official-rcsa-paper-sheet"
-              className="bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-slate-300 space-y-3.5 w-full text-black"
+              className="bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-slate-300 space-y-3.5 w-full text-black font-['Sakkal_Majalla','Calibri','Arial','Noto_Naskh_Arabic','Noto_Sans_Arabic',sans-serif]"
             >
               {/* 1. Official NBE Branding Header Bar */}
-              <div className="flex items-center justify-between bg-[#09331F] text-white px-5 py-3 rounded-lg border-b-3 border-[#F79C1E]">
+              <div className={`flex items-center justify-between ${chromeBarBg} text-white px-5 py-3 rounded-lg border-b-3 border-[#F79646]`}>
                 <div className="flex items-center gap-3.5">
                   <img
                     src="/assets/nbe-logo-white.png"
@@ -403,17 +406,23 @@ export const OfficialRcsaReportModal: React.FC<OfficialRcsaReportModalProps> = (
                     <div className="text-sm font-extrabold text-white">
                       البنك الأهلي المصري — قطاع المخاطر التشغيلية والالتزام الرقابي
                     </div>
-                    <div className="text-[11px] text-emerald-200">
+                    <div className={`text-[11px] ${chromeSubColor}`}>
                       التقرير الرسمي لمصفوفة التقييم الذاتي للمخاطر والضوابط الرقابية (RCSA)
                     </div>
                   </div>
                 </div>
                 <div className="text-left text-[11px] space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#006547] border border-[#F79C1E]/60 text-[#F79C1E] font-bold">
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded font-bold border ${
+                      theme === 'nbe_emerald'
+                        ? 'bg-[#006547] border-[#F79C1E]/60 text-[#F79C1E]'
+                        : 'bg-white border-[#C00000]/40 text-[#963634]'
+                    }`}
+                  >
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>{reportModel.status_badge_ar}</span>
                   </div>
-                  <div className="text-emerald-100 font-mono tabular-nums">
+                  <div className="text-white/90 font-['Calibri','Arial',sans-serif] tabular-nums">
                     الوحدة: {reportModel.unit_code} | التاريخ: {reportModel.date_label_ar}
                   </div>
                 </div>

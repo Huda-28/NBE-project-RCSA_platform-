@@ -903,7 +903,7 @@ apiRouter.get('/hitl/assessments/:id/export-report-model', authenticate, (req: A
     if (!isUserAuthorizedForBU(req.user!, bundle.assessment.unit_id, ['MAKER', 'CHECKER', 'AUDITOR', 'RISK_ADMIN'])) {
       return res.status(403).json({ error: 'لا تملك حق الاطلاع على هذه الوحدة التنظيمية.' });
     }
-    const theme = req.query.theme === 'reference_burgundy' ? 'reference_burgundy' : 'nbe_emerald';
+    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
     const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
     const html = buildOfficialRcsaReportHtml(bundle.reportModel, {
       theme,
@@ -933,7 +933,7 @@ apiRouter.get('/hitl/assessments/:id/export-pdf', authenticate, (req: Authentica
       return res.status(409).json({ error: 'لا يوجد تقييم مخاطر صالح للتصدير.' });
     }
 
-    const theme = req.query.theme === 'reference_burgundy' ? 'reference_burgundy' : 'nbe_emerald';
+    const theme = req.query.theme === 'nbe_emerald' ? 'nbe_emerald' : 'reference_burgundy';
     const includeExtended = req.query.extended === '1' || req.query.extended === 'true';
     const html = buildOfficialRcsaReportHtml(reportModel, {
       theme,

@@ -91,9 +91,9 @@ test('Client Feedback 9 Remarks Verification Suite', async (t) => {
     }
   });
 
-  await t.test('Remark 5 & 7: Default report HTML uses NBE Green theme (#09331F/#006547) and calculates Key Risk from Residual + NFI', () => {
+  await t.test('Remark 5 & 7: Default report HTML uses official reference burgundy template (#963634/#C00000) and calculates Key Risk from Residual + NFI', () => {
     const model = buildOfficialRcsaReportModel({
-      assessment: { id: 'ASM-TEST-GREEN', status: 'DRAFT' },
+      assessment: { id: 'ASM-TEST-BURGUNDY', status: 'DRAFT' },
       unit: { id: 'BU-SYNDICATED', name_ar: 'وحدة اختبارية', name_en: 'Test BU', code: 'TST' },
       risks: [
         {
@@ -128,12 +128,16 @@ test('Client Feedback 9 Remarks Verification Suite', async (t) => {
 
     const defaultHtml = buildOfficialRcsaReportHtml(model);
     assert.ok(defaultHtml.includes('>no<'), 'Rendered HTML Key Risk cell must show no');
-    assert.ok(defaultHtml.includes('#09331F') || defaultHtml.includes('#006547'), 'Default report HTML must use NBE Emerald green');
-    assert.ok(!defaultHtml.includes('#7A1C1C'), 'Default report HTML must not default to burgundy red');
+    assert.ok(defaultHtml.includes('#963634'), 'Default report HTML must use template burgundy #963634');
+    assert.ok(defaultHtml.includes('#C00000'), 'Default report HTML must use template title color #C00000');
+    assert.ok(defaultHtml.includes('Sakkal Majalla'), 'Default report HTML must include template font Sakkal Majalla');
     assert.ok(defaultHtml.includes('ضوابط الاحتساب'), 'Report HTML must display Key Risk & NFI aggregation methodology note');
+
+    const emeraldHtml = buildOfficialRcsaReportHtml(model, { theme: 'nbe_emerald' });
+    assert.ok(emeraldHtml.includes('#09331F') && emeraldHtml.includes('#006547'), 'Optional nbe_emerald theme remains supported');
   });
 
-  await t.test('Remark 7 (API): /export-report-model defaults to NBE green theme when no theme query param is given', async () => {
+  await t.test('Remark 7 (API): /export-report-model defaults to official reference burgundy theme when no theme query param is given', async () => {
     const { server, baseUrl } = await startTestServer();
     try {
       const maker = getUserWithRoles('EMP-1001')!;
@@ -143,8 +147,8 @@ test('Client Feedback 9 Remarks Verification Suite', async (t) => {
       });
       assert.equal(res.status, 200);
       const json = await res.json();
-      assert.ok(json.html_preview.includes('#09331F') || json.html_preview.includes('#006547'));
-      assert.ok(!json.html_preview.includes('#7A1C1C'));
+      assert.ok(json.html_preview.includes('#963634'));
+      assert.ok(json.html_preview.includes('#C00000'));
     } finally {
       server.close();
     }

@@ -1453,74 +1453,82 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[#DCDAD5]">
-                <table className="w-full text-right text-[11px] bg-white">
-                  <thead className="bg-[#09331F] text-white">
+              <div className="overflow-x-auto rounded-xl border border-black font-['Sakkal_Majalla','Calibri','Arial','Noto_Naskh_Arabic','Noto_Sans_Arabic',sans-serif]">
+                <table className="w-full text-right text-[11px] bg-white border-collapse">
+                  <thead className="bg-[#963634] text-white">
                     <tr>
-                      <th className="p-2">م (C)</th>
-                      <th className="p-2">النشاط / العملية (D)</th>
-                      <th className="p-2">الهدف الاستراتيجي (E)</th>
-                      <th className="p-2">وصف المخاطرة (G)</th>
-                      <th className="p-2">NFI متلازم (H)</th>
-                      <th className="p-2">التكرار (I)</th>
-                      <th className="p-2">الأثر الفردي (J)</th>
-                      <th className="p-2">الخسارة السنوية (K)</th>
-                      <th className="p-2">المتلازم (L)</th>
-                      <th className="p-2">الضوابط (M..R)</th>
-                      <th className="p-2">MAX RRF (S)</th>
-                      <th className="p-2">المتبقي بالجنيه (T)</th>
-                      <th className="p-2">المتبقي (U)</th>
-                      <th className="p-2">NFI متبقي (V..Z)</th>
-                      <th className="p-2">القبول النهائي (AA)</th>
-                      <th className="p-2">الإجراء التصحيحي (AB)</th>
-                      <th className="p-2">الأساس المنطقي (AC)</th>
-                      <th className="p-2">المستوى الأول (AD)</th>
-                      <th className="p-2">ESG (AE)</th>
+                      <th className="p-2 border border-black">م (C)</th>
+                      <th className="p-2 border border-black">النشاط / العملية (D)</th>
+                      <th className="p-2 border border-black">الهدف الاستراتيجي (E)</th>
+                      <th className="p-2 border border-black">وصف المخاطرة (G)</th>
+                      <th className="p-2 border border-black">NFI متلازم (H)</th>
+                      <th className="p-2 border border-black">التكرار (I)</th>
+                      <th className="p-2 border border-black">الأثر الفردي (J)</th>
+                      <th className="p-2 border border-black">الخسارة السنوية (K)</th>
+                      <th className="p-2 border border-black">المتلازم (L)</th>
+                      <th className="p-2 border border-black">الضوابط (M..R)</th>
+                      <th className="p-2 border border-black">MAX RRF (S)</th>
+                      <th className="p-2 border border-black">المتبقي بالجنيه (T)</th>
+                      <th className="p-2 border border-black">المتبقي (U)</th>
+                      <th className="p-2 border border-black">NFI متبقي (V..Z)</th>
+                      <th className="p-2 border border-black">القبول النهائي (AA)</th>
+                      <th className="p-2 border border-black">الإجراء التصحيحي (AB)</th>
+                      <th className="p-2 border border-black">الأساس المنطقي (AC)</th>
+                      <th className="p-2 border border-black">المستوى الأول (AD)</th>
+                      <th className="p-2 border border-black">ESG (AE)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#CECCC9]">
+                  <tbody>
                     {(readiness.official_column_preview_rows || []).map((pr: any) => {
                       const isSelected = pr.risk_id === selectedRiskId;
+                      const aaText = String(pr.AA_final_risk_acceptance || '');
+                      const aaBgClass = aaText.includes('غير مقبولة')
+                        ? 'bg-[#F79646] text-black font-bold'
+                        : aaText.includes('تجويد') || aaText.includes('تطوير')
+                          ? 'bg-[#FFFF00] text-black font-bold'
+                          : aaText.includes('مقبولة')
+                            ? 'bg-[#99FF99] text-black font-bold'
+                            : 'bg-white text-black';
                       return (
                         <tr
                           key={pr.risk_id}
                           onClick={() => setSelectedRiskId(pr.risk_id)}
                           className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-emerald-50/90 font-semibold' : 'hover:bg-[#F8F8F6]'
+                            isSelected ? 'bg-rose-50/70 font-semibold' : 'hover:bg-[#F8F8F6]'
                           }`}
                           title="انقر لتعديل ومراجعة هذه المخاطرة وضوابطها في مساحة العمل بالأسفل"
                         >
-                          <td className="p-2 font-mono font-bold">{pr.C_risk_number}</td>
-                          <td className="p-2 max-w-36 truncate" title={pr.D_process_ar}>
+                          <td className="p-2 border border-black font-bold font-['Calibri','Arial',sans-serif]">{pr.C_risk_number}</td>
+                          <td className="p-2 border border-black max-w-36 truncate" title={pr.D_process_ar}>
                             {pr.D_process_ar}
                           </td>
-                          <td className="p-2 max-w-36 truncate" title={pr.E_strategic_objective_ar}>
+                          <td className="p-2 border border-black max-w-36 truncate" title={pr.E_strategic_objective_ar}>
                             {pr.E_strategic_objective_ar}
                           </td>
-                          <td className="p-2 max-w-52 truncate" title={pr.G_risk_description_ar}>
+                          <td className="p-2 border border-black max-w-52 truncate" title={pr.G_risk_description_ar}>
                             {pr.G_risk_description_ar}
                           </td>
-                          <td className="p-2 text-xs">{pr.H_inherent_nfi_status === 'YES' ? 'نعم' : pr.H_inherent_nfi_status === 'NO' ? 'لا' : 'قيد الاستيفاء'}</td>
-                          <td className="p-2">{pr.I_expected_frequency_ar}</td>
-                          <td className="p-2 font-mono">{pr.J_individual_financial_impact_egp}</td>
-                          <td className="p-2 font-mono font-bold">{pr.K_expected_annual_loss_egp}</td>
-                          <td className="p-2 font-bold">{pr.L_inherent_financial_rating}</td>
-                          <td className="p-2">
+                          <td className="p-2 border border-black text-xs">{pr.H_inherent_nfi_status === 'YES' ? 'نعم' : pr.H_inherent_nfi_status === 'NO' ? 'لا' : 'قيد الاستيفاء'}</td>
+                          <td className="p-2 border border-black">{pr.I_expected_frequency_ar}</td>
+                          <td className="p-2 border border-black font-['Calibri','Arial',sans-serif]">{pr.J_individual_financial_impact_egp}</td>
+                          <td className="p-2 border border-black font-['Calibri','Arial',sans-serif] font-bold">{pr.K_expected_annual_loss_egp}</td>
+                          <td className="p-2 border border-black font-bold">{pr.L_inherent_financial_rating}</td>
+                          <td className="p-2 border border-black">
                             {pr.M_to_R_controls.length} ضوابط
                           </td>
-                          <td className="p-2 font-mono font-bold text-[#006547]">{pr.S_selected_max_rrf}</td>
-                          <td className="p-2 font-mono font-bold">{pr.T_residual_financial_loss_egp}</td>
-                          <td className="p-2 font-bold">{pr.U_residual_financial_rating}</td>
-                          <td className="p-2 text-xs" title={`خدمة: ${pr.V_to_Z_residual_nfi_dimensions.V_service}، سمعة: ${pr.V_to_Z_residual_nfi_dimensions.W_reputation}، رقابي: ${pr.V_to_Z_residual_nfi_dimensions.X_regulatory}، قانوني: ${pr.V_to_Z_residual_nfi_dimensions.Y_legal}`}>{pr.V_to_Z_residual_nfi_dimensions.Z_overall_nfi}</td>
-                          <td className="p-2 text-xs">{pr.AA_final_risk_acceptance}</td>
-                          <td className="p-2 max-w-48 truncate" title={pr.AB_corrective_action_ar}>
+                          <td className="p-2 border border-black font-['Calibri','Arial',sans-serif] font-bold text-[#963634]">{pr.S_selected_max_rrf}</td>
+                          <td className="p-2 border border-black font-['Calibri','Arial',sans-serif] font-bold">{pr.T_residual_financial_loss_egp}</td>
+                          <td className="p-2 border border-black font-bold">{pr.U_residual_financial_rating}</td>
+                          <td className="p-2 border border-black text-xs" title={`خدمة: ${pr.V_to_Z_residual_nfi_dimensions.V_service}، سمعة: ${pr.V_to_Z_residual_nfi_dimensions.W_reputation}، رقابي: ${pr.V_to_Z_residual_nfi_dimensions.X_regulatory}، قانوني: ${pr.V_to_Z_residual_nfi_dimensions.Y_legal}`}>{pr.V_to_Z_residual_nfi_dimensions.Z_overall_nfi}</td>
+                          <td className={`p-2 border border-black text-xs ${aaBgClass}`}>{pr.AA_final_risk_acceptance}</td>
+                          <td className="p-2 border border-black max-w-48 truncate" title={pr.AB_corrective_action_ar}>
                             {pr.AB_corrective_action_ar}
                           </td>
-                          <td className="p-2 max-w-56 truncate" title={pr.AC_assessment_rationale_ar}>
+                          <td className="p-2 border border-black max-w-56 truncate" title={pr.AC_assessment_rationale_ar}>
                             {pr.AC_assessment_rationale_ar}
                           </td>
-                          <td className="p-2 max-w-36 truncate">{pr.AD_level1_category_ar}</td>
-                          <td className="p-2 text-xs">{pr.AE_esg_classification}</td>
+                          <td className="p-2 border border-black max-w-36 truncate">{pr.AD_level1_category_ar}</td>
+                          <td className="p-2 border border-black text-xs">{pr.AE_esg_classification}</td>
                         </tr>
                       );
                     })}

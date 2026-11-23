@@ -481,9 +481,9 @@ function escapeHtml(str: string): string {
 }
 
 function getToneBgHex(tone: 'green' | 'yellow' | 'orange' | 'neutral'): string {
-  if (tone === 'green') return '#66FF33';
+  if (tone === 'green') return '#99FF99';
   if (tone === 'yellow') return '#FFFF00';
-  if (tone === 'orange') return '#FFCC00';
+  if (tone === 'orange') return '#F79646';
   return '#FFFFFF';
 }
 
@@ -495,11 +495,16 @@ export function buildOfficialRcsaReportHtml(
     logoDataUri?: string;
   }
 ): string {
-  const theme = options?.theme || 'nbe_emerald';
+  const theme = options?.theme || 'reference_burgundy';
   const includeExtended = Boolean(options?.includeExtendedColumns);
-  const headerBg = theme === 'nbe_emerald' ? '#09331F' : '#7A1C1C';
-  const subHeaderBg = theme === 'nbe_emerald' ? '#006547' : '#801C1C';
+  const headerBg = theme === 'nbe_emerald' ? '#09331F' : '#963634';
+  const subHeaderBg = theme === 'nbe_emerald' ? '#006547' : '#963634';
   const titleTextHex = theme === 'nbe_emerald' ? '#09331F' : '#C00000';
+  const stampBg = theme === 'nbe_emerald' ? '#09331F' : '#963634';
+  const stampBorder = theme === 'nbe_emerald' ? '#F79C1E' : '#C00000';
+  const badgeBg = theme === 'nbe_emerald' ? '#006547' : '#FFFFFF';
+  const badgeColor = theme === 'nbe_emerald' ? '#F79C1E' : '#963634';
+  const subTitleColor = theme === 'nbe_emerald' ? '#A7F3D0' : '#FEE2E2';
   const logoSrc = options?.logoDataUri || '/assets/nbe-logo-white.png';
 
   const rowsHtml: string[] = [];
@@ -590,7 +595,7 @@ export function buildOfficialRcsaReportHtml(
     body {
       margin: 0;
       padding: 8px;
-      font-family: 'Cairo', 'Tahoma', 'Arial', sans-serif;
+      font-family: 'Sakkal Majalla', 'Calibri', 'Arial', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif;
       background: #FFFFFF;
       color: #000000;
       direction: rtl;
@@ -599,10 +604,10 @@ export function buildOfficialRcsaReportHtml(
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background-color: #09331F;
+      background-color: ${stampBg};
       color: #FFFFFF;
       padding: 8px 16px;
-      border-bottom: 3px solid #F79C1E;
+      border-bottom: 3px solid ${stampBorder};
       margin-bottom: 10px;
     }
     .nbe-top-stamp .brand-right {
@@ -616,28 +621,28 @@ export function buildOfficialRcsaReportHtml(
       object-fit: contain;
     }
     .nbe-top-stamp .bank-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       color: #FFFFFF;
     }
     .nbe-top-stamp .bank-sub {
-      font-size: 10px;
-      color: #A7F3D0;
+      font-size: 11px;
+      color: ${subTitleColor};
     }
     .nbe-top-stamp .meta-left {
       text-align: left;
-      font-size: 10px;
+      font-size: 11px;
       line-height: 1.4;
     }
     .nbe-top-stamp .badge {
       display: inline-block;
-      background: #006547;
-      border: 1px solid #F79C1E;
-      color: #F79C1E;
+      background: ${badgeBg};
+      border: 1px solid ${stampBorder};
+      color: ${badgeColor};
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 700;
-      font-size: 10px;
+      font-size: 11px;
     }
     /* Official Title Banner Box matching Page 1 of Reference PDF */
     .official-title-box {
@@ -685,7 +690,8 @@ export function buildOfficialRcsaReportHtml(
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 9.5px;
+      font-family: 'Sakkal Majalla', 'Calibri', 'Arial', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif;
+      font-size: 10px;
       line-height: 1.35;
       border: 1.5px solid #000000;
     }
@@ -705,7 +711,7 @@ export function buildOfficialRcsaReportHtml(
     }
     table.rcsa-official-table tr.sub-header-row th {
       background-color: ${subHeaderBg};
-      font-size: 8px;
+      font-size: 8.5px;
       padding: 4px 2px;
     }
     table.rcsa-official-table td {
@@ -733,9 +739,9 @@ export function buildOfficialRcsaReportHtml(
     }
     .num-cell {
       text-align: center;
-      font-family: 'Courier New', monospace;
+      font-family: 'Calibri', 'Arial', sans-serif;
       font-weight: 700;
-      font-size: 8.5px;
+      font-size: 9px;
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
     }

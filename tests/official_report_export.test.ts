@@ -128,12 +128,14 @@ test('Official RCSA Report Builder & PDF/Excel Export Suite', async (t) => {
     assert.equal(model.risks[0].residual_loss_formatted, '50,100.00');
     assert.equal(model.risks[0].corrective_action_ar, '', 'Class 1 accepted risk must suppress corrective action');
 
-    const html = buildOfficialRcsaReportHtml(model, { theme: 'reference_burgundy', includeExtendedColumns: true });
+    const html = buildOfficialRcsaReportHtml(model, { includeExtendedColumns: true });
     assert.ok(html.includes('نموذج المخاطر الافتراضي &quot;لعمليات القروض المشتركة&quot;'));
     assert.ok(html.includes('الأهداف الاستراتيجية'));
     assert.ok(html.includes('التقدير النهائي للمخاطرة ومدى فاعلية الإجراءات الرقابية المطبقة ككل'));
-    assert.ok(html.includes('#7A1C1C'));
-    assert.ok(html.includes('#66FF33'));
+    assert.ok(html.includes('#963634'));
+    assert.ok(html.includes('#C00000'));
+    assert.ok(html.includes('#99FF99'));
+    assert.ok(html.includes('Sakkal Majalla'));
     assert.ok(html.includes('rowspan="2"'));
   });
 
