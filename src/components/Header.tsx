@@ -20,6 +20,7 @@ const PAGE_LABELS_AR: Record<PageId, string> = {
   reviews: 'المراجعة المستقلة والاعتماد',
   audit: 'سجل التدقيق والتعديلات',
   admin: 'إدارة المستخدمين والصلاحيات',
+  demo: 'العرض التعريفي للمنصة (Demo)',
 };
 
 export const Header: React.FC<HeaderProps> = ({

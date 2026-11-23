@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>العرض التعريفي التنفيذي | منصة التقييم الذاتي للمخاطر والضوابط (RCSA) — البنك الأهلي المصري</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #e9ebe7;
+        color: #0f172a;
+        direction: rtl;
+      }
+
+      .toolbar {
+        position: relative;
+        z-index: 50;
+        background: #09331f;
+        color: #ffffff;
+        border-bottom: 2px solid #f79c1e;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+
+      .btn-primary {
+        background: #006547;
+        border-color: #f79c1e;
+      }
+
+      .deck {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 24px 0 48px;
+      }
+
+      .slide {
+        width: 1280px;
+        height: 720px;
+        background: #ffffff;
+        border: 1px solid #dcdad5;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 34px 44px 24px;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .slide:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .slide-cover {
+        background: #09331f;
+        color: #ffffff;
+        border-color: #09331f;
+        padding: 40px 48px 28px;
+      }
+
+      .slide-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 1px solid #efece6;
+        padding-bottom: 14px;
+        margin-bottom: 18px;
+      }
+
+      .kicker {
+        font-size: 12px;
+        font-weight: 800;
+        color: #006547;
+        margin-bottom: 4px;
+      }
+
+      .kicker-num {
+        color: #9a5b00;
+        font-variant-numeric: tabular-nums;
+      }
+
+      h1.cover-title {
+        font-size: 36px;
+        font-weight: 800;
+        line-height: 1.3;
+        margin: 0;
+        color: #ffffff;
+      }
+
+      h2.slide-title {
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.3;
+        margin: 0;
+        color: #09331f;
+      }
+
+      p.slide-subtitle {
+        font-size: 14px;
+        color: #475569;
+        margin: 4px 0 0;
+        line-height: 1.5;
+      }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .slide-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+      }
+
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #64748b;
+        border-top: 1px solid #efece6;
+        padding-top: 10px;
+        margin-top: 14px;
+      }
+
+      .slide-cover .slide-footer {
+        color: rgba(255, 255, 255, 0.72);
+        border-top-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .grid-6 {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #dcdad5;
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .card-soft {
+        background: #f8f8f6;
+        border: 1px solid #dcdad5;
+        border-radius: 14px;
+        padding: 15px;
+      }
+
+      .card-forest {
+        background: #09331f;
+        color: #ffffff;
+        border: 1px solid #09331f;
+        border-radius: 14px;
+        padding: 18px;
+      }
+
+      .card-rose {
+        background: #fff5f5;
+        border: 1px solid #fecdd3;
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .card-emerald {
+        background: #f2fbf6;
+        border: 1px solid #a7f3d0;
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .card-amber {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 14px;
+        padding: 15px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #09331f;
+        margin: 0 0 6px;
+      }
+
+      .card-forest .card-title {
+        color: #f79c1e;
+      }
+
+      .card-text {
+        font-size: 12.5px;
+        color: #334155;
+        line-height: 1.65;
+        margin: 0;
+      }
+
+      .card-forest .card-text {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .num-big {
+        font-size: 28px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: #f79c1e;
+      }
+
+      .badge-code {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 6px;
+        border: 1px solid #dcdad5;
+        background: #f8f8f6;
+        font-size: 11px;
+        font-weight: 800;
+        color: #09331f;
+      }
+
+      ul.clean-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      ul.clean-list li {
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: #1e293b;
+        background: #ffffff;
+        border: 1px solid #e5e3de;
+        border-radius: 10px;
+        padding: 9px 12px;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @media print {
+        body {
+          background: #ffffff;
+        }
+        .toolbar {
+          display: none !important;
+        }
+        .deck {
+          padding: 0;
+          gap: 0;
+        }
+        .slide {
+          border: none;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div style="font-size: 13px; font-weight: 800">
+        منصة RCSA — البنك الأهلي المصري · العرض التعريفي التنفيذي لغير التقنيين (13 شريحة)
+      </div>
+      <div class="toolbar-actions">
+        <a class="btn" href="/?page=demo">العودة للمنصة التفاعلية</a>
+        <a class="btn" href="/NBE_RCSA_Executive_Demo_AR.pdf" download>تنزيل نسخة PDF</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">طباعة / حفظ PDF</button>
+      </div>
+    </div>
+
+    <main class="deck">
+      <!-- Slide 01: Cover -->
+      <section class="slide slide-cover">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 32px">
+          <div style="max-width: 780px">
+            <div style="color: #f79c1e; font-size: 13px; font-weight: 800; margin-bottom: 14px">
+              العرض التعريفي التنفيذي للمراجعين والإدارات المصرفية
+            </div>
+            <h1 class="cover-title">منصة التقييم الذاتي للمخاطر والضوابط الرقابية (RCSA)</h1>
+            <p style="font-size: 16px; color: rgba(255, 255, 255, 0.88); line-height: 1.75; margin-top: 14px">
+              منظومة مصرفية موحدة لأتمتة وحوكمة دورة تقييم المخاطر التشغيلية بالبنك الأهلي المصري،
+              مصممة بلغة مصرفية واضحة لضمان دقة الحسابات، سلامة المراجعة المستقلة، والامتثال الكامل
+              لمعايير البنك والبنك المركزي المصري.
+            </p>
+          </div>
+          <div
+            style="
+              background: rgba(255, 255, 255, 0.08);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 16px;
+              padding: 24px 28px;
+              text-align: center;
+              min-width: 240px;
+            "
+          >
+            <img
+              src="/assets/nbe-logo-white.png"
+              alt="البنك الأهلي المصري"
+              style="height: 64px; width: auto; object-fit: contain; margin-bottom: 12px"
+            />
+            <div style="font-size: 13px; font-weight: 800">قطاع المخاطر التشغيلية</div>
+            <div class="mono" style="font-size: 12px; color: #f79c1e; margin-top: 4px">
+              NBE RCSA · 2026
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-4" style="margin-top: 18px">
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 16px">
+            <div class="num-big">29</div>
+            <div style="font-size: 13px; font-weight: 800">عموداً معتمداً (C–AE)</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              تطابق تام مع مصنف التقييم الرسمي بالبنك
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 16px">
+            <div class="num-big">84</div>
+            <div style="font-size: 13px; font-weight: 800">بند تصنيف بازل</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              تغطية شاملة لمستويات L1 / L2 / L3 المعتمدة
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 16px">
+            <div class="num-big">34</div>
+            <div style="font-size: 13px; font-weight: 800">معيار استدامة ESG</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              كتالوج البنك المركزي المصري للمخاطر البيئية والاجتماعية
+            </div>
+          </div>
+          <div style="background: rgba(6, 35, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 16px">
+            <div class="num-big">4</div>
+            <div style="font-size: 13px; font-weight: 800">أدوار حوكمة صارمة</div>
+            <div style="font-size: 11.5px; color: rgba(255, 255, 255, 0.78); margin-top: 4px">
+              Maker · Checker · Auditor · Risk Admin
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 14px">
+            <div style="font-size: 13px; font-weight: 800; color: #f79c1e">لغة عمل مصرفية واضحة</div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 4px; line-height: 1.55">
+              شرح مباشر لكل شاشة ومعادلة وقاعدة رقابية دون مصطلحات تقنية معقدة.
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 14px">
+            <div style="font-size: 13px; font-weight: 800; color: #f79c1e">ضمان القرار البشري</div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 4px; line-height: 1.55">
+              المساعد الذكي يقترح بالأدلة فقط، ولا يعتمد أي رقم أو قرار دون موافقة الموظف والمراجع.
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 14px">
+            <div style="font-size: 13px; font-weight: 800; color: #f79c1e">مخرجات جاهزة للجان</div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 4px; line-height: 1.55">
+              تصدير فوري لمصنف Excel الرسمي وتقرير PDF الأخضر المعتمد وسجل التدقيق الكامل.
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>منصة التقييم الذاتي للمخاطر والضوابط الرقابية (RCSA) · البنك الأهلي المصري</span>
+          <span class="mono">01 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 02: Before vs After -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">02 / 13</span> · القيمة المضافة للبنك</div>
+            <h2 class="slide-title">لماذا احتجنا للمنصة؟ مقارنة العمل قبل المنصة وبعدها</h2>
+            <p class="slide-subtitle">
+              الانتقال من العمل اليدوي بملفات Excel المتفرقة إلى منظومة مركزية موثوقة تقلل وقت الإعداد وتضبط جودة الأرقام.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card-rose">
+              <h3 class="card-title" style="color: #881337; font-size: 16px; margin-bottom: 12px">
+                الوضع التقليدي السابق (ملفات متفرقة)
+              </h3>
+              <ul class="clean-list">
+                <li><strong>احتمالية أخطاء المعادلات:</strong> تعديل خلية بالخطأ في Excel يغيّر تصنيف الخطر دون تنبيه.</li>
+                <li><strong>صعوبة تتبع المراجعة:</strong> تداول النسخ بالبريد يضيع تسلسل الملاحظات وقرارات القبول والرفض.</li>
+                <li><strong>تفاوت تصنيفات الإدارات:</strong> صعوبة توحيد بازل (L1–L3) وبنود الاستدامة يدوياً عبر الوحدات.</li>
+                <li><strong>تجميع يدوي بطيء للإدارة العليا:</strong> إعداد خريطة المخاطر 5×5 ومقارنة الدورات يستغرق أياماً.</li>
+              </ul>
+            </div>
+
+            <div class="card-emerald">
+              <h3 class="card-title" style="color: #09331f; font-size: 16px; margin-bottom: 12px">
+                المنظومة الحالية (منصة RCSA المركزية)
+              </h3>
+              <ul class="clean-list">
+                <li><strong>حسابات بنكية حتمية موحدة:</strong> محرك حسابات مركزي يحسب الكامن والضوابط والمتبقي بدقة 100%.</li>
+                <li><strong>سجل تدقيق شامل وأرشفة محمية:</strong> توثيق كل تعديل وقرار اعتماد بالموظف والتوقيت (قبل / بعد).</li>
+                <li><strong>مساعد ذكي يقرأ السياسات والحوادث:</strong> يقترح المخاطر والضوابط برقم الصفحة والفقرة الداعمة.</li>
+                <li><strong>لوحة قيادة وتقارير رسمية فورية:</strong> خريطة 5×5 لحظية، مقارنة الدورات، وتصدير Excel وPDF.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>تتوافق المنصة مع نموذج Excel الحالي للبنك دون إلغاء العمل السابق للإدارات</span>
+          <span class="mono">02 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 03: Workflow -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">03 / 13</span> · رحلة العمل الكاملة</div>
+            <h2 class="slide-title">مسار العمل من البداية إلى الاعتماد الرسمي في 5 خطوات</h2>
+            <p class="slide-subtitle">
+              رحلة واضحة وموحدة تبدأ بتحديد الإدارة وتنتهي بنسخة معتمدة مقفلة وتقارير رسمية جاهزة للتسليم.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-5">
+            <div class="card">
+              <div class="mono" style="font-size: 22px; font-weight: 800; color: #006547">01</div>
+              <div style="font-size: 11px; font-weight: 700; color: #9a5b00; margin: 4px 0 8px">مُعد التقييم (Maker)</div>
+              <h4 class="card-title">اختيار الوحدة ومصدر البيانات</h4>
+              <p class="card-text">تحديد الإدارة والبدء من مستندات جديدة، أو دورة سابقة معتمدة، أو كلاهما معاً.</p>
+            </div>
+            <div class="card">
+              <div class="mono" style="font-size: 22px; font-weight: 800; color: #006547">02</div>
+              <div style="font-size: 11px; font-weight: 700; color: #9a5b00; margin: 4px 0 8px">الوكيل الذكي + الموظف</div>
+              <h4 class="card-title">قراءة الوثائق والاقتراح الذكي</h4>
+              <p class="card-text">رفع السياسات وتقارير الحوادث ليقترح الوكيل المخاطر بالدليل ويقبل الموظف أو يعدل.</p>
+            </div>
+            <div class="card">
+              <div class="mono" style="font-size: 22px; font-weight: 800; color: #006547">03</div>
+              <div style="font-size: 11px; font-weight: 700; color: #9a5b00; margin: 4px 0 8px">محرك الحسابات المعتمد</div>
+              <h4 class="card-title">الضوابط وNFI والحساب الآلي</h4>
+              <p class="card-text">تقييم الأثر المالي، مصفوفة الضوابط 3×3، الأثر غير المالي NFI وESG واحتساب المتبقي.</p>
+            </div>
+            <div class="card">
+              <div class="mono" style="font-size: 22px; font-weight: 800; color: #006547">04</div>
+              <div style="font-size: 11px; font-weight: 700; color: #9a5b00; margin: 4px 0 8px">المراجع المستقل (Checker)</div>
+              <h4 class="card-title">المراجعة والاعتماد المستقل</h4>
+              <p class="card-text">فحص التعديلات وخطط المعالجة، ثم الاعتماد النهائي أو الإعادة للتعديل بسبب موثق.</p>
+            </div>
+            <div class="card">
+              <div class="mono" style="font-size: 22px; font-weight: 800; color: #006547">05</div>
+              <div style="font-size: 11px; font-weight: 700; color: #9a5b00; margin: 4px 0 8px">المخرجات والرقابة</div>
+              <h4 class="card-title">القفل والتصدير الرسمي</h4>
+              <p class="card-text">حفظ النسخة كمرجع تاريخي غير قابل للتعديل وتصدير Excel الرسمي وتقرير PDF الأخضر.</p>
+            </div>
+          </div>
+
+          <div class="card-soft" style="display: flex; justify-content: space-between; align-items: center; gap: 16px">
+            <div class="card-text">
+              <strong style="color: #09331f">قاعدة الحوكمة الثابتة:</strong> النسخة المعتمدة لا تتغير أبداً؛ وعند تحديثها لدورة جديدة تنشأ مسودة مستقلة تحافظ على المرجع الأصلي.
+            </div>
+            <div class="mono" style="font-size: 12px; font-weight: 800; color: #006547; white-space: nowrap">
+              DRAFT → IN_REVIEW → APPROVED (مقفل)
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>دورة عمل مترابطة لا تسمح بتجاوز خطوة أو إغفال حقل مطلوب</span>
+          <span class="mono">03 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 04: Roles & Governance -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">04 / 13</span> · الحوكمة وفصل الصلاحيات</div>
+            <h2 class="slide-title">الصلاحيات والأدوار الأربعة: من يفعل ماذا داخل المنصة؟</h2>
+            <p class="slide-subtitle">
+              تطبيق صارم لمبدأ الفصل بين الإعداد والمراجعة والتدقيق على مستوى كل وحدة تنظيمية.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                <h3 class="card-title" style="margin: 0">مُعد التقييم (Maker)</h3>
+                <span class="badge-code mono">EMP-1001 · أحمد محمود</span>
+              </div>
+              <p class="card-text">
+                <strong>المسؤوليات:</strong> إنشاء مسودة جديدة أو من دورة سابقة لوحدته، رفع المستندات، قبول/رفض مقترحات الوكيل، تعديل البيانات، والإرسال للمراجعة.<br />
+                <strong style="color: #9f1239">القيد الرقابي:</strong> ممنوع تماماً من اعتماد التقييم أو مراجعة عمله.
+              </p>
+            </div>
+
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                <h3 class="card-title" style="margin: 0">المراجع المستقل (Checker)</h3>
+                <span class="badge-code mono">EMP-2002 · سارة إبراهيم</span>
+              </div>
+              <p class="card-text">
+                <strong>المسؤوليات:</strong> فحص المسودات المرسلة، مقارنة القيم الأصلية والمعدلة، التحقق من الأدلة وخطط العمل، والاعتماد أو الإعادة مع سبب إلزامي.<br />
+                <strong style="color: #9f1239">القيد الرقابي:</strong> قراءة وفحص فقط دون تعديل المسودة أو إنشائها.
+              </p>
+            </div>
+
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                <h3 class="card-title" style="margin: 0">التفتيش والرقابة الداخلية (Auditor)</h3>
+                <span class="badge-code mono">EMP-8008 · هدى سامي</span>
+              </div>
+              <p class="card-text">
+                <strong>المسؤوليات:</strong> قراءة شاملة لكل التقييمات المعتمدة، فحص سجل التعديلات الشامل (قبل / بعد)، وتصدير التقارير الرسمية للرقابة.<br />
+                <strong style="color: #9f1239">القيد الرقابي:</strong> صلاحية قراءة وفحص كاملة دون أي تعديل أو اعتماد.
+              </p>
+            </div>
+
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                <h3 class="card-title" style="margin: 0">مدير المخاطر المركزية (Risk Admin)</h3>
+                <span class="badge-code mono">EMP-9009 · طارق رضوان</span>
+              </div>
+              <p class="card-text">
+                <strong>المسؤوليات:</strong> الإشراف على كل الوحدات، إدارة المستخدمين، إنشاء الإدارات، ومتابعة لوحة المعلومات والتنبيهات التاريخية.<br />
+                <strong style="color: #9f1239">القيد الرقابي:</strong> تطبق عليه أيضاً قاعدة منع الاعتماد الذاتي لما أعده.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>الحماية مفروضة على مستوى الخادم والواجهة معاً ولا يمكن تجاوزها</span>
+          <span class="mono">04 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 05: Dashboard -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">05 / 13</span> · الرقابة والمتابعة العليا</div>
+            <h2 class="slide-title">لوحة المعلومات التنفيذية وخريطة المخاطر الحرارية (5×5)</h2>
+            <p class="slide-subtitle">
+              رؤية شاملة لحظية لوضع المخاطر الكامنة والمتبقية عبر الإدارات، مع رصد تلقائي للفجوات التاريخية.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-5">
+            <div class="card-soft">
+              <div class="mono" style="font-size: 11px; color: #006547; font-weight: 800">KPI 01</div>
+              <div class="card-title" style="margin-top: 4px">إجمالي المخاطر</div>
+              <p class="card-text">عدد المخاطر المرصودة عبر الإدارات المصرح بها للمستخدم.</p>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-size: 11px; color: #006547; font-weight: 800">KPI 02</div>
+              <div class="card-title" style="margin-top: 4px">المخاطر الرئيسية</div>
+              <p class="card-text">فقط المخاطر التي يظل أثرها المتبقي أو غير المالي مرتفعاً (H / VH / C).</p>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-size: 11px; color: #006547; font-weight: 800">KPI 03</div>
+              <div class="card-title" style="margin-top: 4px">الخسارة الكامنة EAL</div>
+              <p class="card-text">إجمالي الخسارة السنوية المتوقعة قبل تطبيق الضوابط.</p>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-size: 11px; color: #006547; font-weight: 800">KPI 04</div>
+              <div class="card-title" style="margin-top: 4px">الخسارة المتبقية</div>
+              <p class="card-text">التعرض المالي الفعلي المتبقي بعد خصم الضوابط المنفذة.</p>
+            </div>
+            <div class="card-soft">
+              <div class="mono" style="font-size: 11px; color: #006547; font-weight: 800">KPI 05</div>
+              <div class="card-title" style="margin-top: 4px">نسبة خفض المخاطرة</div>
+              <p class="card-text">الوفر المالي المحقق بفضل كفاءة الضوابط القائمة.</p>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="card" style="grid-column: span 2">
+              <h3 class="card-title">المصفوفة الحرارية 5×5 (قبل الضوابط مقابل بعد الضوابط)</h3>
+              <p class="card-text" style="margin-bottom: 10px">
+                توضح للقيادات التنفيذية كيف تحركت المخاطر من المنطقة الحرجة الكامنة إلى المنطقة المنضبطة المتبقية، مع إمكانية الفلترة حسب الإدارة وفئة الخطر وحالة الاعتماد.
+              </p>
+              <div class="grid-5" style="text-align: center; font-size: 12px; font-weight: 800">
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 10px">VL · منخفض جداً</div>
+                <div style="background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 8px; padding: 10px">L · منخفض</div>
+                <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px">M · متوسط</div>
+                <div style="background: #ffedd5; border: 1px solid #fdba74; border-radius: 8px; padding: 10px">H · مرتفع</div>
+                <div style="background: #ffe4e6; border: 1px solid #fda4af; border-radius: 8px; padding: 10px">VH/C · حرج</div>
+              </div>
+            </div>
+
+            <div class="card-amber">
+              <h3 class="card-title" style="color: #78350f">معايرة الخسائر التاريخية</h3>
+              <p class="card-text">
+                يقارن النظام تلقائياً بين التقدير السنوي للوحدة وبين الخسائر الفعلية التاريخية المسجلة بالبنك، ويرفع تنبيهاً فورياً عند وجود فجوة.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>تدعم اللوحة التنفيذية الانتقال المباشر إلى مصفوفة أي وحدة بضغطة واحدة</span>
+          <span class="mono">05 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 06: Sources & Guided Setup -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">06 / 13</span> · مرونة إعداد التقييم</div>
+            <h2 class="slide-title">إعداد تقييم جديد: 3 مصادر بيانات داخل معالج موجه من 6 خطوات</h2>
+            <p class="slide-subtitle">
+              تتيح المنصة البدء من مستندات جديدة فقط، أو تحديث دورة سابقة معتمدة دون المساس بالأصل، أو الجمع بينهما معاً.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div style="font-size: 11px; font-weight: 800; color: #006547">الوضع الأول</div>
+              <h3 class="card-title" style="margin-top: 4px">مستندات جديدة فقط</h3>
+              <p class="card-text">
+                يُستخدم عند تقييم خدمة أو سياسة مستحدثة؛ ترفع ملفات السياسات والإجراءات فيستخلص النظام المخاطر من الصفر.
+              </p>
+            </div>
+            <div class="card">
+              <div style="font-size: 11px; font-weight: 800; color: #006547">الوضع الثاني</div>
+              <h3 class="card-title" style="margin-top: 4px">بيانات الوحدة السابقة فقط</h3>
+              <p class="card-text">
+                يستورد آخر دورة معتمدة أو مسودة لنفس الإدارة في نسخة جديدة قابلة للتعديل مع بقاء الأصل المعتمد محمياً.
+              </p>
+            </div>
+            <div class="card-emerald">
+              <div style="font-size: 11px; font-weight: 800; color: #006547">الوضع الثالث · المزدوج</div>
+              <h3 class="card-title" style="margin-top: 4px">المستندات + البيانات السابقة معاً</h3>
+              <p class="card-text">
+                يدمج سجل العام الماضي مع تقارير التدقيق والحوادث الجديدة لاكتشاف المخاطر المستجدة ومراجعة الفجوات.
+              </p>
+            </div>
+          </div>
+
+          <div class="card-forest">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e; margin-bottom: 12px">
+              مراحل المعالج الموجه (6 خطوات تمنع نسيان أي بيان قبل الإرسال):
+            </div>
+            <div class="grid-6" style="text-align: center; font-size: 11.5px; font-weight: 700">
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">1. الوحدة والمصدر</div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">2. رفع المستندات</div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">3. مطابقة المخاطر</div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">4. استيفاء النواقص</div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">5. الحساب الآلي</div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 8px">6. مصفوفة 29 عموداً</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>يدعم المعالج حفظ العمل والعودة من نفس الخطوة دون فقدان أي مدخلات</span>
+          <span class="mono">06 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 07: AI Agent & RAG -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">07 / 13</span> · المساعد الذكي وقراءة الوثائق</div>
+            <h2 class="slide-title">وكيل الذكاء الاصطناعي (RAG): مساعد أمين وليس صاحب قرار</h2>
+            <p class="slide-subtitle">
+              يقرأ ملفات السياسات والحوادث ويربطها بتصنيف بازل ومعايير الاستدامة مع إظهار الدليل، والقرار للموظف دائماً.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <h3 class="card-title">1. فهم كافة ملفات البنك</h3>
+              <p class="card-text">
+                يستخلص النصوص من ملفات <strong>PDF وWord وExcel وCSV وPowerPoint وJSON</strong>.
+              </p>
+              <div class="card-amber" style="margin-top: 12px; padding: 10px">
+                <div class="card-text" style="font-size: 11.5px">
+                  <strong>حماية الدقة:</strong> إذا كان الملف PDF مصوراً (سكان) لا يحتوي نصاً، يظهر تنبيه فوري بضرورة المراجعة اليدوية.
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">2. وضعان للعمل + مطابقة قواعد البنك</h3>
+              <div class="card-soft" style="padding: 10px; margin-bottom: 10px">
+                <strong style="font-size: 12px; color: #09331f">الوضع السريع:</strong>
+                <p class="card-text" style="font-size: 11.5px">للاستفسارات المباشرة والملخصات السريعة من الوثائق.</p>
+              </div>
+              <div class="card-emerald" style="padding: 10px">
+                <strong style="font-size: 12px; color: #09331f">الوضع الدقيق:</strong>
+                <p class="card-text" style="font-size: 11.5px">تحليل عميق مع مراجعة جودة ذاتية ومطابقة <strong>84 بند بازل</strong> و<strong>34 حالة ESG</strong>.</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">3. الرقابة البشرية الكاملة</h3>
+              <p class="card-text">
+                كل مقترح يعرض <strong>اسم الملف ورقم الصفحة والفقرة الداعمة</strong>، ولا يُعتمد أبداً تلقائياً، بل ينتظر قرار الموظف:
+              </p>
+              <div class="grid-3" style="margin-top: 16px; text-align: center; font-weight: 800; font-size: 12.5px">
+                <div style="background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46; border-radius: 10px; padding: 10px">قبول</div>
+                <div style="background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; border-radius: 10px; padding: 10px">تعديل</div>
+                <div style="background: #fff1f2; border: 1px solid #fda4af; color: #9f1239; border-radius: 10px; padding: 10px">رفض</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>يمكن استخدام الوكيل لبناء المسودة أو للاستشارة السريعة داخل بيئة العمل</span>
+          <span class="mono">07 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 08: Calculations -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">08 / 13</span> · دقة الاحتساب البنكي</div>
+            <h2 class="slide-title">كيف تُحسب الأرقام المالية والضوابط؟ قواعد واضحة لا تقبل الاجتهاد</h2>
+            <p class="slide-subtitle">
+              يتولى محرك الحسابات المركزي تطبيق معادلات البنك الأهلي المصري بشكل حتمي دون أي تدخل عشوائي.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <h3 class="card-title">1. الخسارة السنوية الكامنة (EAL)</h3>
+              <div class="card-soft" style="padding: 10px; margin: 8px 0; font-weight: 800; font-size: 12px; color: #09331f">
+                الخسارة الكامنة = متوسط الأثر المالي × التكرار السنوي
+              </div>
+              <p class="card-text">يحدد المحرك درجة الخطر الكامن على مصفوفة 5×5 (من VL حتى C) تلقائياً.</p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">2. مصفوفة الضوابط 3×3 (MAX RRF)</h3>
+              <p class="card-text">
+                تقاطع <strong>كفاءة التصميم × الالتزام بالتنفيذ</strong> يحدد معامل الخفض، ويُختار أعلى ضابط <strong>منفذ فعلياً</strong>. الضابط المقترح مستقبلاً (Proposed) يُحتسب <strong>0%</strong>.
+              </p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">3. الخسارة والتصنيف المتبقي</h3>
+              <div class="card-emerald" style="padding: 10px; margin: 8px 0; font-weight: 800; font-size: 12px; color: #09331f">
+                الخسارة المتبقية = الكامنة × (1 − نسبة الخفض)
+              </div>
+              <p class="card-text">إذا ظل التصنيف المتبقي أعلى من حد التحمل، تُطلب خطة معالجة (Action Plan).</p>
+            </div>
+          </div>
+
+          <div class="card-forest">
+            <div style="font-size: 12.5px; font-weight: 800; color: #f79c1e; margin-bottom: 10px">
+              مثال عملي مبسط من بيئة البنك:
+            </div>
+            <div class="grid-4" style="font-size: 12.5px">
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px">
+                <div style="color: #a7f3d0; font-size: 11px">1. المدخلات</div>
+                <strong class="mono">200,000 جم × 3 مرات/سنة</strong>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px">
+                <div style="color: #a7f3d0; font-size: 11px">2. الخسارة الكامنة</div>
+                <strong class="mono" style="color: #f79c1e">600,000 جم/سنة</strong>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px">
+                <div style="color: #a7f3d0; font-size: 11px">3. ضابط منفذ فعّال</div>
+                <strong class="mono">تصميم وتنفيذ فعّالان = 90%</strong>
+              </div>
+              <div style="background: #006547; border: 1px solid #f79c1e; border-radius: 10px; padding: 12px">
+                <div style="color: #d1fae5; font-size: 11px">4. الخسارة المتبقية</div>
+                <strong class="mono">60,000 جم/سنة فقط</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>أي تعديل مالي في الصف يعيد تشغيل المحرك لضمان تطابق كل الأرقام</span>
+          <span class="mono">08 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 09: NFI, ESG & Key Risk -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">09 / 13</span> · الامتثال المنهجي للبنك والمركزي</div>
+            <h2 class="slide-title">الأثر غير المالي (NFI 4×5)، الاستدامة (ESG)، وقاعدة المخاطرة الرئيسية</h2>
+            <p class="slide-subtitle">
+              تغطية كاملة لمصفوفة الشريحة الرابعة للبنك، كتالوج البنك المركزي للاستدامة، وقاعدة Key Risk من المتبقي فقط.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <h3 class="card-title">1. مصفوفة NFI (4 أبعاد × 5 درجات)</h3>
+              <p class="card-text" style="margin-bottom: 10px">
+                تقييم مستقل من <span class="mono">1</span> إلى <span class="mono">5</span> مع خيار <strong>&quot;-&quot;</strong> عند عدم الانطباق:
+              </p>
+              <div class="grid-2" style="gap: 8px; font-size: 11.5px; font-weight: 800; color: #09331f">
+                <div class="card-soft" style="padding: 8px">توقف الخدمة والعملاء</div>
+                <div class="card-soft" style="padding: 8px">السمعة والثقة العامة</div>
+                <div class="card-soft" style="padding: 8px">الرقابي والبنك المركزي</div>
+                <div class="card-soft" style="padding: 8px">القانوني والتشريعي</div>
+              </div>
+              <div class="card-emerald" style="margin-top: 10px; padding: 10px; font-size: 11.5px">
+                <strong>مبدأ الأكثر تحوطاً:</strong> الدرجة النهائية = أعلى درجة مسجلة بين الأبعاد الأربعة.
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">2. الاستدامة (ESG · 34 بنداً للبنك المركزي)</h3>
+              <ul class="clean-list" style="margin-top: 10px">
+                <li><strong>البيئي (E):</strong> مخاطر المناخ، الموارد، والتمويل الأخضر.</li>
+                <li><strong>الاجتماعي (S):</strong> حقوق العملاء، الشمول، وبيئة العمل.</li>
+                <li><strong>الحوكمة (G):</strong> الشفافية، النزاهة، والامتثال المؤسسي.</li>
+              </ul>
+            </div>
+
+            <div class="card-forest">
+              <h3 class="card-title" style="font-size: 15px">3. قاعدة المخاطرة الرئيسية (Key Risk)</h3>
+              <p class="card-text" style="margin-bottom: 14px">
+                تُحسب <strong>حصرياً من الأثر المتبقي بعد الضوابط</strong> (ولا تدخل الدرجة الكامنة فيها). تكون المخاطرة رئيسية <strong>&quot;نعم&quot;</strong> فقط إذا:
+              </p>
+              <div style="background: rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 10px; font-size: 12px; font-weight: 800; margin-bottom: 8px">
+                1) الأثر المالي المتبقي = H أو VH أو C
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 10px; font-size: 12px; font-weight: 800">
+                2) أو أي بُعد غير مالي (NFI) = H أو VH أو C
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>تطبيق مباشر لملاحظات مراجعي البنك الأهلي المصري في كافة الشاشات والتقارير</span>
+          <span class="mono">09 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 10: Matrix & Lineage -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">10 / 13</span> · بيئة العمل والمراجعة اليومية</div>
+            <h2 class="slide-title">مصفوفة تقييم المخاطر (29 عموداً) ومؤشرات مصدر كل معلومة</h2>
+            <p class="slide-subtitle">
+              مساحة العمل التفصيلية لمعد التقييم والمراجع: تمييز بصري لأصل كل قيمة، حماية من الحقول الناقصة، وخيارات &quot;أخرى&quot;.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-5">
+            <div class="card-soft">
+              <div class="badge-code">مصدر أصلي</div>
+              <p class="card-text" style="margin-top: 8px">بيان منقول من ملف Excel أو الدورة المعتمدة السابقة للوحدة.</p>
+            </div>
+            <div class="card-soft">
+              <div class="badge-code" style="background: #fffbeb; border-color: #fcd34d; color: #92400e">مقترح ذكي</div>
+              <p class="card-text" style="margin-top: 8px">توصية مستخلصة من الوثائق بعد موافقة الموظف على إدراجها.</p>
+            </div>
+            <div class="card-soft">
+              <div class="badge-code" style="background: #f0f9ff; border-color: #7dd3fc; color: #075985">تعديل مسودة</div>
+              <p class="card-text" style="margin-top: 8px">حقل عدّله مُعد التقييم يدوياً خلال العمل ويظهر بوضوح للمراجع.</p>
+            </div>
+            <div class="card-soft">
+              <div class="badge-code" style="background: #ecfdf5; border-color: #6ee7b7; color: #065f46">محرك بايثون</div>
+              <p class="card-text" style="margin-top: 8px">نتيجة مالية أو تصنيفية محسوبة آلياً وفق معادلات البنك.</p>
+            </div>
+            <div class="card-soft">
+              <div class="badge-code" style="background: #09331f; border-color: #09331f; color: #ffffff">معتمد نهائياً</div>
+              <p class="card-text" style="margin-top: 8px">حالة مغلقة وموثقة باعتماد المراجع المستقل (Checker).</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3 class="card-title">حماية المخرجات عند تعديل الأرقام</h3>
+              <p class="card-text">
+                عند تعديل أي مبلغ أو تكرار أو ضابط رقابي، ينتقل الصف فوراً إلى حالة &quot;بانتظار إعادة الاحتساب&quot; ويُمنع التصدير حتى يعيد الموظف تأكيد الحساب.
+              </p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">خيار &quot;أخرى&quot; في كل القوائم المنسدلة</h3>
+              <p class="card-text">
+                جميع قوائم الاختيار (تصنيف بازل، نوع الضابط، حالة التنفيذ، الأبعاد، والاستدامة) تتيح اختيار &quot;أخرى&quot; وتحديد الوصف المناسب.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>تغطي المصفوفة الأعمدة من C إلى AE مطابقة لقالب البنك الأهلي المصري</span>
+          <span class="mono">10 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 11: Reviews, Units & Audit -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">11 / 13</span> · التدقيق والتتبع التاريخي</div>
+            <h2 class="slide-title">الاعتماد المستقل، مقارنة الدورات التاريخية، وسجل التدقيق الشامل</h2>
+            <p class="slide-subtitle">
+              ثلاث شاشات رقابية تضمن الشفافية الكاملة أمام المراجع المستقل وإدارة التفتيش والرقابة الداخلية.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <h3 class="card-title">1. صندوق المراجعة والاعتماد</h3>
+              <ul class="clean-list" style="margin-top: 10px">
+                <li>عرض المسودات الجاهزة للمراجعة حسب الوحدة.</li>
+                <li>مقارنة القيم الأصلية بأي تعديل أو مقترح ذكي.</li>
+                <li>إلزام المراجع بكتابة سبب واضح عند الإعادة للمعد.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">2. الوحدات التنظيمية والتاريخ</h3>
+              <ul class="clean-list" style="margin-top: 10px">
+                <li>استعراض الإدارات (القروض المشتركة، الحسابات، POS).</li>
+                <li>عرض النسخ المعتمدة مع اسم آخر معدل وتاريخ الاعتماد.</li>
+                <li>مقارنة الدورات لرصد المخاطر المستحدثة أو المتغيرة.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">3. سجل التعديلات (Audit Trail)</h3>
+              <ul class="clean-list" style="margin-top: 10px">
+                <li>توثيق الإنشاء والتعديل والحساب والاعتماد والرفض.</li>
+                <li>عرض القيمة <strong>قبل التعديل وبعده</strong> لكل حقل.</li>
+                <li>بحث وتصفية فورية لإدارة التفتيش والرقابة الداخلية.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>لا تُمحى أي نسخة أو تعديل من الذاكرة التاريخية للوحدة بعد اعتمادها</span>
+          <span class="mono">11 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 12: Outputs & UX -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">12 / 13</span> · المخرجات وتجربة المستخدم</div>
+            <h2 class="slide-title">التقارير الرسمية المعتمدة (Excel & PDF) وتبسيط الواجهة بتلميحات الشرح</h2>
+            <p class="slide-subtitle">
+              مخرجات جاهزة للعرض على اللجان العليا مع واجهة هادئة وشرح فوري لكل مصطلح وزر بالهوفر.
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <h3 class="card-title">مصنف Excel الرسمي (29 عموداً)</h3>
+              <p class="card-text">
+                إنتاج ملف Excel مطابق حرفياً لنموذج البنك المعتمد (الأعمدة <span class="mono">C–AE</span>) مع الحفاظ على الصيغ والتنسيقات الرسمية بمجرد استيفاء الصفوف.
+              </p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">التقرير الأخضر المنسق (PDF)</h3>
+              <p class="card-text">
+                معاينة وطباعة وتنزيل فوري للتقرير الرسمي بالهوية الخضراء المعتمدة للبنك الأهلي المصري متضمناً الجداول والتقييمات وNFI وESG وKey Risk.
+              </p>
+            </div>
+            <div class="card-emerald">
+              <h3 class="card-title">واجهة هادئة + تلميحات الهوفر (؟)</h3>
+              <p class="card-text">
+                تخفيف الازدحام البصري وإضافة أيقونة <strong>(؟)</strong> وتلميحات تشرح أي مصطلح (EAL، RRF، NFI، Key Risk) وأي زر بمجرد الوقوف عليه بالمؤشر.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>وضوح كامل للمستخدم غير المتخصص في التقنية منذ اللحظة الأولى</span>
+          <span class="mono">12 / 13</span>
+        </div>
+      </section>
+
+      <!-- Slide 13: Live Demo Walkthrough -->
+      <section class="slide">
+        <div class="slide-header">
+          <div>
+            <div class="kicker"><span class="kicker-num">13 / 13</span> · خطة العرض المباشر</div>
+            <h2 class="slide-title">خطة العرض العملي في 10 دقائق وإجابات أهم أسئلة المراجعين</h2>
+            <p class="slide-subtitle">
+              دليل عملي خطوة بخطوة لتجربة كافة صلاحيات المنصة أمام الحضور بالحسابات الجاهزة (كلمة المرور: <span class="mono">NBE@2026!</span>).
+            </p>
+          </div>
+          <div class="header-brand">
+            <img src="/assets/nbe-logo.svg" alt="NBE" style="height: 38px; width: 156px; object-fit: contain; display: block" />
+          </div>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card">
+              <h3 class="card-title">مسار الجلسة المباشرة (10 دقائق)</h3>
+              <ul class="clean-list">
+                <li><strong>الدقائق 1–2 · طارق رضوان (EMP-9009):</strong> لوحة المعلومات 5×5 وتنبيهات الخسائر التاريخية.</li>
+                <li><strong>الدقائق 3–5 · أحمد محمود (EMP-1001):</strong> إعداد تقييم بالمصدر المزدوج + الوكيل الذكي بالدليل.</li>
+                <li><strong>الدقائق 6–8 · مصفوفة 29 عموداً:</strong> تعديل NFI/ضابط، الحساب الآلي، ومعاينة PDF وExcel.</li>
+                <li><strong>الدقائق 9–10 · سارة (EMP-2002) وهدى (EMP-8008):</strong> الاعتماد المستقل وفحص سجل التدقيق.</li>
+              </ul>
+            </div>
+
+            <div class="card-forest">
+              <h3 class="card-title">إجابات سريعة لأسئلة المراجع</h3>
+              <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px">
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px">
+                  <strong>هل يعتمد الذكاء الاصطناعي الأرقام تلقائياً؟</strong><br />
+                  لا؛ يقترح فقط بالدليل، والحساب لمحرك البنك، والاعتماد للمراجع البشري.
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px">
+                  <strong>هل النسخ المعتمدة محمية من التعديل؟</strong><br />
+                  نعم؛ تقفل تماماً وأي دورة جديدة تنشأ كمسودة مستقلة بسجل تدقيق كامل.
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px">
+                  <strong>هل المخرجات مطابقة لنموذج البنك؟</strong><br />
+                  نعم؛ Excel الرسمي (29 عموداً C–AE) والتقرير الأخضر PDF.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>شكراً لحضوركم · فريق منصة RCSA — البنك الأهلي المصري</span>
+          <span class="mono">13 / 13</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

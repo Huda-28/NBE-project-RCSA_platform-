@@ -12,6 +12,7 @@ import { RCSATablePage } from './pages/RCSATablePage.js';
 import { ReviewsPage } from './pages/ReviewsPage.js';
 import { AuditTrailPage } from './pages/AuditTrailPage.js';
 import { AdminPage } from './pages/AdminPage.js';
+import { DemoPresentationPage } from './pages/DemoPresentationPage.js';
 
 export interface AppNavigationState {
   page: PageId;
@@ -31,6 +32,7 @@ const VALID_PAGES: Set<PageId> = new Set([
   'reviews',
   'audit',
   'admin',
+  'demo',
 ]);
 
 function readNavStateFromUrl(): AppNavigationState {
@@ -186,6 +188,8 @@ const MainAppContent: React.FC = () => {
         return <AuditTrailPage initialUnitId={navState.unitId} />;
       case 'admin':
         return <AdminPage />;
+      case 'demo':
+        return <DemoPresentationPage onNavigate={navigateTo} />;
       default:
         return <DashboardPage onNavigate={navigateTo} />;
     }

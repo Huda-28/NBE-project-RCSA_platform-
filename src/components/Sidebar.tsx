@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   PanelRightClose,
   PanelRightOpen,
+  Presentation,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.js';
@@ -25,7 +26,8 @@ export type PageId =
   | 'rcsa-table'
   | 'reviews'
   | 'audit'
-  | 'admin';
+  | 'admin'
+  | 'demo';
 
 interface SidebarProps {
   currentPage: PageId;
@@ -103,6 +105,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       tooltip: 'تعيين الصلاحيات والأدوار (Maker / Checker / Auditor / Admin) على الوحدات.',
       icon: UserCog,
       requiresRole: ['RISK_ADMIN'],
+      group: 'governance',
+    },
+    {
+      id: 'demo' as PageId,
+      label: 'العرض التقديمي',
+      tooltip: 'عرض تعريفي تفاعلي لغير التقنيين والمراجعين يشرح كافة شاشات المنصة مع نسخة PDF.',
+      icon: Presentation,
+      badge: '13',
       group: 'governance',
     },
   ];
