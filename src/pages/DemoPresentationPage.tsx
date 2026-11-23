@@ -53,6 +53,12 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
   const [showNotes, setShowNotes] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<{
+    type: 'success' | 'error';
+    message: string;
+    fallbackUrl: string;
+  } | null>(null);
 
   const activeSlides: Array<DemoSlide | MethodologySlide> =
     activeDeck === 'executive' ? DEMO_SLIDES : METHODOLOGY_SLIDES;
@@ -63,6 +69,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
     setActiveDeck(deck);
     setCurrentIndex(0);
     setShowOverview(false);
+    setDownloadNotice(null);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       if (deck === 'methodology') {
@@ -73,6 +80,71 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
       window.history.replaceState({}, '', url.toString());
     }
   }, []);
+
+  const handleDownloadDeckPdf = useCallback(async () => {
+    const filename =
+      activeDeck === 'executive'
+        ? 'NBE_RCSA_Executive_Demo_AR.pdf'
+        : 'NBE_RCSA_Methodology_Models_Journey.pdf';
+    const apiUrl = `/api/demo/deck-pdf/${activeDeck}`;
+    const staticUrl = `/${filename}`;
+
+    setDownloadingPdf(true);
+    setDownloadNotice(null);
+    try {
+      let response = await fetch(apiUrl, { cache: 'no-store' });
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok || !contentType.includes('pdf')) {
+        response = await fetch(staticUrl, { cache: 'no-store' });
+      }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const rawBlob = await response.blob();
+      if (!rawBlob || rawBlob.size < 1024) {
+        throw new Error('Invalid PDF payload');
+      }
+      const headerSlice = await rawBlob.slice(0, 5).text();
+      if (!headerSlice.startsWith('%PDF-')) {
+        throw new Error('Response is not a PDF document');
+      }
+
+      const pdfBlob =
+        rawBlob.type === 'application/pdf'
+          ? rawBlob
+          : new Blob([rawBlob], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 4000);
+
+      const sizeKb = Math.round(pdfBlob.size / 1024);
+      setDownloadNotice({
+        type: 'success',
+        message:
+          activeDeck === 'executive'
+            ? `تم بدء تنزيل العرض التقديمي (${filename} · ${sizeKb} كيلوبايت).`
+            : `PDF download started (${filename} · ${sizeKb} KB).`,
+        fallbackUrl: `${apiUrl}?inline=1`,
+      });
+    } catch {
+      setDownloadNotice({
+        type: 'error',
+        message:
+          activeDeck === 'executive'
+            ? 'تعذر التنزيل التلقائي من المتصفح. يمكنك فتح ملف الـ PDF مباشرة أو استخدام نسخة الطباعة.'
+            : 'Automatic download was blocked by the browser. Open the PDF directly or use Print View.',
+        fallbackUrl: `${apiUrl}?inline=1`,
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [activeDeck]);
 
   const goNext = useCallback(() => {
     setCurrentIndex((prev) => Math.min(totalSlides - 1, prev + 1));
@@ -1193,26 +1265,56 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
             }
             side="bottom"
           >
-            <a
-              href={
-                activeDeck === 'executive'
-                  ? '/NBE_RCSA_Executive_Demo_AR.pdf'
-                  : '/NBE_RCSA_Methodology_Models_Journey.pdf'
-              }
-              download={
-                activeDeck === 'executive'
-                  ? 'NBE_RCSA_Executive_Demo_AR.pdf'
-                  : 'NBE_RCSA_Methodology_Models_Journey.pdf'
-              }
+            <button
+              type="button"
+              onClick={handleDownloadDeckPdf}
+              disabled={downloadingPdf}
               data-testid="demo-download-pdf"
-              className="min-h-9 px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 transition-colors whitespace-nowrap"
+              className="min-h-9 px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] disabled:opacity-60 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
             >
               <FileDown className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>{activeDeck === 'executive' ? 'تنزيل PDF للعرض' : 'Download Deck PDF'}</span>
-            </a>
+              <span>
+                {downloadingPdf
+                  ? activeDeck === 'executive'
+                    ? 'جاري تجهيز الـ PDF...'
+                    : 'Preparing PDF...'
+                  : activeDeck === 'executive'
+                    ? 'تنزيل PDF للعرض'
+                    : 'Download Deck PDF'}
+              </span>
+            </button>
           </HoverTooltip>
         </div>
       </div>
+
+      {downloadNotice && (
+        <div
+          dir={activeDeck === 'methodology' ? 'ltr' : 'rtl'}
+          data-testid="demo-download-notice"
+          className={`rounded-xl border px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 ${
+            downloadNotice.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-[#09331F]'
+              : 'bg-amber-50 border-amber-300 text-amber-950'
+          }`}
+        >
+          <span className="font-bold">{downloadNotice.message}</span>
+          <div className="flex items-center gap-3">
+            <a
+              href={downloadNotice.fallbackUrl}
+              className="font-extrabold text-[#006547] underline hover:text-[#09331F]"
+            >
+              {activeDeck === 'executive' ? 'فتح ملف PDF مباشرة' : 'Open PDF Directly'}
+            </a>
+            <button
+              type="button"
+              onClick={() => setDownloadNotice(null)}
+              className="text-slate-500 hover:text-slate-800 font-bold cursor-pointer"
+            >
+              {activeDeck === 'executive' ? 'إغلاق' : 'Dismiss'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Slide Overview Grid Drawer */}
       {showOverview && (

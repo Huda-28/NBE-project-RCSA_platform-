@@ -1978,6 +1978,50 @@ apiRouter.post('/admin/users/:employeeId/roles', authenticate, (req: Authenticat
 // 6. PROVISIONAL CALCULATION API CONTRACT (Returns ENGINE_NOT_CONFIGURED)
 // ==========================================
 
+// ==========================================
+// 7. PRESENTATION DECK PDF DOWNLOAD ENDPOINT
+// ==========================================
+
+apiRouter.get('/demo/deck-pdf/:deck', async (req, res) => {
+  const deck = req.params.deck;
+  const filename =
+    deck === 'executive'
+      ? 'NBE_RCSA_Executive_Demo_AR.pdf'
+      : deck === 'methodology'
+        ? 'NBE_RCSA_Methodology_Models_Journey.pdf'
+        : null;
+
+  if (!filename) {
+    return res.status(404).json({ error: 'Presentation deck PDF not found.' });
+  }
+
+  const candidatePaths = [
+    path.resolve(process.cwd(), 'public', filename),
+    path.resolve(process.cwd(), 'dist', filename),
+  ];
+
+  const resolvedPath = candidatePaths.find((candidate) => fs.existsSync(candidate));
+  if (!resolvedPath) {
+    return res.status(404).json({ error: 'PDF asset is not available on disk.' });
+  }
+
+  try {
+    const buffer = await fs.promises.readFile(resolvedPath);
+    const isInline = req.query.inline === '1' || req.query.inline === 'true';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', String(buffer.length));
+    res.setHeader(
+      'Content-Disposition',
+      `${isInline ? 'inline' : 'attachment'}; filename="${filename}"`
+    );
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(buffer);
+  } catch (err: any) {
+    console.error('[Demo PDF download]', err);
+    return res.status(500).json({ error: 'Failed to read presentation PDF.' });
+  }
+});
+
 apiRouter.post('/internal/engine/calculate', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await executeProvisionalCalculation(req.body);
