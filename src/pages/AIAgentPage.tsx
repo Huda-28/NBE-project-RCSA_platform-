@@ -4,6 +4,7 @@ import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
 import { HoverTooltip, InfoHint } from '../components/HoverTooltip.js';
+import { RichChunkContent } from '../components/RichChunkContent.js';
 import {
   Bot as BotIcon,
   Cpu as CpuIcon,
@@ -77,6 +78,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
   const [loadingState, setLoadingState] = useState<boolean>(true);
   const [sendingMsg, setSendingMsg] = useState<boolean>(false);
   const [uploadingDocs, setUploadingDocs] = useState<boolean>(false);
+  const [reanalyzingDocId, setReanalyzingDocId] = useState<string | null>(null);
   const [switchingModel, setSwitchingModel] = useState<boolean>(false);
   const [userPromptText, setUserPromptText] = useState<string>('');
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -461,6 +463,45 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
       });
     } catch (err: any) {
       setActionNotice({ type: 'error', text: err.message });
+    }
+  };
+
+  // V5: Trigger on-demand ViT / VLM multimodal analysis on any existing or uploaded document
+  const handleReanalyzeDocumentVision = async (documentId: string, docTitle?: string) => {
+    if (!token || !sessionId || reanalyzingDocId) return;
+    setReanalyzingDocId(documentId);
+    setActionNotice(null);
+    try {
+      const res = await fetch(`/api/guided-rcsa/documents/${documentId}/reanalyze-vision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'تعذر تشغيل التحليل البصري للمستند.');
+      await loadAgentState(sessionId, selectedUnitId);
+      if (data.extraction_status === 'EXTRACTED_TEXT_CHUNKS') {
+        setInspectedDocId(documentId);
+        setActionNotice({
+          type: 'success',
+          text:
+            data.message_ar ||
+            `تم التحليل البصري للمستند (${docTitle || documentId}) واستخراج الجداول والنصوص في محرك RAG.`,
+        });
+      } else {
+        setActionNotice({
+          type: 'info',
+          text:
+            data.message_ar ||
+            'محرك الرؤية البصرية غير مفعل في البيئة الحالية (يلزم نموذج رؤية مثل Ollama Vision أو Gemini API)، تم الاحتفاظ بالمقاطع النصية الحالية.',
+        });
+      }
+    } catch (err: any) {
+      setActionNotice({ type: 'error', text: err.message });
+    } finally {
+      setReanalyzingDocId(null);
     }
   };
 
@@ -895,13 +936,13 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
           handleUnitChange(newUnit.id);
         }}
       />
-      {/* Hidden File Input for Universal Document Upload */}
+      {/* Hidden File Input for Universal Multimodal Document & Image Upload */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileUpload}
         multiple
-        accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.tsv,.txt,.md,.json,.xml,.html,.htm,.rtf,.yaml,.yml,.log,.zip"
+        accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.tsv,.txt,.md,.json,.xml,.html,.htm,.rtf,.yaml,.yml,.log,.zip,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff"
         className="hidden"
       />
 
@@ -917,8 +958,8 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                 الوكيل الذكي وقاعدة المعرفة (RAG)
               </h2>
               <InfoHint
-                title="قدرات الوكيل الذكي المصرفي"
-                description="يدعم فهرسة واستخلاص البيانات من PDF وWord وExcel وCSV وJSON وXML وPPTX وZIP وبناء مصفوفة RCSA كاملة من 29 عموداً (C إلى AE)."
+                title="قدرات الوكيل الذكي متعدد الوسائط (V5)"
+                description="يدعم استخلاص النصوص والجداول المهيكلة من PDF وWord وExcel وCSV وPPTX بالإضافة إلى تحليل الصور والمستندات المصورة (PNG/JPG/Scanned PDF) عبر Vision AI وإعادة الترتيب بدقتين."
               />
             </div>
             <p className="text-xs text-slate-600 mt-0.5">
@@ -1118,16 +1159,28 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
           {/* Live RAG Knowledge Base Stats */}
           <div className="flex items-center gap-2 flex-wrap text-[11px] tabular-nums">
             <HoverTooltip
-              title="فهرس المستندات (RAG)"
-              description="عدد الملفات والمقاطع النصية المفهرسة حالياً للبحث والاستدلال داخل الجلسة."
+              title="فهرس المستندات (RAG + V5 Reranker)"
+              description="عدد الملفات والمقاطع النصية والجدولية والبصرية المفهرسة حالياً للبحث وإعادة الترتيب الثنائي المرحلة."
               side="bottom"
             >
-              <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5 cursor-help">
+              <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5 cursor-help flex-wrap">
                 <DatabaseIcon className="w-3.5 h-3.5 text-[#006547]" />
                 <span>فهرس RAG:</span>
                 <strong className="text-[#09331F]">{ragStats?.documents_count ?? docsList.length} ملفات</strong>
                 <span className="text-slate-400">·</span>
                 <strong className="text-[#09331F]">{ragStats?.total_chunks_count ?? 0} مقطع</strong>
+                {(ragStats?.tables_detected_count ?? 0) > 0 && (
+                  <>
+                    <span className="text-slate-400">·</span>
+                    <strong className="text-[#006547]">{ragStats.tables_detected_count} جداول</strong>
+                  </>
+                )}
+                {(ragStats?.vision_documents_count ?? 0) > 0 && (
+                  <>
+                    <span className="text-slate-400">·</span>
+                    <strong className="text-[#9A5B00]">{ragStats.vision_documents_count} بصري ViT</strong>
+                  </>
+                )}
               </div>
             </HoverTooltip>
             <HoverTooltip
@@ -1387,13 +1440,17 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                   لم يتم إرفاق مستندات خاصة بهذه الجلسة بعد (يتم استخدام المراجع الأساسية للوحدة أو الاستدلال المصرفي الشامل).
                 </p>
                 <p className="text-slate-600">
-                  اضغط على <strong>"رفع ملفات للتحليل (كافة الصيغ)"</strong> أو <strong>"لصق نص / جدول مباشر"</strong> لرفع أي ملفات (PDF, Word, Excel, CSV, JSON, XML, PPTX, TXT) ليقوم محرك RAG بفهمها والرد على أي سؤال حولها.
+                  اضغط على <strong>"رفع ملفات للتحليل"</strong> أو <strong>"لصق نص / جدول مباشر"</strong> لرفع ملفات PDF أو Word أو Excel أو صور الجداول والمستندات الممسوحة (PNG/JPG/TIFF) ليقوم محرك Vision + RAG بفهمها واستخراج الجداول بدقة.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {docsList.map((doc: any) => {
                   const isInspected = inspectedDocId === doc.id;
+                  const isReanalyzing = reanalyzingDocId === doc.id;
+                  const isVisionProcessed =
+                    doc.extraction_method === 'VISION_MULTIMODAL' ||
+                    doc.extraction_method === 'HYBRID_TEXT_PLUS_VISION';
                   return (
                     <div
                       key={doc.id}
@@ -1411,12 +1468,20 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                               {doc.title_ar || doc.filename}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-600 flex-wrap tabular-nums">
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-600 flex-wrap tabular-nums">
                             <span className="px-1.5 py-0.2 rounded bg-white border border-[#DCDAD5] font-mono font-bold text-[#09331F]">
                               {doc.doc_type || 'SOP'}
                             </span>
-                            <span>• {doc.chunks_count || 0} مقاطع مفهرسة</span>
-                            {doc.total_chars ? <span>• {Number(doc.total_chars).toLocaleString()} حرف</span> : null}
+                            <span>• {doc.chunks_count || 0} مقاطع</span>
+                            {Number(doc.table_count || 0) > 0 && (
+                              <span className="font-bold text-[#006547]">• {doc.table_count} جداول</span>
+                            )}
+                            {isVisionProcessed && (
+                              <span className="font-bold text-[#9A5B00]">• تحليل بصري ViT</span>
+                            )}
+                            {doc.needs_vision && !isVisionProcessed && (
+                              <span className="font-bold text-amber-700">• يتطلب فحص بصري</span>
+                            )}
                           </div>
                         </div>
 
@@ -1431,25 +1496,36 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-[#E5E3DE]">
+                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-[#E5E3DE] flex-wrap">
                         <button
                           type="button"
                           onClick={() => setInspectedDocId(isInspected ? null : doc.id)}
                           className="px-2 py-1 rounded-lg bg-white hover:bg-[#EFECE6] border border-[#DCDAD5] text-[#09331F] font-bold text-[10px] flex items-center gap-1 cursor-pointer"
                         >
                           <EyeIcon className="w-3 h-3 text-[#006547]" />
-                          <span>{isInspected ? 'إخفاء المقاطع' : 'فحص المقاطع المستخرجة'}</span>
+                          <span>{isInspected ? 'إخفاء' : 'فحص المقاطع'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isReanalyzing}
+                          onClick={() => handleReanalyzeDocumentVision(doc.id, doc.title_ar)}
+                          title="تشغيل التحليل البصري V5 لقراءة الصور والجداول داخل الملف"
+                          className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                        >
+                          <SparklesIcon className="w-3 h-3 text-amber-700" />
+                          <span>{isReanalyzing ? 'جارٍ المسح...' : 'تحليل بصري'}</span>
                         </button>
 
                         <button
                           type="button"
                           disabled={sendingMsg}
                           onClick={() =>
-                            handleSendMessage(`اشرح لي بالتفصيل محتوى الملف المرفوع (${doc.title_ar}) وأهم الإجراءات والأرقام والمخاطر الواردة فيه.`)
+                            handleSendMessage(`اشرح لي بالتفصيل محتوى الملف المرفوع (${doc.title_ar}) وأهم الجداول والإجراءات والأرقام والمخاطر الواردة فيه.`)
                           }
-                          className="px-2.5 py-1 rounded-lg bg-[#006547]/10 hover:bg-[#006547]/20 text-[#006547] font-bold text-[10px] cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-[#006547]/10 hover:bg-[#006547]/20 text-[#006547] font-bold text-[10px] cursor-pointer"
                         >
-                          اسأل عن هذا الملف
+                          اسأل الوكيل
                         </button>
                       </div>
                     </div>
@@ -1465,7 +1541,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                   <div className="text-xs font-bold text-[#09331F] flex items-center gap-2">
                     <DatabaseIcon className="w-4 h-4 text-[#006547]" />
                     <span>
-                      معاينة المقاطع المستخلصة في فهرس RAG للمستند: {inspectedDoc.title_ar} ({inspectedDoc.chunks?.length || 0} مقطع)
+                      معاينة المقاطع والجداول المستخلصة في فهرس RAG للمستند: {inspectedDoc.title_ar} ({inspectedDoc.chunks?.length || 0} مقطع)
                     </span>
                   </div>
                   <button
@@ -1480,13 +1556,25 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                 {(!inspectedDoc.chunks || inspectedDoc.chunks.length === 0) ? (
                   <p className="text-xs text-slate-600">لا توجد مقاطع نصية مستخلصة لهذا الملف.</p>
                 ) : (
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                     {inspectedDoc.chunks.map((ch: any) => (
-                      <div key={ch.id} className="p-2.5 rounded-lg bg-white border border-[#DCDAD5] text-[11px] space-y-1">
-                        <div className="font-bold text-[#006547]">
-                          {ch.section_title || `مقطع #${ch.chunk_index}`} (صفحة {ch.page_number || 1})
+                      <div key={ch.id} className="p-2.5 rounded-lg bg-white border border-[#DCDAD5] text-[11px] space-y-1.5">
+                        <div className="font-bold text-[#006547] flex items-center justify-between gap-2">
+                          <span>
+                            {ch.section_title || `مقطع #${ch.chunk_index}`} (صفحة {ch.page_number || 1})
+                          </span>
+                          {ch.chunk_kind === 'TABLE' && (
+                            <span className="text-[10px] font-extrabold text-[#09331F] bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                              جدول مهيكل
+                            </span>
+                          )}
+                          {ch.chunk_kind === 'VISION_OCR' && (
+                            <span className="text-[10px] font-extrabold text-amber-900 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                              تحليل بصري ViT
+                            </span>
+                          )}
                         </div>
-                        <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">{ch.content_text}</p>
+                        <RichChunkContent text={ch.content_text} />
                       </div>
                     ))}
                   </div>

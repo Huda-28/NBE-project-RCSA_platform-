@@ -393,6 +393,42 @@ export function initDatabase() {
     // Column already exists
   }
 
+  try {
+    db.exec("ALTER TABLE documents ADD COLUMN extraction_method TEXT DEFAULT 'TEXT'");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE documents ADD COLUMN vision_model TEXT");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE documents ADD COLUMN table_count INTEGER DEFAULT 0");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE documents ADD COLUMN vision_pages_count INTEGER DEFAULT 0");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE documents ADD COLUMN needs_vision INTEGER DEFAULT 0");
+  } catch {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE document_chunks ADD COLUMN chunk_kind TEXT DEFAULT 'PROSE'");
+  } catch {
+    // Column already exists
+  }
+
   runInTransaction(() => {
     seedInitialData();
     ensureAllBusinessUnitsAndPermissions();

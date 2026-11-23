@@ -1,18 +1,21 @@
-"""Deterministic text & structure extraction for supporting RCSA documents.
+"""Deterministic text, table-layout, and embedded-image extraction for supporting RCSA documents.
 
-Supports PDF, DOCX (paragraphs + tables), XLSX (worksheets + tabular rows),
-PPTX (slides), CSV/TSV (header-mapped rows), JSON, XML, HTML, RTF, YAML, Markdown,
-TXT, LOG, and ZIP bundles. Uses encoding auto-detection (UTF-8 / CP1256 Arabic).
-For scanned PDFs, images, or unsupported binary files, reports MANUAL_REQUIRED.
+Supports PDF (CMap Arabic + multi-column Markdown table reconstruction + embedded image detection),
+DOCX (paragraphs + Markdown tables), XLSX (worksheets + tabular rows), PPTX (slides),
+CSV/TSV (header-mapped rows), JSON, XML, HTML (Markdown tables), RTF, YAML, Markdown,
+TXT, LOG, ZIP bundles, and valid Image files (reported as VISION_REQUIRED for multimodal VLM).
+For corrupt or unparseable files, reports MANUAL_REQUIRED.
 """
 from __future__ import annotations
 import argparse
+import binascii
 import csv
 import io
 import json
 import logging
 from pathlib import Path
 import re
+import struct
 import sys
 import zipfile
 import zlib
@@ -42,6 +45,64 @@ def _zip_member(z: zipfile.ZipFile, name: str) -> bytes:
     return z.read(name)
 
 
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff'}
+
+
+def _detect_valid_image_mime(raw: bytes, ext: str) -> str | None:
+    if len(raw) < 12:
+        return None
+    if ext == '.png' and raw.startswith(b'\x89PNG\r\n\x1a\n'):
+        return 'image/png'
+    if ext in ('.jpg', '.jpeg') and raw.startswith(b'\xff\xd8\xff'):
+        return 'image/jpeg'
+    if ext == '.webp' and raw.startswith(b'RIFF') and raw[8:12] == b'WEBP':
+        return 'image/webp'
+    if ext == '.bmp' and raw.startswith(b'BM') and len(raw) >= 26:
+        return 'image/bmp'
+    if ext in ('.tif', '.tiff') and (raw.startswith(b'II*\x00') or raw.startswith(b'MM\x00*')):
+        return 'image/tiff'
+    return None
+
+
+def _encode_png_rgb_or_gray(width: int, height: int, channels: int, pixel_bytes: bytes) -> bytes | None:
+    if width <= 0 or height <= 0 or width > 6000 or height > 6000 or channels not in (1, 3):
+        return None
+    row_bytes = width * channels
+    if len(pixel_bytes) < row_bytes * height:
+        return None
+
+    raw_scanlines = bytearray()
+    for r in range(height):
+        raw_scanlines.append(0)
+        start = r * row_bytes
+        raw_scanlines.extend(pixel_bytes[start:start + row_bytes])
+
+    def _chunk(chunk_type: bytes, data: bytes) -> bytes:
+        crc = binascii.crc32(chunk_type + data) & 0xFFFFFFFF
+        return struct.pack('>I', len(data)) + chunk_type + data + struct.pack('>I', crc)
+
+    color_type = 2 if channels == 3 else 0
+    ihdr = struct.pack('>IIBBBBB', width, height, 8, color_type, 0, 0, 0)
+    idat = zlib.compress(bytes(raw_scanlines), level=6)
+    return b'\x89PNG\r\n\x1a\n' + _chunk(b'IHDR', ihdr) + _chunk(b'IDAT', idat) + _chunk(b'IEND', b'')
+
+
+def _format_markdown_table(rows: list[list[str]]) -> list[str]:
+    clean_rows = [[re.sub(r'\s+', ' ', c.replace('|', '/')).strip() for c in row] for row in rows if any(c.strip() for c in row)]
+    if not clean_rows:
+        return []
+    col_count = max(len(r) for r in clean_rows)
+    if col_count < 2:
+        return [' '.join(r).strip() for r in clean_rows if any(r)]
+    padded = [r + [''] * (col_count - len(r)) for r in clean_rows]
+    lines = ['| ' + ' | '.join(padded[0]) + ' |']
+    if len(padded) >= 2:
+        lines.append('| ' + ' | '.join(['---'] * col_count) + ' |')
+        for r in padded[1:]:
+            lines.append('| ' + ' | '.join(r) + ' |')
+    return lines
+
+
 def extract_docx(path: Path) -> str:
     with zipfile.ZipFile(path) as z:
         root = ET.fromstring(_zip_member(z, 'word/document.xml'))
@@ -55,6 +116,7 @@ def extract_docx(path: Path) -> str:
                 if text:
                     pieces.append(text)
             elif elem.tag == WORD_NS + 'tbl':
+                tbl_rows: list[list[str]] = []
                 for tr in elem.iter(WORD_NS + 'tr'):
                     cells = []
                     for tc in tr.findall(WORD_NS + 'tc'):
@@ -62,10 +124,11 @@ def extract_docx(path: Path) -> str:
                             ''.join(n.text or '' for n in p.iter(WORD_NS + 't')).strip()
                             for p in tc.iter(WORD_NS + 'p')
                         ).strip()
-                        if cell_txt:
-                            cells.append(cell_txt)
-                    if cells:
-                        pieces.append(' | '.join(cells))
+                        cells.append(cell_txt)
+                    if any(cells):
+                        tbl_rows.append(cells)
+                if tbl_rows:
+                    pieces.extend(_format_markdown_table(tbl_rows))
             if sum(len(x) for x in pieces) >= MAX_CHARS:
                 break
 
@@ -591,20 +654,71 @@ def _extract_pdf_stdlib(path: Path) -> str:
             if cur_line:
                 grouped_lines.append(cur_line)
 
-            page_lines: list[str] = []
+            page_row_entries: list[tuple[float, list[str]]] = []
             for ln in grouped_lines:
                 has_ar = any(_is_arabic_char(c) for _, t in ln for c in t)
                 ln_sorted = sorted(ln, key=lambda it: -it[0] if has_ar else it[0])
-                out_ln = re.sub(r'\s+', ' ', ''.join(t for _, t in ln_sorted)).strip()
-                if not out_ln or out_ln.lower() == 'public document':
-                    continue
-                if _is_meaningful_extracted_line(out_ln):
-                    page_lines.append(out_ln)
 
-            if page_lines:
-                # Merge soft-wrapped prose lines while keeping headings and bullets distinct
+                # Split horizontal row spans into distinct columns when visual gap indicates tabular cells
+                row_cells: list[str] = []
+                cur_cell_parts: list[str] = []
+                prev_x: float | None = None
+                prev_len = 0
+                for span_x, span_t in ln_sorted:
+                    clean_span = re.sub(r'\s+', ' ', span_t).strip()
+                    if not clean_span:
+                        continue
+                    if prev_x is None:
+                        cur_cell_parts.append(clean_span)
+                    else:
+                        dx = abs(span_x - prev_x)
+                        est_gap = dx - max(10.0, prev_len * 4.2)
+                        if dx >= 42.0 and est_gap >= 14.0:
+                            joined_cell = ''.join(cur_cell_parts).strip()
+                            if joined_cell:
+                                row_cells.append(joined_cell)
+                            cur_cell_parts = [clean_span]
+                        else:
+                            if cur_cell_parts and not cur_cell_parts[-1].endswith(' ') and not clean_span.startswith(' ') and est_gap >= 2.2:
+                                cur_cell_parts.append(' ' + clean_span)
+                            else:
+                                cur_cell_parts.append(clean_span)
+                    prev_x = span_x
+                    prev_len = len(clean_span)
+                if cur_cell_parts:
+                    joined_cell = ''.join(cur_cell_parts).strip()
+                    if joined_cell:
+                        row_cells.append(joined_cell)
+
+                full_row_txt = re.sub(r'\s+', ' ', ' '.join(row_cells)).strip()
+                if not full_row_txt or full_row_txt.lower() == 'public document':
+                    continue
+                if _is_meaningful_extracted_line(full_row_txt):
+                    row_y = next((y for y, _, t in rows if any(t == it[1] for it in ln)), 0.0)
+                    page_row_entries.append((row_y, row_cells))
+
+            if page_row_entries:
                 merged_lines: list[str] = []
-                for ln in page_lines:
+                idx_r = 0
+                total_r = len(page_row_entries)
+                while idx_r < total_r:
+                    _, cells = page_row_entries[idx_r]
+                    if 2 <= len(cells) <= 8:
+                        table_block: list[list[str]] = [cells]
+                        look = idx_r + 1
+                        while look < total_r:
+                            _, next_cells = page_row_entries[look]
+                            if 2 <= len(next_cells) <= 8:
+                                table_block.append(next_cells)
+                                look += 1
+                            else:
+                                break
+                        if len(table_block) >= 2:
+                            merged_lines.extend(_format_markdown_table(table_block))
+                            idx_r = look
+                            continue
+
+                    ln = ' '.join(cells).strip()
                     starts_new_block = (
                         ln.startswith(('•', '-', '*', '▪'))
                         or bool(re.match(r'^(?:\d+(?:\.\d+)*[.)]?\s|[أ-ي]\s*[-)])', ln))
@@ -612,6 +726,7 @@ def _extract_pdf_stdlib(path: Path) -> str:
                     )
                     if (
                         merged_lines
+                        and not merged_lines[-1].startswith('|')
                         and not starts_new_block
                         and len(merged_lines[-1]) < 340
                         and not merged_lines[-1].endswith(('.', '؟', '!', ':'))
@@ -619,6 +734,7 @@ def _extract_pdf_stdlib(path: Path) -> str:
                         merged_lines[-1] = f'{merged_lines[-1]} {ln}'
                     else:
                         merged_lines.append(ln)
+                    idx_r += 1
 
                 pieces.append(f'[PDF page {p_idx}]\n' + '\n'.join(merged_lines))
             if sum(len(x) for x in pieces) >= MAX_CHARS:
@@ -745,6 +861,24 @@ def extract_xml_or_html(path: Path) -> str:
     raw_text = _read_text_with_arabic_fallback(path.read_bytes())
     # Strip script and style tags for HTML
     cleaned = re.sub(r'<(script|style)\b[^>]*>.*?</\1>', ' ', raw_text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Convert HTML <table> elements cleanly into Markdown table blocks
+    def _replace_html_table(match: re.Match) -> str:
+        tbl_html = match.group(0)
+        rows_out: list[list[str]] = []
+        for tr_m in re.finditer(r'<tr\b[^>]*>(.*?)</tr>', tbl_html, flags=re.DOTALL | re.IGNORECASE):
+            cells_out: list[str] = []
+            for cell_m in re.finditer(r'<(?:th|td)\b[^>]*>(.*?)</(?:th|td)>', tr_m.group(1), flags=re.DOTALL | re.IGNORECASE):
+                cell_txt = re.sub(r'<[^>]+>', ' ', cell_m.group(1))
+                cell_txt = re.sub(r'\s+', ' ', cell_txt).strip()
+                cells_out.append(cell_txt)
+            if any(cells_out):
+                rows_out.append(cells_out)
+        if not rows_out:
+            return '\n'
+        return '\n' + '\n'.join(_format_markdown_table(rows_out)) + '\n'
+
+    cleaned = re.sub(r'<table\b[^>]*>.*?</table>', _replace_html_table, cleaned, flags=re.DOTALL | re.IGNORECASE)
     cleaned = re.sub(r'<[^>]+>', '\n', cleaned)
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
     return '\n'.join(lines)[:MAX_CHARS]
@@ -841,6 +975,111 @@ def redact_banking_pii(text: str) -> tuple[str, int]:
     return text, count
 
 
+def _count_markdown_tables(text: str) -> int:
+    if not text:
+        return 0
+    return len(re.findall(r'^\|.+\|\s*\n\|(?:\s*:?-{2,}:?\s*\|)+', text, flags=re.MULTILINE))
+
+
+def _inspect_document_media(file: Path, ext: str) -> tuple[int, int]:
+    """Return (embedded_image_count, page_count)."""
+    try:
+        if ext == '.pdf':
+            raw = file.read_bytes()
+            img_count = len(re.findall(rb'/Subtype\s*/Image\b', raw))
+            pages = len(re.findall(rb'/Type\s*/Page\b(?!s)', raw))
+            if pages == 0 and img_count == 0 and b'/Pages' not in raw:
+                return 0, 0
+            return img_count, max(1, pages)
+        if ext in ('.docx', '.pptx', '.xlsx') and zipfile.is_zipfile(file):
+            with zipfile.ZipFile(file) as z:
+                media = [n for n in z.namelist() if '/media/' in n and not n.endswith('/')]
+                slides_or_sheets = [n for n in z.namelist() if n.startswith(('ppt/slides/slide', 'xl/worksheets/sheet'))]
+                return len(media), max(1, len(slides_or_sheets))
+    except Exception:
+        pass
+    return 0, 1
+
+
+def extract_embedded_images(path: str, out_dir: str, max_images: int = 8) -> dict:
+    """Extract embedded images (JPEG/PNG) from PDF or Office ZIP archives for multimodal Vision OCR."""
+    file = Path(path)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    if not file.is_file():
+        return {'images': [], 'error': 'File not found'}
+    ext = file.suffix.lower()
+    saved: list[dict] = []
+
+    try:
+        if ext in IMAGE_EXTENSIONS:
+            raw = file.read_bytes()
+            mime = _detect_valid_image_mime(raw, ext)
+            if mime:
+                dest = out / f'page_1{ext}'
+                dest.write_bytes(raw)
+                saved.append({'path': str(dest), 'mime_type': mime, 'page': 1})
+            return {'images': saved}
+
+        if ext == '.pdf':
+            raw = file.read_bytes()
+            for m in re.finditer(rb'(\d+)\s+\d+\s+obj\b(.*?)\bendobj', raw, re.DOTALL):
+                if len(saved) >= max_images:
+                    break
+                body = m.group(2)
+                if not re.search(rb'/Subtype\s*/Image\b', body):
+                    continue
+                sm = re.search(rb'stream[\r\n]+(.*?)[\r\n]*endstream', body, re.DOTALL)
+                if not sm:
+                    continue
+                dict_b, st_b = body[:sm.start()], sm.group(1)
+                if b'/DCTDecode' in dict_b and st_b.startswith(b'\xff\xd8\xff'):
+                    idx = len(saved) + 1
+                    dest = out / f'pdf_img_{idx}.jpg'
+                    dest.write_bytes(st_b)
+                    saved.append({'path': str(dest), 'mime_type': 'image/jpeg', 'page': idx})
+                elif b'/FlateDecode' in dict_b:
+                    wm = re.search(rb'/Width\s+(\d+)', dict_b)
+                    hm = re.search(rb'/Height\s+(\d+)', dict_b)
+                    if wm and hm:
+                        w, h = int(wm.group(1)), int(hm.group(1))
+                        channels = 1 if b'/DeviceGray' in dict_b else 3
+                        decompressed = None
+                        for wb in (zlib.MAX_WBITS, -zlib.MAX_WBITS):
+                            try:
+                                decompressed = zlib.decompress(st_b, wb)
+                                break
+                            except Exception:
+                                continue
+                        if decompressed:
+                            png_bytes = _encode_png_rgb_or_gray(w, h, channels, decompressed)
+                            if png_bytes:
+                                idx = len(saved) + 1
+                                dest = out / f'pdf_img_{idx}.png'
+                                dest.write_bytes(png_bytes)
+                                saved.append({'path': str(dest), 'mime_type': 'image/png', 'page': idx})
+            return {'images': saved}
+
+        if ext in ('.docx', '.pptx', '.xlsx') and zipfile.is_zipfile(file):
+            with zipfile.ZipFile(file) as z:
+                media_names = sorted(n for n in z.namelist() if '/media/' in n and not n.endswith('/'))
+                for idx, name in enumerate(media_names[:max_images], 1):
+                    sub_ext = Path(name).suffix.lower()
+                    if sub_ext not in ('.png', '.jpg', '.jpeg', '.webp'):
+                        continue
+                    data = _zip_member(z, name)
+                    mime = _detect_valid_image_mime(data, sub_ext)
+                    if mime:
+                        dest = out / f'media_{idx}{sub_ext}'
+                        dest.write_bytes(data)
+                        saved.append({'path': str(dest), 'mime_type': mime, 'page': idx})
+            return {'images': saved}
+    except Exception as exc:
+        return {'images': saved, 'error': str(exc)[:200]}
+
+    return {'images': saved}
+
+
 def extract(path: str) -> dict:
     file = Path(path)
     if not file.is_file():
@@ -848,6 +1087,35 @@ def extract(path: str) -> dict:
     if file.stat().st_size > MAX_BYTES:
         raise ValueError('Uploaded document exceeds 6 MB size limit')
     ext = file.suffix.lower()
+
+    if ext in IMAGE_EXTENSIONS:
+        raw_img = file.read_bytes()
+        mime = _detect_valid_image_mime(raw_img, ext)
+        if not mime:
+            return {
+                'status': 'MANUAL_REQUIRED',
+                'text': '',
+                'reason': 'Invalid or unrecognized image binary header',
+                'is_image': True,
+                'needs_vision': False,
+            }
+        return {
+            'status': 'VISION_REQUIRED',
+            'text': '',
+            'chars': 0,
+            'format': ext.lstrip('.').upper(),
+            'mime_type': mime,
+            'is_image': True,
+            'needs_vision': True,
+            'has_tables': False,
+            'table_count': 0,
+            'embedded_image_count': 1,
+            'page_count': 1,
+            'reason': 'Image document requires multimodal Vision OCR/Table parser',
+        }
+
+    embedded_image_count, page_count = _inspect_document_media(file, ext)
+
     try:
         if ext == '.pdf':
             text = extract_pdf(file)
@@ -874,11 +1142,25 @@ def extract(path: str) -> dict:
     except Exception as exc:
         return {'status': 'MANUAL_REQUIRED', 'text': '', 'reason': str(exc)[:300]}
     if not text.strip():
-        return {'status': 'MANUAL_REQUIRED', 'text': '', 'reason': 'No selectable text found; scanned/empty file requires review'}
+        needs_vision = bool(ext == '.pdf' and (embedded_image_count > 0 or page_count >= 1))
+        return {
+            'status': 'MANUAL_REQUIRED',
+            'text': '',
+            'reason': 'No selectable text found; scanned/empty file requires review',
+            'is_image': False,
+            'needs_vision': needs_vision,
+            'has_tables': False,
+            'table_count': 0,
+            'embedded_image_count': embedded_image_count,
+            'page_count': page_count,
+        }
 
     repaired_text = repair_arabic_pdf_text(text)
     quarantined_text, injection_quarantined = quarantine_prompt_injection(repaired_text)
     redacted_text, pii_redactions = redact_banking_pii(quarantined_text)
+    table_count = _count_markdown_tables(redacted_text)
+    chars_per_page = len(redacted_text) / max(1, page_count)
+    needs_vision = bool(embedded_image_count > 0 and (chars_per_page < 450 or ext == '.pdf'))
 
     return {
         'status': 'EXTRACTED',
@@ -887,14 +1169,24 @@ def extract(path: str) -> dict:
         'format': ext.lstrip('.').upper(),
         'injection_quarantined': injection_quarantined,
         'pii_redactions': pii_redactions,
+        'is_image': False,
+        'needs_vision': needs_vision,
+        'has_tables': table_count > 0,
+        'table_count': table_count,
+        'embedded_image_count': embedded_image_count,
+        'page_count': page_count,
     }
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', required=True)
+    parser.add_argument('--extract-images-dir', default='')
     args = parser.parse_args()
-    print(json.dumps(extract(args.path), ensure_ascii=False))
+    if args.extract_images_dir:
+        print(json.dumps(extract_embedded_images(args.path, args.extract_images_dir), ensure_ascii=False))
+    else:
+        print(json.dumps(extract(args.path), ensure_ascii=False))
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
 import { HoverTooltip, InfoHint } from '../components/HoverTooltip.js';
+import { RichChunkContent } from '../components/RichChunkContent.js';
 import {
   FileUp,
   HelpCircle,
@@ -18,6 +19,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   Bot,
+  Sparkles,
 } from 'lucide-react';
 
 interface BackendRCSAPageProps {
@@ -64,6 +66,7 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
   const [docTitleAr, setDocTitleAr] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [reanalyzingDocId, setReanalyzingDocId] = useState<string | null>(null);
   const [uploadNotice, setUploadNotice] = useState<{
     type: 'success' | 'warning' | 'error';
     text: string;
@@ -398,6 +401,34 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       setUploadNotice({ type: 'error', text: err.message });
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  const handleReanalyzeDocumentVision = async (documentId: string, docTitle?: string) => {
+    if (!token || !selectedBU || reanalyzingDocId) return;
+    setReanalyzingDocId(documentId);
+    setUploadNotice(null);
+    try {
+      const res = await fetch(`/api/guided-rcsa/documents/${documentId}/reanalyze-vision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'تعذر إعادة التحليل البصري للمستند.');
+      setUploadNotice({
+        type: body.extraction_status === 'EXTRACTED_TEXT_CHUNKS' ? 'success' : 'warning',
+        text:
+          body.message_ar ||
+          `تم تحديث التحليل البصري للمستند (${docTitle || documentId}).`,
+      });
+      loadGuidedContext(selectedBU, true);
+    } catch (err: any) {
+      setUploadNotice({ type: 'error', text: err.message });
+    } finally {
+      setReanalyzingDocId(null);
     }
   };
 
@@ -1026,11 +1057,11 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-800 mb-1">
-                      اختر الملف (TXT, CSV, PDF, DOCX, XLSX):
+                      اختر الملف (PDF, Word, Excel, CSV, صور المستندات PNG/JPG/TIFF):
                     </label>
                     <input
                       type="file"
-                      accept=".txt,.csv,.pdf,.docx,.xlsx"
+                      accept=".txt,.csv,.pdf,.docx,.xlsx,.pptx,.json,.xml,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff"
                       onChange={handleFileSelection}
                       className="w-full min-h-10 rounded-xl bg-white border border-[#DCDAD5] px-3 py-1.5 text-xs text-slate-800 file:ml-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-[#006547] file:text-white file:text-[11px] file:font-bold"
                     />
@@ -1078,36 +1109,60 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                 </div>
                 {currentSessionDocuments.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {currentSessionDocuments.map((doc: any) => (
-                      <div
-                        key={doc.id}
-                        className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] flex items-start justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-[#006547] shrink-0" />
-                            <span className="text-xs font-bold text-slate-900">{doc.title_ar}</span>
+                    {currentSessionDocuments.map((doc: any) => {
+                      const isVisionProcessed =
+                        doc.extraction_method === 'VISION_MULTIMODAL' ||
+                        doc.extraction_method === 'HYBRID_TEXT_PLUS_VISION';
+                      const isReanalyzing = reanalyzingDocId === doc.id;
+                      return (
+                        <div
+                          key={doc.id}
+                          className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] flex items-start justify-between gap-3"
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-[#006547] shrink-0" />
+                              <span className="text-xs font-bold text-slate-900 truncate">{doc.title_ar}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-600 font-mono truncate">
+                              {doc.doc_type} · {doc.original_filename}
+                            </div>
+                            <div className="text-[10px] text-slate-600 tabular-nums flex items-center gap-1.5 flex-wrap">
+                              <span>تاريخ التسجيل: {doc.uploaded_at_ar}</span>
+                              <span>· المقاطع: {doc.chunks_count}</span>
+                              {Number(doc.table_count || 0) > 0 && (
+                                <span className="font-bold text-[#006547]">· جداول: {doc.table_count}</span>
+                              )}
+                              {isVisionProcessed && (
+                                <span className="font-bold text-[#9A5B00]">· تحليل بصري ViT</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-600 font-mono">
-                            {doc.doc_type} · {doc.original_filename}
-                          </div>
-                          <div className="text-[10px] text-slate-600 tabular-nums">
-                            تاريخ التسجيل: {doc.uploaded_at_ar} · المقاطع النصية: {doc.chunks_count}
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <span
+                              className={`text-[11px] font-bold ${
+                                doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
+                                  ? 'text-amber-800'
+                                  : 'text-[#006547]'
+                              }`}
+                            >
+                              {doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
+                                ? 'يتطلب فحص بصري'
+                                : 'مستخرج ومفهرس'}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={isReanalyzing}
+                              onClick={() => handleReanalyzeDocumentVision(doc.id, doc.title_ar)}
+                              className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                            >
+                              <Sparkles className="w-3 h-3 text-amber-700" />
+                              <span>{isReanalyzing ? 'جارٍ المسح...' : 'تحليل بصري'}</span>
+                            </button>
                           </div>
                         </div>
-                        <span
-                          className={`text-[11px] font-bold shrink-0 ${
-                            doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
-                              ? 'text-amber-800'
-                              : 'text-[#006547]'
-                          }`}
-                        >
-                          {doc.parse_status?.includes('MANUAL_EXTRACT_REQUIRED')
-                            ? 'يتطلب استخراج يدوي'
-                            : 'مستخرج ومفهرس'}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE] text-xs text-slate-600">
@@ -1159,19 +1214,31 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                       {visibleSourceChunks.length} مقطع
                     </span>
                   </div>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {visibleSourceChunks.map((chunk: any) => (
                       <div
                         key={chunk.chunk_id}
-                        className="p-3 rounded-xl bg-white border border-[#DCDAD5] text-xs space-y-1"
+                        className="p-3 rounded-xl bg-white border border-[#DCDAD5] text-xs space-y-1.5"
                       >
-                        <div className="flex items-center justify-between text-[10px] font-bold text-[#006547]">
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-bold text-[#006547] flex-wrap">
                           <span>
                             {chunk.sop_title_ar} — ({chunk.section_ref})
                           </span>
-                          <span className="font-mono tabular-nums">{chunk.chunk_id}</span>
+                          <div className="flex items-center gap-1.5">
+                            {chunk.chunk_kind === 'TABLE' && (
+                              <span className="text-[10px] font-extrabold text-[#09331F] bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                جدول مهيكل
+                              </span>
+                            )}
+                            {chunk.chunk_kind === 'VISION_OCR' && (
+                              <span className="text-[10px] font-extrabold text-amber-900 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                تحليل بصري ViT
+                              </span>
+                            )}
+                            <span className="font-mono tabular-nums">{chunk.chunk_id}</span>
+                          </div>
                         </div>
-                        <p className="text-slate-800 leading-relaxed">{chunk.text_ar}</p>
+                        <RichChunkContent text={chunk.text_ar} />
                       </div>
                     ))}
                     {visibleSourceChunks.length === 0 && (

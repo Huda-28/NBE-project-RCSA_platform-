@@ -77,9 +77,9 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                   desc: 'Automated quality scoring & repair pass prior to Maker sign-off',
                 },
                 {
-                  num: '169',
+                  num: '181',
                   unit: 'Automated Tests',
-                  desc: '82 Node.js tests + 87 Python Decimal verification checks',
+                  desc: '91 Node.js tests + 90 Python checks + V4→V5 P@1/MRR benchmark',
                 },
               ].map((stat) => (
                 <div
@@ -107,12 +107,12 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                 body: 'All EAL formulas, 3x3 RRF lookups, NFI aggregation, and Key Risk classification run inside Python Decimal with zero LLM involvement.',
               },
               {
-                title: '2. Industry Best-Practice Hybrid RAG',
-                body: 'Combines PDF Arabic ligature repair, BM25 IDF with 9 banking synonym clusters, and 192-dim dense vectors via Cormack et al. RRF (k=60).',
+                title: '2. Industry Best-Practice Multimodal RAG',
+                body: 'Combines ViT/Swin Vision parsing, table-aware Markdown chunking, BM25 + 192-dim dense vectors via RRF (k=60), and Stage-2 precision reranking.',
               },
               {
-                title: '3. Documented V1-to-V4 Evolution',
-                body: 'Traces every upgrade from the initial weak baseline through V4 NBE reviewer calibration and peer-reviewed reference frameworks.',
+                title: '3. Documented V1-to-V5 Evolution',
+                body: 'Traces every upgrade from the initial weak baseline through V4 NBE calibration and V5 multimodal Vision document understanding.',
               },
             ].map((card) => (
               <div
@@ -140,8 +140,8 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                 <span className="text-[11px] font-mono text-[#006547] font-bold">TypeScript</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-700 leading-relaxed">
-                <li>• Universal document parsing (PDF/DOCX/XLSX/CSV/PPTX/JSON) + Arabic Lam-Alef repair.</li>
-                <li>• Hybrid retrieval fusing BM25 + 192-dim / gemini-embedding-2 via RRF (k=60).</li>
+                <li>• Universal document &amp; Vision parsing (PDF/DOCX/XLSX/PPTX/PNG/JPG) + Markdown table reconstruction.</li>
+                <li>• Two-stage retrieval: BM25 + 192-dim/gemini vectors via RRF (k=60) + Stage-2 Precision Reranker.</li>
                 <li>• Gold-standard few-shot extraction bounded by Basel (84) and CBE ESG (34) catalogues.</li>
                 <li>• Evidence attribution: mandatory verbatim quote, file name, and page number per row.</li>
               </ul>
@@ -415,7 +415,7 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
     case 'evolution_timeline':
       return (
         <div className="space-y-4 text-left" dir="ltr">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {MODEL_EVOLUTION_MILESTONES.map((step, idx) => {
               const isLatest = idx === MODEL_EVOLUTION_MILESTONES.length - 1;
               return (
@@ -423,7 +423,7 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                   key={step.stage}
                   className={`rounded-2xl p-4 border flex flex-col justify-between space-y-3 ${
                     isLatest
-                      ? 'bg-[#09331F] text-white border-[#09331F]'
+                      ? 'bg-[#09331F] text-white border-[#09331F] md:col-span-2 lg:col-span-2'
                       : 'bg-white text-slate-800 border-[#DCDAD5]'
                   }`}
                 >
@@ -529,23 +529,23 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-extrabold text-[#F79C1E]">
                   <GitBranch className="w-4 h-4 shrink-0" />
-                  <span>Reciprocal Rank Fusion (RRF)</span>
+                  <span>Stage-1 RRF (k=60) + Stage-2 Reranker</span>
                 </div>
-                <div className="bg-white/10 border border-white/15 rounded-xl p-3 font-mono text-xs">
-                  score(d) = 1/(60 + rank_vec(d)) + 1/(60 + rank_bm25(d)) + doc_type_boost
+                <div className="bg-white/10 border border-white/15 rounded-xl p-3 font-mono text-[11px]">
+                  stage2 = rrf + multi_concept + bigram + code_match + table_bonus
                 </div>
                 <p className="text-xs text-emerald-100/90 leading-relaxed">
-                  Applies Cormack et al. (2009) RRF with <span className="font-mono">k = 60</span> and a
-                  targeted +0.02 boost for audit findings and historical loss logs.
+                  Applies Cormack et al. (2009) RRF (<span className="font-mono">k = 60</span>) followed by{' '}
+                  <span className="font-mono">rerankCandidatesWithStage2</span> to elevate exact table rows and codes.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-3.5 text-xs text-slate-800 flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+          <div className="bg-emerald-50/70 border border-[#006547]/30 rounded-xl p-3.5 text-xs text-slate-800 flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-[#006547] shrink-0" />
             <span>
-              <strong>Scanned-PDF OCR Guard:</strong> Whenever extracted text per page falls below threshold (image-only scans), the index flags <span className="font-mono font-bold">low_text_ocr_warning</span> and alerts the Maker immediately.
+              <strong>V5 Vision &amp; Table-Aware Guard:</strong> Scanned PDFs &amp; images trigger ViT/Swin multimodal OCR (<span className="font-mono font-bold">vision-document-parser.ts</span>) while <span className="font-mono font-bold">table-chunker.ts</span> preserves Markdown column headers across row splits.
             </span>
           </div>
         </div>
@@ -711,7 +711,7 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
           <div className="flex items-center justify-between border-b border-[#EFECE6] pb-2.5">
             <div className="flex items-center gap-2 text-sm font-extrabold text-[#09331F]">
               <TrendingUp className="w-4 h-4 text-[#006547]" />
-              <span>Repository-Verified Architectural Uplift: V1 Baseline vs. V4 Best-Practice Build</span>
+              <span>Repository-Verified Architectural Uplift: V1 Baseline vs. V5 Multimodal Architecture</span>
             </div>
           </div>
 
@@ -721,7 +721,7 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                 <tr className="bg-[#09331F] text-white">
                   <th className="py-2.5 px-3 rounded-tl-lg">Engineering Dimension</th>
                   <th className="py-2.5 px-3">V1 Weak Baseline (4301a33)</th>
-                  <th className="py-2.5 px-3 rounded-tr-lg">V4 Best-Practice Architecture (d8379bd)</th>
+                  <th className="py-2.5 px-3 rounded-tr-lg">V5 Multimodal &amp; Reranked Architecture</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EFECE6]">
@@ -729,12 +729,17 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                   {
                     axis: 'Context Window & Output Tokens',
                     before: '240 chars per snippet · constrained 0.5B generation',
-                    after: '1,400 chars per snippet (5.8x) · 4,096 token output budget',
+                    after: '1,400 chars per snippet (5.8x) · 4,096 token output budget · header-preserved tables',
                   },
                   {
-                    axis: 'Document Search & Retrieval',
+                    axis: 'Images, Scanned PDFs & Tables',
+                    before: 'Image/scan files stored unparsed (0 chunks); tables flattened into broken text',
+                    after: 'ViT/Swin Vision OCR + embedded PDF image extractor + Markdown table reconstruction',
+                  },
+                  {
+                    axis: 'Search & Two-Stage Ranking',
                     before: 'Exact substring lookup (LIKE); sensitive to Arabic PDF font breaks',
-                    after: '30+ Lam-Alef fixes + BM25 (9 clusters) + 192-dim/Gemini Vectors via RRF (k=60)',
+                    after: '30+ Lam-Alef fixes + BM25 + Vectors via RRF (k=60) + Stage-2 Precision Reranker',
                   },
                   {
                     axis: 'Model Profiles & JSON Recovery',
@@ -742,14 +747,9 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
                     after: 'Dual profiles (qwen3:1.7b / qwen3.5:4b) + gold few-shot + resilient JSON parser',
                   },
                   {
-                    axis: 'Quality Gate & Calibration',
-                    before: 'Unchecked raw output; leaked page tags & weak "Probability..." openers',
-                    after: '8 deterministic NBE QA rules + Self-Refine critique + <75% historical loss alert',
-                  },
-                  {
-                    axis: 'AI Security & Separation',
-                    before: 'No PII masking, injection sandboxing, or strict field stripping',
-                    after: 'EG IBAN/ID/PAN redaction + injection quarantine + 15 forbidden fields stripped',
+                    axis: 'Quality Gate & Security Perimeter',
+                    before: 'Unchecked raw output; no PII masking or strict field stripping',
+                    after: '8 deterministic NBE QA rules + Self-Refine + PII redaction + 15 fields stripped',
                   },
                   {
                     axis: 'Methodological Compliance',
@@ -781,15 +781,16 @@ export const MethodologySlideBody: React.FC<{ slide: MethodologySlide }> = ({ sl
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                <div className="text-2xl font-extrabold font-mono text-[#006547] tabular-nums">82</div>
+                <div className="text-2xl font-extrabold font-mono text-[#006547] tabular-nums">91</div>
                 <div className="text-[11px] font-bold text-[#09331F]">Node.js / TypeScript Tests</div>
               </div>
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                <div className="text-2xl font-extrabold font-mono text-[#006547] tabular-nums">87</div>
-                <div className="text-[11px] font-bold text-[#09331F]">Python Decimal Engine Tests</div>
+                <div className="text-2xl font-extrabold font-mono text-[#006547] tabular-nums">90</div>
+                <div className="text-[11px] font-bold text-[#09331F]">Python Decimal &amp; Extractor Tests</div>
               </div>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 leading-relaxed">
+              <li>• <strong>V5 Multimodal &amp; Rerank:</strong> Verified PNG/PDF Vision parsing, Markdown table chunking, and Stage-2 Reranker uplift (P@1: 0% → 100%, MRR: 0.400 → 1.000 vs Stage-1 RRF).</li>
               <li>• Hybrid RRF vector/BM25 ranking, Arabic Lam-Alef restoration, PII redaction, and injection quarantine.</li>
               <li>• End-to-end 29-column official Excel export (C–AE), green Committee PDF, and RBAC separation.</li>
               <li>• Live Playwright browser verification on Desktop (1440×900) and Mobile (390×844) with zero console errors.</li>

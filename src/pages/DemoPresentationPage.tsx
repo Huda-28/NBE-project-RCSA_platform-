@@ -1127,7 +1127,7 @@ export const DemoPresentationPage: React.FC<DemoPresentationPageProps> = ({ onNa
                   activeDeck === 'methodology' ? 'text-emerald-100/90' : 'text-slate-600'
                 }`}
               >
-                Python Decimal + Hybrid RAG (RRF) + Best-Practice V1→V4 &amp; Academic References
+                Python Decimal + Hybrid RAG (RRF + Stage-2 Reranker) + V1→V5 Vision &amp; Academic References
               </div>
             </div>
             <span

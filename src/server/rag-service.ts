@@ -11,7 +11,10 @@ export interface CitationReference {
   quote_text: string;
   page_number?: number;
   doc_type: string;
+  chunk_kind?: 'TABLE' | 'VISION_OCR' | 'PROSE';
   relevance_score?: number;
+  rerank_score?: number;
+  retrieval_stage?: 'RRF_K60' | 'RRF_K60_PLUS_STAGE2_RERANK';
 }
 
 export interface DocumentIntelligenceSummary {
@@ -37,6 +40,11 @@ export interface RagContextBundle {
     title_ar: string;
     file_name: string;
     doc_type: string;
+    extraction_method?: string;
+    vision_model?: string | null;
+    table_count?: number;
+    vision_pages_count?: number;
+    needs_vision?: boolean;
     total_chars: number;
     detected_amounts_egp: number[];
     chunks: Array<{
@@ -45,6 +53,7 @@ export interface RagContextBundle {
       section_title?: string;
       content_text: string;
       page_number?: number;
+      chunk_kind?: 'TABLE' | 'VISION_OCR' | 'PROSE';
     }>;
   }>;
   incidents: any[];
@@ -58,6 +67,9 @@ export interface RagContextBundle {
     documents_count: number;
     total_chunks_count: number;
     total_indexed_chars: number;
+    vision_documents_count: number;
+    tables_detected_count: number;
+    retrieval_pipeline: string;
     incidents_count: number;
     audit_findings_count: number;
     baseline_risks_count: number;
@@ -330,10 +342,12 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
 
   let totalChunksCount = 0;
   let totalIndexedChars = 0;
+  let visionDocumentsCount = 0;
+  let tablesDetectedCount = 0;
 
   const session_documents = docs.map((d: any) => {
     const chunks = db
-      .prepare('SELECT id, chunk_index, section_title, content_text, page_number FROM document_chunks WHERE document_id = ? ORDER BY chunk_index ASC')
+      .prepare('SELECT id, chunk_index, section_title, content_text, page_number, chunk_kind FROM document_chunks WHERE document_id = ? ORDER BY chunk_index ASC')
       .all(d.id) as any[];
 
     const cleanName = d.filename ? path.basename(String(d.filename)).replace(/^\d+_/, '') : d.id;
@@ -341,12 +355,23 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
     const docChars = fullDocText.length;
     totalChunksCount += chunks.length;
     totalIndexedChars += docChars;
+    const extMethod = String(d.extraction_method || 'TEXT');
+    if (extMethod.includes('VISION')) {
+      visionDocumentsCount += 1;
+    }
+    const tableCount = Number(d.table_count || 0) || chunks.filter(c => c.chunk_kind === 'TABLE').length;
+    tablesDetectedCount += tableCount;
 
     return {
       id: d.id,
       title_ar: cleanName || d.id,
       file_name: cleanName || `${d.id}.pdf`,
       doc_type: d.file_type || 'SOP',
+      extraction_method: extMethod,
+      vision_model: d.vision_model || null,
+      table_count: tableCount,
+      vision_pages_count: Number(d.vision_pages_count || 0),
+      needs_vision: Boolean(d.needs_vision),
       total_chars: docChars,
       detected_amounts_egp: extractMonetaryAmountsFromText(fullDocText),
       chunks,
@@ -499,6 +524,9 @@ export function assembleRagContextBundle(sessionId: string, unitId: string): Rag
       documents_count: session_documents.length,
       total_chunks_count: totalChunksCount,
       total_indexed_chars: totalIndexedChars,
+      vision_documents_count: visionDocumentsCount,
+      tables_detected_count: tablesDetectedCount,
+      retrieval_pipeline: 'V5 Hybrid RAG (BM25 + Dense + RRF k=60 + Stage-2 Reranker)',
       incidents_count: incidents.length,
       audit_findings_count: audit_findings.length,
       baseline_risks_count: baseline_risks.length,
@@ -799,6 +827,10 @@ function buildBm25AndLocalCandidates(
         score += 3.5;
       }
 
+      if (chunk.chunk_kind === 'TABLE' && directLexicalMatches > 0) {
+        score += 2.2;
+      }
+
       candidates.push({
         key: `CHUNK::${chunk.id}`,
         citation: {
@@ -810,6 +842,7 @@ function buildBm25AndLocalCandidates(
           quote_text: extractBestContextWindow(rawText, [...rawTerms, ...stems], 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
+          chunk_kind: chunk.chunk_kind || 'PROSE',
           relevance_score: Number((score > 0 ? score + 2 : 0).toFixed(2)),
         },
         bm25Score: score,
@@ -902,8 +935,122 @@ function buildBm25AndLocalCandidates(
   };
 }
 
+export interface Stage2RerankableItem {
+  key: string;
+  rawText: string;
+  rrfScore: number;
+  citation: CitationReference;
+}
+
 /**
- * Synchronous Hybrid BM25 IDF + Multilingual Semantic Vector + Reciprocal Rank Fusion (RRF) search.
+ * V5 Stage-2 Pairwise Query-Document Precision Reranker:
+ * Refines Stage-1 RRF (k=60) candidate pool using:
+ * 1. Multi-concept query coverage (fraction of distinct query terms & stems satisfied)
+ * 2. Adjacent bi-gram & exact phrase co-occurrence
+ * 3. Exact code / identifier / monetary number alignment (e.g., MT103, RSK-01, 501000, 95%)
+ * 4. Structured Markdown Table & header-row alignment bonus
+ * 5. Boilerplate / short-title penalty
+ */
+export function rerankCandidatesWithStage2<T extends Stage2RerankableItem>(
+  query: string,
+  stage1Fused: T[],
+  topK: number
+): Array<T & { rerankScore: number }> {
+  if (!stage1Fused || stage1Fused.length === 0) return [];
+
+  const { rawTerms, stems, bigrams } = tokenizeRagQuery(query);
+  const normQuery = normalizeTextForRag(query);
+  const maxRrf = stage1Fused.reduce((m, c) => Math.max(m, c.rrfScore), 0) || 1;
+
+  // Extract explicit alphanumeric codes & significant numbers from query for exact cross-matching
+  const queryCodes = (query.match(/\b[A-Za-z]{2,6}[-_]?\d{1,5}\b|\b\d{3,9}(?:,\d{3})*\b/g) || []).map(
+    (x) => x.replace(/,/g, '').toLowerCase()
+  );
+  const queryAsksForStructuredNumbers = Boolean(
+    normQuery.match(/مبلغ|قيمه|خسار|مالي|جنيه|egp|rrf|نسب|عدد|جدول|حد|صفوف|مقارنه|متبقي|كامن/)
+  );
+
+  const uniqueConcepts = Array.from(new Set(rawTerms.length > 0 ? rawTerms : stems)).filter(
+    (t) => t.length >= 2
+  );
+
+  const scored = stage1Fused.map((cand) => {
+    const raw = cand.rawText || cand.citation.quote_text || '';
+    const normDoc = normalizeTextForRag(raw);
+    const lowerDoc = raw.toLowerCase();
+
+    // 1. Multi-concept coverage (rewards answering all parts of a query, not repeating 1 term)
+    let conceptHits = 0;
+    for (const c of uniqueConcepts) {
+      if (normDoc.includes(c)) {
+        conceptHits += 1;
+      } else {
+        const stripped = c.replace(/^(وال|بال|كال|فال|لل|ال)/, '');
+        if (stripped.length >= 3 && normDoc.includes(stripped)) {
+          conceptHits += 0.85;
+        }
+      }
+    }
+    const coverageRatio = uniqueConcepts.length > 0 ? Math.min(1, conceptHits / uniqueConcepts.length) : 0;
+
+    // 2. Adjacent bi-gram exactness
+    let bigramHits = 0;
+    for (const bg of bigrams) {
+      if (normDoc.includes(bg)) bigramHits += 1;
+    }
+    const bigramRatio = bigrams.length > 0 ? Math.min(1, bigramHits / bigrams.length) : 0;
+
+    // 3. Exact code / numeric alignment
+    let exactCodeBonus = 0;
+    if (queryCodes.length > 0) {
+      const compactLowerDoc = lowerDoc.replace(/,/g, '');
+      const codeMatches = queryCodes.filter((code) => compactLowerDoc.includes(code)).length;
+      exactCodeBonus = 0.25 * (codeMatches / queryCodes.length);
+    }
+
+    // 4. Structured Markdown Table & numeric alignment bonus
+    const hasMarkdownTable =
+      cand.citation.chunk_kind === 'TABLE' ||
+      (raw.includes('|') && /\|(?:\s*:?-{2,}:?\s*\|)+/.test(raw));
+    let tableBonus = 0;
+    if (hasMarkdownTable && coverageRatio > 0) {
+      tableBonus += queryAsksForStructuredNumbers ? 0.2 : 0.1;
+      if (/\d+/.test(raw) && queryAsksForStructuredNumbers) {
+        tableBonus += 0.1;
+      }
+    } else if (queryAsksForStructuredNumbers && /\d+/.test(raw) && coverageRatio >= 0.4) {
+      tableBonus += 0.06;
+    }
+
+    // 5. Short boilerplate title / header penalty
+    const trimmedLen = raw.trim().length;
+    const isShortTitleOnly =
+      trimmedLen < 70 && !hasMarkdownTable && !/[.:،؟\d]/.test(raw);
+    const boilerplatePenalty = isShortTitleOnly ? 0.25 : 0;
+
+    const crossScore = Math.max(
+      0,
+      0.52 * coverageRatio +
+        0.22 * bigramRatio +
+        exactCodeBonus +
+        tableBonus -
+        boilerplatePenalty
+    );
+    const normRrf = cand.rrfScore / maxRrf;
+    const finalStage2Score = 0.32 * normRrf + 0.68 * crossScore;
+
+    return {
+      ...cand,
+      rerankScore: Number(finalStage2Score.toFixed(4)),
+    };
+  });
+
+  scored.sort((a, b) => b.rerankScore - a.rerankScore || b.rrfScore - a.rrfScore);
+  return scored.slice(0, topK);
+}
+
+/**
+ * Synchronous Hybrid BM25 IDF + Multilingual Semantic Vector + RRF (k=60) + Stage-2 Precision Reranker.
  */
 export function searchRelevantCitations(
   sessionId: string,
@@ -940,7 +1087,8 @@ export function searchRelevantCitations(
     .sort((a, b) => b.sim - a.sim)
     .map((v) => v.cand);
 
-  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60);
+  const stage1PoolSize = Math.max(topK * 4, 24);
+  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60).slice(0, stage1PoolSize);
 
   if (fused.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
     const fallbackCitations: CitationReference[] = [];
@@ -955,6 +1103,7 @@ export function searchRelevantCitations(
           quote_text: chunk.content_text.slice(0, 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
+          chunk_kind: chunk.chunk_kind || 'PROSE',
           relevance_score: 1,
         });
       }
@@ -962,16 +1111,29 @@ export function searchRelevantCitations(
     return fallbackCitations.slice(0, topK);
   }
 
-  return fused.slice(0, topK).map((f) => ({
-    ...f.item.citation,
-    relevance_score: Number((f.item.citation.relevance_score || f.rrf_score * 100).toFixed(2)),
+  const reranked = rerankCandidatesWithStage2(
+    query,
+    fused.map((f) => ({
+      key: f.item.key,
+      rawText: f.item.rawText,
+      rrfScore: f.rrf_score,
+      citation: f.item.citation,
+    })),
+    topK
+  );
+
+  return reranked.map((f) => ({
+    ...f.citation,
+    rerank_score: f.rerankScore,
+    retrieval_stage: 'RRF_K60_PLUS_STAGE2_RERANK',
+    relevance_score: Number(((f.citation.relevance_score || f.rrfScore * 100) + f.rerankScore * 5).toFixed(2)),
   }));
 }
 
 /**
- * Asynchronous SOTA Hybrid RAG Search:
- * Combines BM25 IDF lexical scoring + Gemini `gemini-embedding-2` (or local semantic vector fallback)
- * via Reciprocal Rank Fusion (RRF), caching document chunk vectors in SQLite.
+ * Asynchronous V5 Hybrid RAG Search:
+ * Stage 1: BM25 IDF + Gemini `gemini-embedding-2` (or local 192-dim semantic vector) via RRF (k=60).
+ * Stage 2: Pairwise Query-Document Precision Reranker (+ table-aware alignment).
  */
 export async function searchRelevantCitationsHybrid(
   sessionId: string,
@@ -1054,7 +1216,8 @@ export async function searchRelevantCitationsHybrid(
       .map((v) => v.cand);
   }
 
-  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60);
+  const stage1PoolSize = Math.max(topK * 4, 24);
+  const fused = fuseBm25AndVectorWithRrf(bm25Hits, vectorHits, (c) => c.key, 60).slice(0, stage1PoolSize);
 
   if (fused.length === 0 && bundle.session_documents.length > 0 && isBroadFileOrAnalysisRequest) {
     const fallbackCitations: CitationReference[] = [];
@@ -1069,6 +1232,7 @@ export async function searchRelevantCitationsHybrid(
           quote_text: chunk.content_text.slice(0, 1400),
           page_number: chunk.page_number || 1,
           doc_type: doc.doc_type,
+          chunk_kind: chunk.chunk_kind || 'PROSE',
           relevance_score: 1,
         });
       }
@@ -1076,9 +1240,22 @@ export async function searchRelevantCitationsHybrid(
     return fallbackCitations.slice(0, topK);
   }
 
-  return fused.slice(0, topK).map((f) => ({
-    ...f.item.citation,
-    relevance_score: Number((f.item.citation.relevance_score || f.rrf_score * 100).toFixed(2)),
+  const reranked = rerankCandidatesWithStage2(
+    query,
+    fused.map((f) => ({
+      key: f.item.key,
+      rawText: f.item.rawText,
+      rrfScore: f.rrf_score,
+      citation: f.item.citation,
+    })),
+    topK
+  );
+
+  return reranked.map((f) => ({
+    ...f.citation,
+    rerank_score: f.rerankScore,
+    retrieval_stage: 'RRF_K60_PLUS_STAGE2_RERANK',
+    relevance_score: Number(((f.citation.relevance_score || f.rrfScore * 100) + f.rerankScore * 5).toFixed(2)),
   }));
 }
 

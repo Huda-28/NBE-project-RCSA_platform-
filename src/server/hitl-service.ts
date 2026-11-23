@@ -13,6 +13,14 @@ import {
   formatArabicDateTime,
   SEEDED_ASSESSMENT_IDS,
 } from '../utils/dateFormat.js';
+import {
+  chunkExtractedDocumentText,
+  countMarkdownTablesInText,
+} from './table-chunker.js';
+import {
+  parseDocumentWithVision,
+  VisionModelCallback,
+} from './vision-document-parser.js';
 
 export type HitlWorkflowStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'RETURNED_FOR_CHANGES';
 
@@ -3555,6 +3563,7 @@ export function getGuidedAssessmentUnitContext(unitId: string, user: User): any 
   const formattedDocs = documents.map(d => {
     const baseName = path.basename(d.filename);
     const hasChunks = Number(d.chunks_count || 0) > 0;
+    const extMethod = String(d.extraction_method || 'TEXT');
     return {
       ...d,
       title_ar: baseName,
@@ -3562,6 +3571,11 @@ export function getGuidedAssessmentUnitContext(unitId: string, user: User): any 
       original_filename: baseName,
       uploaded_at_ar: formatArabicDateTime(d.uploaded_at),
       display_filename: baseName,
+      extraction_method: extMethod,
+      vision_model: d.vision_model || null,
+      table_count: Number(d.table_count || 0),
+      vision_pages_count: Number(d.vision_pages_count || 0),
+      needs_vision: Boolean(d.needs_vision),
       parse_status: hasChunks ? 'EXTRACTED_AND_INDEXED' : 'STORED_MANUAL_EXTRACT_REQUIRED',
     };
   });
@@ -3575,6 +3589,7 @@ export function getGuidedAssessmentUnitContext(unitId: string, user: User): any 
     title_ar: c.section_title || path.basename(c.filename || 'مستند'),
     page_or_section: `ص ${c.page_number || 1}`,
     chunk_text: c.content_text,
+    chunk_kind: c.chunk_kind || 'PROSE',
   }));
 
   const formattedIncidents = incidents.map(inc => ({
@@ -3700,9 +3715,10 @@ export function uploadSupportingDocumentForUnit(params: {
     '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt',
     '.csv', '.tsv', '.txt', '.md', '.json', '.xml', '.html', '.htm',
     '.rtf', '.yaml', '.yml', '.log', '.ini', '.sql', '.zip',
+    '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff',
   ];
   if (!allowedExtensions.includes(ext)) {
-    const err: any = new Error('نوع المستند غير مدعوم. الامتدادات المسموحة PDF وDOCX وXLSX وPPTX وCSV وJSON وXML وZIP والملفات النصية.');
+    const err: any = new Error('نوع المستند غير مدعوم. الامتدادات المسموحة PDF وDOCX وXLSX وPPTX وCSV وJSON وXML وZIP والصور (PNG/JPG/WEBP/TIFF) والملفات النصية.');
     err.statusCode = 400; throw err;
   }
   if (!contentBase64 && typeof contentText !== 'string') {
@@ -3734,12 +3750,13 @@ export function uploadSupportingDocumentForUnit(params: {
   // Extract only the bytes actually stored, never infer content from filename.
   let extractionReason = '';
   let decodedText = '';
+  let extractMeta: any = {};
   try {
-    const extracted = JSON.parse(execFileSync(getPythonExecutable(), ['-m', 'rcsa_engine.document_extract', '--path', storedRelativePath], {
+    extractMeta = JSON.parse(execFileSync(getPythonExecutable(), ['-m', 'rcsa_engine.document_extract', '--path', storedRelativePath], {
       cwd: process.cwd(), encoding: 'utf-8', maxBuffer: 2 * 1024 * 1024, timeout: 60_000,
     }));
-    decodedText = extracted.status === 'EXTRACTED' ? String(extracted.text || '') : '';
-    extractionReason = String(extracted.reason || '');
+    decodedText = extractMeta.status === 'EXTRACTED' ? String(extractMeta.text || '') : '';
+    extractionReason = String(extractMeta.reason || '');
   } catch (error: any) {
     extractionReason = 'تعذر تشغيل استخلاص النص؛ يرجى مراجعة المستند يدويًا.';
   }
@@ -3747,72 +3764,58 @@ export function uploadSupportingDocumentForUnit(params: {
     decodedText = contentText.trim();
   }
   const isTextExtractable = decodedText.trim().length > 0;
+  const detectedTables = Number(extractMeta?.table_count || 0) || countMarkdownTablesInText(decodedText);
+  const needsVisionFlag = Boolean(extractMeta?.needs_vision || extractMeta?.is_image);
+  const initialMethod = isTextExtractable
+    ? (detectedTables > 0 ? 'TEXT_AND_TABLES' : 'TEXT')
+    : (needsVisionFlag ? 'VISION_PENDING' : 'MANUAL_REQUIRED');
 
   const docId = `DOC-${unitId.replace('BU-', '')}-${Date.now().toString(36).toUpperCase()}`;
-  const chunksInserted: Array<{ id: string; section_title: string; content_text: string }> = [];
+  const chunksInserted: Array<{ id: string; section_title: string; content_text: string; chunk_kind: string }> = [];
 
   runInTransaction(() => {
     db.prepare(
-      `INSERT INTO documents (id, unit_id, filename, file_type, file_hash, uploaded_by, uploaded_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
-    ).run(docId, unitId, storedRelativePath, normalizedType, sha256Hash, user.employee_id);
+      `INSERT INTO documents (
+         id, unit_id, filename, file_type, file_hash, uploaded_by, uploaded_at,
+         extraction_method, table_count, needs_vision
+       ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)`
+    ).run(
+      docId,
+      unitId,
+      storedRelativePath,
+      normalizedType,
+      sha256Hash,
+      user.employee_id,
+      initialMethod,
+      detectedTables,
+      needsVisionFlag ? 1 : 0
+    );
 
     if (isTextExtractable && decodedText.length > 0) {
-      const paragraphs = decodedText
-        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
-        .split(/\r?\n\s*\r?\n|\r?\n/)
-        .map(p => p.trim())
-        .filter(p => p.length > 2)
-        .slice(0, 350);
-
+      const structuredChunks = chunkExtractedDocumentText(decodedText, safeName);
       const insertChunk = db.prepare(
-        `INSERT INTO document_chunks (id, document_id, chunk_index, section_title, content_text, page_number)
-         VALUES (?, ?, ?, ?, ?, ?)`
+        `INSERT INTO document_chunks (id, document_id, chunk_index, section_title, content_text, page_number, chunk_kind)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       );
 
-      let currentSection = '';
-      let currentPage = 1;
-      let chunkSeq = 0;
-      paragraphs.forEach((p) => {
-        const pageMatch = p.match(/^\[(?:PDF page|Slide)\s+(\d+)\]\s*(.*)$/i);
-        if (pageMatch) {
-          currentPage = parseInt(pageMatch[1], 10) || currentPage;
-          if (!pageMatch[2]?.trim()) {
-            return;
-          }
-        }
-        const bracketMatch = p.match(/^\[([^\]]+)\]\s*(.*)$/);
-        if (bracketMatch && !bracketMatch[2]?.trim()) {
-          currentSection = bracketMatch[1];
-          return;
-        }
-        const cleanBody = (pageMatch?.[2] || bracketMatch?.[2] || p).trim();
-        if (cleanBody.length <= 2) return;
-
-        // Track numbered/titled section headings inside the document for clearer citations
-        const headingPrefix = cleanBody.match(
-          /^(\d+(?:\.\d+)*\.?\s+[^•:\n]{5,90})(?:\s|$)/
+      for (const ch of structuredChunks) {
+        const chunkId = `CHK-${docId}-${ch.chunk_index}`;
+        insertChunk.run(
+          chunkId,
+          docId,
+          ch.chunk_index,
+          ch.section_title,
+          ch.content_text,
+          ch.page_number,
+          ch.chunk_kind
         );
-        if (headingPrefix && !cleanBody.startsWith('•')) {
-          const candidateHeading = headingPrefix[1]
-            .replace(/\s+/g, ' ')
-            .trim()
-            .slice(0, 80);
-          if (candidateHeading.length >= 6) {
-            currentSection = candidateHeading;
-          }
-        }
-
-        chunkSeq += 1;
-        const chunkId = `CHK-${docId}-${chunkSeq}`;
-        const title = bracketMatch?.[1] && !pageMatch
-          ? `${bracketMatch[1]} — ${safeName}`
-          : currentSection
-            ? `${currentSection} (صفحة ${currentPage})`
-            : `صفحة ${currentPage} • مقطع (${chunkSeq})`;
-        insertChunk.run(chunkId, docId, chunkSeq, title, cleanBody, currentPage);
-        chunksInserted.push({ id: chunkId, section_title: title, content_text: cleanBody });
-      });
+        chunksInserted.push({
+          id: chunkId,
+          section_title: ch.section_title,
+          content_text: ch.content_text,
+          chunk_kind: ch.chunk_kind,
+        });
+      }
 
       if (normalizedType === 'SOP' && chunksInserted.length > 0) {
         db.prepare(
@@ -3839,6 +3842,8 @@ export function uploadSupportingDocumentForUnit(params: {
         filename: safeName,
         file_type: normalizedType,
         file_hash: sha256Hash,
+        extraction_method: initialMethod,
+        table_count: detectedTables,
         extracted_chunks_count: chunksInserted.length,
       },
       changeSummary: `رفع وحفظ مستند مؤيد "${safeName}" (${normalizedType}) للوحدة (${unitId}) ببصمة (${sha256Hash}) بواسطة ${user.full_name}`,
@@ -3852,15 +3857,20 @@ export function uploadSupportingDocumentForUnit(params: {
 
   const statusMessageAr =
     chunksInserted.length > 0
-      ? `تم حفظ المستند "${safeName}" واستخلاص (${chunksInserted.length}) مقطعاً نصياً بنجاح في قاعدة البيانات.`
-      : `تم حفظ المستند "${safeName}" وتوثيق بصمته الرقمية (${sha256Hash}) في سجل مستندات الوحدة. لم تتوفر نصوص قابلة للاستخلاص من هذا الملف (${ext}). ${extractionReason || 'قد يكون المستند مصورًا أو محميًا.'} يرجى مراجعة المستند يدويًا؛ لم تُنشأ مخاطر أو ضوابط منه تلقائيًا.`;
+      ? `تم حفظ المستند "${safeName}" واستخلاص (${chunksInserted.length}) مقطعاً${detectedTables > 0 ? ` (منها ${detectedTables} جدول مهيكل)` : ''} بنجاح في قاعدة البيانات.`
+      : `تم حفظ المستند "${safeName}" وتوثيق بصمته الرقمية (${sha256Hash}) في سجل مستندات الوحدة. لم تتوفر نصوص قابلة للاستخلاص من هذا الملف (${ext}). ${extractionReason || 'قد يكون المستند مصورًا أو محميًا.'} يرجى مراجعة المستند يدويًا أو تشغيل المحلل البصري؛ لم تُنشأ مخاطر أو ضوابط منه تلقائيًا.`;
 
   return {
     document_id: docId,
     filename: safeName,
+    stored_path: storedRelativePath,
     file_type: normalizedType,
     file_hash: sha256Hash,
     extraction_status: extractionStatus,
+    extraction_method: initialMethod,
+    table_count: detectedTables,
+    needs_vision: needsVisionFlag,
+    is_image: Boolean(extractMeta?.is_image),
     extracted_chunks_count: chunksInserted.length,
     message_ar: statusMessageAr,
     document: {
@@ -3868,12 +3878,219 @@ export function uploadSupportingDocumentForUnit(params: {
       title_ar: params.titleAr || safeName,
       doc_type: normalizedType,
       original_filename: safeName,
+      extraction_method: initialMethod,
+      table_count: detectedTables,
+      needs_vision: needsVisionFlag,
       parse_status:
         chunksInserted.length > 0 ? 'EXTRACTED_TEXT_CHUNKS' : 'STORED_MANUAL_EXTRACT_REQUIRED',
       extraction_notice_ar: statusMessageAr,
       chunks_count: chunksInserted.length,
     },
     context: getGuidedAssessmentUnitContext(unitId, user),
+  };
+}
+
+/**
+ * Re-run or upgrade an existing stored document using V5 Multimodal ViT/VLM Vision & Table Parsing.
+ */
+export async function reanalyzeDocumentWithVision(params: {
+  documentId: string;
+  user: User;
+  visionCallback?: VisionModelCallback;
+}): Promise<any> {
+  initHitlSchema();
+  const docRow = db.prepare('SELECT * FROM documents WHERE id = ?').get(params.documentId) as any;
+  if (!docRow) {
+    const err: any = new Error('المستند المطلوب غير موجود في قاعدة البيانات.');
+    err.statusCode = 404;
+    throw err;
+  }
+  const unitId = String(docRow.unit_id);
+  if (!isUserAuthorizedForBU(params.user, unitId, ['MAKER', 'RISK_ADMIN'])) {
+    const err: any = new Error('غير مصرح: يلزم توفر صلاحية معد تقييم (MAKER) أو مسؤول مخاطر لإعادة تحليل المستند بصرياً.');
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const resolvedPath = path.resolve(docRow.filename);
+  if (!fs.existsSync(resolvedPath)) {
+    const err: any = new Error('ملف المستند الفعلي غير موجود على الخادم.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const visionRes = await parseDocumentWithVision({
+    filePath: resolvedPath,
+    visionCallback: params.visionCallback,
+  });
+
+  if (visionRes.status !== 'EXTRACTED' || !visionRes.text.trim()) {
+    return {
+      document_id: docRow.id,
+      extraction_status: 'STORED_WITHOUT_BINARY_EXTRACTION',
+      vision_status: visionRes.status,
+      reason: visionRes.reason,
+      message_ar:
+        visionRes.reason ||
+        'لم يتوفر نص قابل للاستخلاص البصري من هذا المستند في الوضع الحالي.',
+      context: getGuidedAssessmentUnitContext(unitId, params.user),
+    };
+  }
+
+  const safeName = path.basename(docRow.filename).replace(/^\d+_/, '');
+  const existingChunks = db
+    .prepare('SELECT content_text, chunk_kind FROM document_chunks WHERE document_id = ? ORDER BY chunk_index ASC')
+    .all(docRow.id) as Array<{ content_text: string; chunk_kind?: string }>;
+
+  const existingNonVisionText = existingChunks
+    .filter((c) => c.chunk_kind !== 'VISION_OCR')
+    .map((c) => c.content_text)
+    .join('\n')
+    .trim();
+
+  const mergedText = existingNonVisionText
+    ? `${existingNonVisionText}\n\n[التحليل البصري للصور والجداول — V5 ViT Vision]\n${visionRes.text}`
+    : visionRes.text;
+
+  const newMethod = existingNonVisionText ? 'HYBRID_TEXT_PLUS_VISION' : 'VISION_MULTIMODAL';
+  const structuredChunks = chunkExtractedDocumentText(mergedText, safeName);
+  const totalTables = Math.max(visionRes.tablesDetected, countMarkdownTablesInText(mergedText));
+
+  runInTransaction(() => {
+    db.prepare('DELETE FROM document_chunks WHERE document_id = ?').run(docRow.id);
+    const insertChunk = db.prepare(
+      `INSERT INTO document_chunks (id, document_id, chunk_index, section_title, content_text, page_number, chunk_kind)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+    for (const ch of structuredChunks) {
+      const chunkId = `CHK-${docRow.id}-V${ch.chunk_index}`;
+      insertChunk.run(
+        chunkId,
+        docRow.id,
+        ch.chunk_index,
+        ch.section_title,
+        ch.content_text,
+        ch.page_number,
+        ch.chunk_kind === 'TABLE' ? 'TABLE' : existingNonVisionText ? ch.chunk_kind : 'VISION_OCR'
+      );
+    }
+
+    db.prepare(
+      `UPDATE documents
+       SET extraction_method = ?,
+           vision_model = ?,
+           table_count = ?,
+           vision_pages_count = ?,
+           needs_vision = 0
+       WHERE id = ?`
+    ).run(newMethod, visionRes.modelName, totalTables, visionRes.pagesProcessed, docRow.id);
+
+    if (docRow.file_type === 'SOP' && structuredChunks.length > 0) {
+      db.prepare(
+        `UPDATE bu_source_coverage
+         SET sop_status = 'AVAILABLE',
+             sop_procedures_count = CASE WHEN sop_procedures_count = 0 THEN ? ELSE sop_procedures_count END
+         WHERE unit_id = ?`
+      ).run(structuredChunks.length, unitId);
+      unitInitCache.delete(unitId);
+    }
+
+    const role = params.user.roles.find(r => r.unit_id === unitId)?.role || params.user.roles[0]?.role || 'MAKER';
+    logAuditEvent({
+      userId: params.user.employee_id,
+      userRole: role,
+      unitId,
+      entityType: 'DOCUMENT',
+      entityId: docRow.id,
+      action: 'VISION_DOCUMENT_EXTRACT',
+      beforeState: { extraction_method: docRow.extraction_method || 'TEXT' },
+      afterState: {
+        extraction_method: newMethod,
+        vision_model: visionRes.modelName,
+        vision_pages_count: visionRes.pagesProcessed,
+        table_count: totalTables,
+        extracted_chunks_count: structuredChunks.length,
+        pii_redactions: visionRes.piiRedactions,
+        injection_quarantined: visionRes.injectionQuarantined,
+      },
+      changeSummary: `تحليل بصري متقدم (${newMethod} عبر ${visionRes.modelName}) للمستند "${safeName}": استخراج ${structuredChunks.length} مقطعاً و${totalTables} جداول مهيكلة`,
+    });
+  });
+
+  const noticeAr = `تم التحليل البصري للصور والجداول بنجاح (${newMethod}) عبر ${visionRes.modelName}: استخلاص (${structuredChunks.length}) مقطعاً و(${totalTables}) جداول مهيكلة من ${visionRes.pagesProcessed} صفحات.`;
+
+  return {
+    document_id: docRow.id,
+    filename: safeName,
+    file_type: docRow.file_type,
+    file_hash: docRow.file_hash,
+    extraction_status: 'EXTRACTED_TEXT_CHUNKS',
+    extraction_method: newMethod,
+    vision_model: visionRes.modelName,
+    vision_pages_count: visionRes.pagesProcessed,
+    table_count: totalTables,
+    needs_vision: false,
+    extracted_chunks_count: structuredChunks.length,
+    message_ar: noticeAr,
+    document: {
+      id: docRow.id,
+      title_ar: safeName,
+      doc_type: docRow.file_type,
+      original_filename: safeName,
+      extraction_method: newMethod,
+      vision_model: visionRes.modelName,
+      table_count: totalTables,
+      vision_pages_count: visionRes.pagesProcessed,
+      needs_vision: false,
+      parse_status: 'EXTRACTED_TEXT_CHUNKS',
+      extraction_notice_ar: noticeAr,
+      chunks_count: structuredChunks.length,
+    },
+    context: getGuidedAssessmentUnitContext(unitId, params.user),
+  };
+}
+
+/**
+ * Async V5 Upload Wrapper:
+ * Runs deterministic text & table extraction first, then automatically invokes V5 Vision Document & Table Parser
+ * whenever an uploaded file is an image, a scanned PDF, or contains embedded images/charts.
+ */
+export async function uploadSupportingDocumentWithVision(params: {
+  unitId: string;
+  user: User;
+  filename?: string;
+  fileName?: string;
+  titleAr?: string;
+  fileType?: string;
+  docType?: string;
+  contentText?: string;
+  textContent?: string;
+  contentBase64?: string;
+  base64Content?: string;
+  mimeType?: string;
+  fileSizeBytes?: number;
+  visionCallback?: VisionModelCallback;
+}): Promise<any> {
+  const baseResult = uploadSupportingDocumentForUnit(params);
+  if (!baseResult.needs_vision && !baseResult.is_image) {
+    return baseResult;
+  }
+
+  const visionResult = await reanalyzeDocumentWithVision({
+    documentId: baseResult.document_id,
+    user: params.user,
+    visionCallback: params.visionCallback,
+  });
+
+  if (visionResult.extraction_status === 'EXTRACTED_TEXT_CHUNKS') {
+    return visionResult;
+  }
+
+  // Vision was not configured/available; return honest baseResult plus transparent vision unavailability notice
+  return {
+    ...baseResult,
+    vision_status: visionResult.vision_status,
+    vision_reason: visionResult.reason,
   };
 }
 

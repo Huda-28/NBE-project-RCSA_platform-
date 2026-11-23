@@ -358,26 +358,34 @@ export const MODEL_EVOLUTION_MILESTONES = [
     qaAndCompliance: 'Residual-only Key Risk, "-" legal NFI justification, 1–4 acceptability rules, and scanned-PDF OCR alerts.',
     outcome: 'Full alignment with NBE reviewer feedback and backed by 82 Node.js + 87 Python regression tests.',
   },
+  {
+    stage: 'V5 · Multimodal Vision & Stage-2 Reranker',
+    commitRef: 'Vision + Rerank (V5)',
+    retrieval: 'Stage-2 multi-concept + table-aware Precision Reranker over Stage-1 RRF (k=60) candidate pools.',
+    contextAndTokens: 'ViT/Swin multimodal Vision parser + PDF embedded image extractor + header-preserving Markdown table chunker.',
+    qaAndCompliance: 'Clean tabular row parsing into 29-column Matrix proposals + VISION_DOCUMENT_EXTRACT audit logging.',
+    outcome: 'Understands scanned PDFs, PNG/JPG tables, and complex multi-column tables with measurable Precision@1 & MRR uplift.',
+  },
 ] as const;
 
 export const METHODOLOGY_REFERENCES = [
   {
-    category: 'Information Retrieval & RAG Architecture',
+    category: 'Information Retrieval, Reranking & Multimodal Vision',
     items: [
       {
         citation: 'Cormack, G. V., Clarke, C. L. A., & Buettcher, S. (2009)',
         title: 'Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods (SIGIR ’09)',
-        roleInSystem: 'Governs Hybrid RAG rank fusion in rag-service.ts using constant k = 60 across dense vectors and BM25.',
+        roleInSystem: 'Governs Stage-1 Hybrid RAG rank fusion in rag-service.ts using constant k = 60 across dense vectors and BM25.',
       },
       {
-        citation: 'Robertson, S., & Zaragoza, H. (2009)',
-        title: 'The Probabilistic Relevance Framework: BM25 and Beyond (Foundations & Trends in IR)',
-        roleInSystem: 'Forms the lexical scoring leg paired with custom Arabic/English banking synonym expansion.',
+        citation: 'Robertson, S., & Zaragoza, H. (2009) & Nogueira, R., & Cho, K. (2019)',
+        title: 'BM25 Probabilistic Relevance & Two-Stage Passage Reranking (FnTIR ’09 / arXiv:1901.04085)',
+        roleInSystem: 'Forms Stage-1 lexical scoring paired with Stage-2 precision reranking (rerankCandidatesWithStage2) for exact table/code fidelity.',
       },
       {
-        citation: 'Lewis, P., Perez, E., Piktus, A., et al. (2020)',
-        title: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (NeurIPS 2020)',
-        roleInSystem: 'Core evidence-grounding pattern requiring verbatim policy quotes and page numbers per proposal.',
+        citation: 'Dosovitskiy, A., et al. (ICLR 2021) & Liu, Z., et al. (ICCV 2021)',
+        title: 'Vision Transformer (ViT) & Swin Transformer Hierarchical Shifted-Window Encoders + Lewis et al. (NeurIPS 2020) RAG',
+        roleInSystem: 'Guides patch/hierarchical visual document & table extraction (vision-document-parser.ts) combined with evidence-grounded RAG.',
       },
     ],
   },
@@ -391,13 +399,13 @@ export const METHODOLOGY_REFERENCES = [
       },
       {
         citation: 'Qwen Team (2025) & Google Gemini Developer Docs (2025)',
-        title: 'Qwen3 Technical Report (arXiv:2505.09388) & gemini-embedding-2 / Structured Schema Outputs',
-        roleInSystem: 'Powers qwen3:1.7b / qwen3.5:4b profiles, <think> parsing, 192-dim dense vectors, and JSON outputs.',
+        title: 'Qwen3 Technical Report (arXiv:2505.09388) & gemini-embedding-2 / Multimodal Vision & Schema Outputs',
+        roleInSystem: 'Powers qwen3:1.7b / qwen3.5:4b profiles, multimodal Vision table/OCR extraction, 192-dim dense vectors, and JSON outputs.',
       },
       {
         citation: 'OWASP Foundation (2025) & NIST (2023)',
         title: 'OWASP Top 10 for LLM Applications (LLM01 / LLM02) & NIST AI Risk Management Framework (AI 100-1)',
-        roleInSystem: 'Informs EG IBAN/National ID/PAN redaction, prompt-injection quarantine, and strict human-in-the-loop separation.',
+        roleInSystem: 'Informs EG IBAN/National ID/PAN redaction, prompt-injection quarantine across Vision OCR, and human-in-the-loop separation.',
       },
     ],
   },
@@ -435,7 +443,7 @@ export const METHODOLOGY_SLIDES: MethodologySlide[] = [
     layout: 'deep_cover',
     jumpTarget: { label: 'Open AI Risk Agent', page: 'agent' },
     presenterNotes:
-      'Designed for model risk committees, internal audit, and methodology reviewers: maps every NBE rule and Excel formula directly to the running code, and traces the V1-to-V4 model upgrade path grounded in established research.',
+      'Designed for model risk committees, internal audit, and methodology reviewers: maps every NBE rule and Excel formula directly to the running code, and traces the V1-to-V5 model upgrade path grounded in established research.',
     keyQuestion: 'What is the foundational engineering principle behind this platform?',
     keyAnswer:
       'Strict separation of concerns: Hybrid RAG and LLMs extract and cite qualitative policy evidence, while the deterministic Python Decimal engine and human reviewers control 100% of ratings, RRF, and approvals.',
@@ -500,26 +508,26 @@ export const METHODOLOGY_SLIDES: MethodologySlide[] = [
     number: 6,
     indexLabel: '06',
     section: 'Model Performance Journey',
-    title: 'Evolution from V1 Weak Baseline to V4 Industry Best-Practice Architecture',
+    title: 'Evolution from V1 Weak Baseline to V5 Multimodal Vision & Reranked Architecture',
     subtitle:
-      'How four tracked engineering iterations resolved weak recall, context truncation, and schema errors until reaching full banking calibration.',
+      'How five tracked engineering iterations resolved weak recall, scanned images, split tables, and schema errors into a multimodal banking architecture.',
     layout: 'evolution_timeline',
     jumpTarget: { label: 'Test the Upgraded AI Agent', page: 'agent' },
     presenterNotes:
-      'This slide directly documents the journey requested by reviewers: tracing every commit from V1 (4301a33: 240-char naive search + 0.5B model) through V2 (8c5c335) and V3 Hybrid RAG + Self-Critique (13160f5) to V4 Bank Calibration (d8379bd).',
+      'This slide directly documents the journey requested by reviewers: tracing V1 (4301a33), V2 (8c5c335), V3 Hybrid RAG + Self-Critique (13160f5), V4 Bank Calibration (d8379bd), and V5 Multimodal Vision (ViT/Swin VLM) + Table Chunker + Stage-2 Reranker.',
   },
   {
     id: 'rag-hybrid-rrf',
     number: 7,
     indexLabel: '07',
-    section: 'Hybrid Retrieval Engineering',
-    title: 'Inside Hybrid RAG: Arabic Repair + BM25 IDF + Dense Vectors + RRF (k=60)',
+    section: 'Hybrid Retrieval & Reranking',
+    title: 'Inside Two-Stage Hybrid RAG: Tables + Vision OCR + RRF (k=60) + Stage-2 Reranker',
     subtitle:
-      'How the retrieval pipeline overcomes broken Arabic PDF font ligatures and matches cross-lingual operational risk terminology with high precision.',
+      'How the retrieval pipeline combines table-preserving Markdown chunking, ViT/Swin multimodal OCR, BM25 + gemini-embedding-2 / 192-dim dense vectors via RRF (k=60), and Stage-2 precision reranking.',
     layout: 'rag_hybrid_rrf',
     jumpTarget: { label: 'Inspect Knowledge Base in Agent', page: 'agent' },
     presenterNotes:
-      'Explain the two parallel legs in rag-service.ts: lexical BM25 enriched with 30+ Arabic Lam-Alef fixes and 9 banking synonym clusters, fused via Cormack et al. (2009) RRF (k=60) with gemini-embedding-2 and 192-dim dense vectors cached in SQLite.',
+      'Explain the upgraded V5 two-stage pipeline: table reconstruction + ViT/Swin visual parsing feed Stage-1 RRF (k=60) candidate generation (BM25 + gemini-embedding-2 vectors), followed by rerankCandidatesWithStage2 scoring multi-concept, code, and table fidelity.',
   },
   {
     id: 'llm-profiles-prompting',
@@ -565,25 +573,25 @@ export const METHODOLOGY_SLIDES: MethodologySlide[] = [
     number: 11,
     indexLabel: '11',
     section: 'Architectural Uplift',
-    title: 'Verified Capability Comparison: V1 Baseline vs. V4 Industry Best-Practice Build',
+    title: 'Verified Capability Comparison: V1 Baseline vs. V5 Multimodal Architecture',
     subtitle:
-      'An honest, strictly repository-verified before/after comparison across retrieval, reasoning depth, security, and regulatory alignment.',
+      'An honest, repository-verified before/after comparison across vision table extraction, two-stage reranking, reasoning depth, security, and regulatory alignment.',
     layout: 'before_after_metrics',
     presenterNotes:
-      'Highlight concrete measurable changes implemented in code: 5.8x context expansion (240 → 1,400 chars), 4,096-token budget, Vector+BM25 RRF fusion, 8-rule QA gate, 15 forbidden fields stripped, and Dual-Source historical continuation.',
+      'Highlight concrete measurable changes implemented in code: 5.8x context expansion, multimodal ViT/Swin image & scanned-PDF understanding, header-preserving Markdown table chunking, Stage-2 precision reranking, and 15 forbidden fields stripped.',
   },
   {
     id: 'testing-roadmap',
     number: 12,
     indexLabel: '12',
     section: 'Verification & Production Readiness',
-    title: 'Automated Verification Suite (169 Tests) & On-Premises Banking Roadmap',
+    title: 'Automated Verification & Vision/Reranker Benchmarks + Production Roadmap',
     subtitle:
-      'Dual-stack TypeScript and Python verification ensuring mathematical stability alongside a clear path to air-gapped institutional deployment.',
+      'Dual-stack TypeScript and Python test suites plus before-vs-after benchmarks verifying precision gains on scanned tables alongside an air-gapped banking roadmap.',
     layout: 'testing_roadmap',
     jumpTarget: { label: 'Review Units & Audit Trail', page: 'business-units' },
     presenterNotes:
-      'Summarize real verified test coverage (82 Node.js tests + 87 Python unit tests + browser E2E) and outline institutional scaling: local air-gapped Ollama, AD/LDAP SSO, Loss DB sync, and WORM audit archiving.',
+      'Summarize verified test coverage across Python decimal formulas, PDF/table/image extraction, Stage-2 reranking uplift, official 29-column Excel export, and air-gapped Ollama/ViT scaling.',
   },
   {
     id: 'references',
@@ -592,13 +600,13 @@ export const METHODOLOGY_SLIDES: MethodologySlide[] = [
     section: 'References & Sources',
     title: 'Research Papers, AI Governance Frameworks & Banking Regulatory Sources',
     subtitle:
-      'Peer-reviewed publications, security standards, and primary NBE / CBE / Basel methodological sources underpinning the platform design.',
+      'Peer-reviewed publications, vision/reranking transformers, security standards, and primary NBE / CBE / Basel sources underpinning the platform design.',
     layout: 'references',
     presenterNotes:
-      'Close with transparent attribution: every retrieval algorithm (BM25, RRF k=60, Dense RAG, Self-Refine), security control (OWASP LLM Top 10, NIST AI RMF), and risk formula traces directly to established literature and official NBE/CBE/BCBS standards.',
-    keyQuestion: 'What external research and standards validate the V4 architecture?',
+      'Close with transparent attribution: Cormack et al. (2009) RRF, Robertson & Zaragoza (2009) BM25, Nogueira & Cho (2019) Reranking, Dosovitskiy et al. (2021) ViT, Liu et al. (2021) Swin, Madaan et al. (2023) Self-Refine, OWASP/NIST, and BCBS/CBE/NBE standards.',
+    keyQuestion: 'What external research and standards validate the V5 multimodal architecture?',
     keyAnswer:
-      'Hybrid retrieval follows Cormack et al. (2009) RRF and Robertson & Zaragoza (2009) BM25; self-critique builds on Madaan et al. (2023); guardrails align with OWASP LLM Top 10 & NIST AI RMF; and scoring implements BCBS PSMOR, CBE ESG, and official NBE RCSA specifications.',
+      'Two-stage retrieval pairs Cormack et al. (2009) RRF and Robertson & Zaragoza (2009) BM25 with Nogueira & Cho (2019) reranking; visual table parsing follows Dosovitskiy et al. (2021) ViT and Liu et al. (2021) Swin principles; and scoring enforces BCBS, CBE ESG, and official NBE RCSA rules.',
   },
 ];
 

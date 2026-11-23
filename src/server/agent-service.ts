@@ -684,7 +684,7 @@ function synthesizeQwenGroundedRagAnswer(params: {
  * using Qwen profile depth (`qwen-0.5b` Fast vs `qwen-4b` High Accuracy), official 84-row L1-L3 taxonomy,
  * 34-row ESG catalogue, and authoritative Python recalculation.
  */
-async function buildHighPrecisionRcsaProposals(params: {
+export async function buildHighPrecisionRcsaProposals(params: {
   session: any;
   ragBundle: RagContextBundle;
   modelProfile: QwenModelProfileId;
@@ -742,6 +742,8 @@ async function buildHighPrecisionRcsaProposals(params: {
     const scored = activePool.map((ch, idx) => {
       const txt = normalizeTextForRag(ch.content_text);
       let s = 0;
+      if (ch.chunk_kind === 'TABLE' || ch.content_text.includes('| --- |')) s += 6;
+      if (ch.chunk_kind === 'VISION_OCR' || ch.content_text.includes('[Vision Page')) s += 4;
       if (ch.content_text.includes('•') || ch.content_text.includes(':')) s += 4;
       if (txt.match(/حظر|عقوبات|غسل|احتيال|تزوير|maker|checker|اعتماد|صلاحيات/)) s += 5;
       if (txt.match(/نوسترو|مطابقه|تسويه|مقاصه|تجميد|فك تجميد|قيد مزدوج|السيوله|صادره|وارده|اغفال/)) s += 4;
@@ -1651,7 +1653,7 @@ export async function sendAgentMessage(
     VALUES (?, ?, ?, 'USER', ?, ?, datetime('now'))
   `).run(userMsgId, sessionId, session.unit_id, userMessageText, activeProfile);
 
-  // 2. Retrieve SOTA Hybrid RAG context & citations (Vector + BM25 + RRF Fusion)
+  // 2. Retrieve V5 Hybrid RAG + Stage-2 Reranked context & citations (Vector + BM25 + RRF k=60 + Precision Reranker)
   const citations = await searchRelevantCitationsHybrid(sessionId, session.unit_id, userMessageText, qOption.rag_top_k);
   const ragBundle = assembleRagContextBundle(sessionId, session.unit_id);
   const existingState = getAgentSessionState(sessionId, user);
@@ -1675,17 +1677,18 @@ export async function sendAgentMessage(
 النموذج المختار: ${qOption.label_ar}
 الوحدة التنظيمية: ${session.unit.name_ar} (${session.unit.code})
 نمط التقييم: ${session.workflow_mode === 'NEW' ? 'إنشاء تقييم RCSA جديد' : 'تحديث ومقارنة تقييم RCSA قائم'}
+مسار الاسترجاع النشط: ${ragBundle.rag_stats.retrieval_pipeline} (مستندات بصرية ViT: ${ragBundle.rag_stats.vision_documents_count} | جداول مهيكلة: ${ragBundle.rag_stats.tables_detected_count})
 المستندات المرفوعة بالجلسة (${ragBundle.session_documents.length}):
-${ragBundle.session_documents.map(d => `- ${d.title_ar} (${d.doc_type}): ${d.chunks.length} مقطع نصي`).join('\n') || 'لا توجد مستندات مرفوعة حالياً'}${activeProposalsSummary}
+${ragBundle.session_documents.map(d => `- ${d.title_ar} (${d.doc_type} | ${d.extraction_method || 'TEXT'} | جداول: ${d.table_count || 0}): ${d.chunks.length} مقطع`).join('\n') || 'لا توجد مستندات مرفوعة حالياً'}${activeProposalsSummary}
 
 حالة البحث في فهرس RAG لهذا السؤال: ${
     citations.length > 0
-      ? `تم العثور على (${citations.length}) مقاطع مطابقة في فهرس RAG`
+      ? `تم العثور على (${citations.length}) مقاطع مطابقة وترتيبها بمرحلتين (RRF k=60 + Reranker)`
       : `لم يتم العثور على تطابق نصي مباشر في فهرس RAG — استخدم صلاحيتك الكاملة ومعرفتك المصرفية والعامة للإجابة الشاملة عن سؤال المستخدم دون تقييد`
   }
 ${
   citations.length > 0
-    ? `المقتطفات الكاملة المسترجعة عبر محرك RAG (BM25 + مترادفات مصرفية):\n${citations.map((c, idx) => `[${idx + 1}] (${c.title_ar} - ${c.section_title}):\n"""\n${c.quote_text}\n"""`).join('\n\n')}`
+    ? `المقتطفات الكاملة المسترجعة عبر محرك RAG (BM25 + Vectors + Stage-2 Reranker):\n${citations.map((c, idx) => `[${idx + 1}] (${c.title_ar} - ${c.section_title}${c.chunk_kind === 'TABLE' ? ' [جدول مهيكل]' : c.chunk_kind === 'VISION_OCR' ? ' [تحليل بصري]' : ''}):\n"""\n${c.quote_text}\n"""`).join('\n\n')}`
     : ''
 }
 

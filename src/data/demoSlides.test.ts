@@ -102,11 +102,12 @@ test('Methodology tables, evolution milestones & references match exact paramete
   assert.equal(RRF_MATRIX_ROWS[0].preventive, '95%');
   assert.equal(RRF_MATRIX_ROWS[2].corrective, '30%');
 
-  assert.equal(MODEL_EVOLUTION_MILESTONES.length, 4);
+  assert.equal(MODEL_EVOLUTION_MILESTONES.length, 5);
   assert.match(MODEL_EVOLUTION_MILESTONES[0].commitRef, /4301a33/);
   assert.match(MODEL_EVOLUTION_MILESTONES[1].commitRef, /8c5c335/);
   assert.match(MODEL_EVOLUTION_MILESTONES[2].commitRef, /13160f5/);
   assert.match(MODEL_EVOLUTION_MILESTONES[3].commitRef, /d8379bd/);
+  assert.match(MODEL_EVOLUTION_MILESTONES[4].stage, /V5/i);
   assert.doesNotMatch(JSON.stringify(MODEL_EVOLUTION_MILESTONES), /\bsota\b/i);
 
   assert.equal(METHODOLOGY_REFERENCES.length, 3);
@@ -114,6 +115,9 @@ test('Methodology tables, evolution milestones & references match exact paramete
   assert.doesNotMatch(refsText, /\bsota\b/i);
   assert.match(refsText, /Cormack/);
   assert.match(refsText, /Robertson/);
+  assert.match(refsText, /Nogueira/);
+  assert.match(refsText, /Dosovitskiy/);
+  assert.match(refsText, /Liu/);
   assert.match(refsText, /Lewis/);
   assert.match(refsText, /Madaan/);
   assert.match(refsText, /OWASP/);

@@ -37,6 +37,8 @@ import {
   compareUnitAssessmentVersions,
   getGuidedAssessmentUnitContext,
   uploadSupportingDocumentForUnit,
+  uploadSupportingDocumentWithVision,
+  reanalyzeDocumentWithVision,
   previewGuidedAssessmentCalculation,
   createGuidedAssessmentDraft,
 } from './hitl-service.js';
@@ -1142,9 +1144,9 @@ apiRouter.get('/guided-rcsa/units/:unitId/context', authenticate, (req: Authenti
   }
 });
 
-apiRouter.post('/guided-rcsa/units/:unitId/documents', authenticate, (req: AuthenticatedRequest, res) => {
+apiRouter.post('/guided-rcsa/units/:unitId/documents', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
-    const result = uploadSupportingDocumentForUnit({
+    const result = await uploadSupportingDocumentWithVision({
       unitId: req.params.unitId,
       user: req.user!,
       fileType: req.body?.doc_type || req.body?.fileType || 'SOP',
@@ -1173,6 +1175,23 @@ apiRouter.post('/guided-rcsa/units/:unitId/documents', authenticate, (req: Authe
     res.json({
       success: true,
       message: result.document?.extraction_notice_ar || result.message_ar,
+      ...result,
+    });
+  } catch (err: any) {
+    const code = err.statusCode || (err.message?.includes('غير مصرح') ? 403 : 400);
+    res.status(code).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/guided-rcsa/documents/:docId/reanalyze-vision', authenticate, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await reanalyzeDocumentWithVision({
+      documentId: req.params.docId,
+      user: req.user!,
+    });
+    res.json({
+      success: result.extraction_status === 'EXTRACTED_TEXT_CHUNKS',
+      message: result.message_ar,
       ...result,
     });
   } catch (err: any) {

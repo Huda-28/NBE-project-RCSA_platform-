@@ -108,21 +108,23 @@ export interface ExtractedRiskDetails {
 }
 
 const LOCATION_NOISE_REGEX =
-  /(?:صفحة\s*\d+(?:\s*•\s*مقطع\s*\(\d+\))?|مقطع\s*(?:مستخلص\s*)?(?:رقم\s*)?\(\d+\)|PDF\s*section\s*\d+(?:\s*•\s*مقطع\s*\(\d+\))?)/gi;
+  /(?:صفحة\s*\d+(?:\s*•\s*مقطع\s*\(\d+\))?|مقطع\s*(?:مستخلص\s*)?(?:رقم\s*)?\(\d+\)|PDF\s*section\s*\d+(?:\s*•\s*مقطع\s*\(\d+\))?|\[(?:PDF\s*page|Vision\s*Page|Slide)\s*\d+\]|\[(?:جدول\s*مستخلص|الجدول\s*#?\d+|تحليل\s*بصري[^\]]*)\])/gi;
 
 const CONTROL_MECHANISM_PREFIX_REGEX =
   /\s*\((?:ضابط\s*رقابي\s*)?(?:وقائي|مانع|مانعة|كاشف|كاشفة|تصحيحي|تصحيحية|preventive|detective|corrective|آلي|شبه\s*آلي|نصف\s*آلي|يدوي|automated|semi[\s-]*automated|semi[\s-]*auto|manual)(?:\s*[-–—/،,]\s*(?:ضابط\s*رقابي\s*)?(?:وقائي|مانع|مانعة|كاشف|كاشفة|تصحيحي|تصحيحية|preventive|detective|corrective|آلي|شبه\s*آلي|نصف\s*آلي|يدوي|automated|semi[\s-]*automated|semi[\s-]*auto|manual))*\)\s*/gi;
 
 /**
- * Strip page/chunk location markers ("صفحة 1 • مقطع (1)") and file extensions from operational titles.
+ * Strip page/chunk location markers ("صفحة 1 • مقطع (1)", "[Vision Page 1]") and file extensions from operational titles.
  */
 export function stripLocationMarkers(raw?: string | null): string {
   if (!raw) return '';
   return raw
     .replace(LOCATION_NOISE_REGEX, '')
-    .replace(/\.(?:pdf|docx?|xlsx?|csv|pptx?|txt|json|xml)\b/gi, '')
-    .replace(/^\s*[-—•:()]+\s*/, '')
-    .replace(/\s*[-—•:()]+\s*$/, '')
+    .replace(/^\|[\s\-:|]+\|$/gm, '')
+    .replace(/\s*\|\s*/g, ' — ')
+    .replace(/\.(?:pdf|docx?|xlsx?|csv|pptx?|txt|json|xml|png|jpe?g|webp|tiff?|bmp)\b/gi, '')
+    .replace(/^\s*[-—•:()|]+\s*/, '')
+    .replace(/\s*[-—•:()|]+\s*$/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
@@ -1111,13 +1113,115 @@ export function extractMatchedPatternsFromFullDocument(
   return matched.slice(0, maxPatterns);
 }
 
+export interface StructuredTableFields {
+  processName?: string;
+  riskTitle?: string;
+  controlDesc?: string;
+  owner?: string;
+  frequency?: string;
+  impactText?: string;
+  normalizedSummary: string;
+}
+
 /**
- * Extract clean clause heading and body from raw text (e.g., "• فحص قوائم الحظر: تمرير...").
+ * Parse Markdown tables (`| col1 | col2 |` + `| --- | --- |`) from text/vision chunks
+ * into clean header-value pairs and named RCSA semantic fields (never leaving `|` pipes in titles).
+ */
+export function extractStructuredTableFields(rawText: string): StructuredTableFields | null {
+  if (!rawText || !rawText.includes('|')) return null;
+  const rawLines = rawText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith('|') && l.endsWith('|') && l.split('|').length >= 3);
+
+  if (rawLines.length < 2) return null;
+
+  const isSeparator = (line: string) => /^\|[\s\-:|]+\|$/.test(line);
+  const splitRow = (line: string) =>
+    line
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map((c) => c.trim());
+
+  const headers = splitRow(rawLines[0]);
+  const dataLines = rawLines.slice(1).filter((l) => !isSeparator(l));
+  if (dataLines.length === 0) return null;
+
+  const firstCells = splitRow(dataLines[0]);
+  const fields: StructuredTableFields = { normalizedSummary: '' };
+  const pairedParts: string[] = [];
+
+  for (let i = 0; i < firstCells.length; i++) {
+    const val = firstCells[i];
+    if (!val || val === '-' || val === '—') continue;
+    const hdr = headers[i] || `بند ${i + 1}`;
+    const hNorm = normAr(hdr);
+    pairedParts.push(`${hdr}: ${val}`);
+
+    if (!fields.processName && hNorm.match(/العمليه|الإجراء|الاجراء|النشاط|process|stage|مرحله/)) {
+      fields.processName = val;
+    } else if (!fields.riskTitle && hNorm.match(/المخاطر|المخاطره|الخطر|وصف الخطر|risk|threat|event|حدث/)) {
+      fields.riskTitle = val;
+    } else if (!fields.controlDesc && hNorm.match(/الضابط|الرقاب|التحكم|الاجراء الرقابي|control|mitigat/)) {
+      fields.controlDesc = val;
+    } else if (!fields.owner && hNorm.match(/المسؤول|المالك|الاداره|السلطه|owner|department/)) {
+      fields.owner = val;
+    } else if (!fields.frequency && hNorm.match(/الدوريه|التكرار|frequency|cadence/)) {
+      fields.frequency = val;
+    } else if (!fields.impactText && hNorm.match(/الاثر|الخساره|المبلغ|التقييم|impact|loss|egp|amount/)) {
+      fields.impactText = val;
+    }
+  }
+
+  // Fallback assignment if columns used generic headers
+  if (!fields.processName && firstCells[0]) fields.processName = firstCells[0];
+  if (!fields.riskTitle && firstCells[1] && firstCells[1] !== fields.processName) {
+    fields.riskTitle = firstCells[1];
+  }
+  if (!fields.controlDesc && firstCells[2]) fields.controlDesc = firstCells[2];
+
+  const extraRowSummaries = dataLines
+    .slice(1, 4)
+    .map((line) => {
+      const cells = splitRow(line);
+      return cells
+        .map((c, idx) => (c ? `${headers[idx] || idx + 1}: ${c}` : ''))
+        .filter(Boolean)
+        .join(' | ');
+    })
+    .filter(Boolean);
+
+  fields.normalizedSummary = [pairedParts.join(' — '), ...extraRowSummaries].filter(Boolean).join(' ؛ ');
+  return fields.normalizedSummary ? fields : null;
+}
+
+export function normalizeMarkdownTableToStructuredText(rawText: string): string {
+  const tableFields = extractStructuredTableFields(rawText);
+  if (tableFields) {
+    return tableFields.normalizedSummary;
+  }
+  return stripLocationMarkers(rawText);
+}
+
+/**
+ * Extract clean clause heading and body from raw text (e.g., "• فحص قوائم الحظر: تمرير...") or Markdown tables.
  */
 function parseClauseSubjectAndBody(chunkText: string, sectionHint?: string): {
   subject: string;
   body: string;
 } {
+  const tableFields = extractStructuredTableFields(chunkText);
+  if (tableFields) {
+    const subj = (tableFields.processName || tableFields.riskTitle || stripLocationMarkers(sectionHint) || 'إجراء تشغيلي')
+      .slice(0, 85)
+      .trim();
+    return {
+      subject: subj,
+      body: tableFields.normalizedSummary,
+    };
+  }
+
   const cleaned = stripLocationMarkers(chunkText)
     .replace(/^[•\-\*]+\s*/, '')
     .trim();
@@ -1193,34 +1297,39 @@ function classifyControlHeuristically(text: string): {
 
 /**
  * Extract concrete primary control name, classification, automation level, and clean description
- * directly from chunk text. Never embeds mechanism labels ("ضابط رقابي وقائي - آلي") or page markers
- * inside `description_ar`.
+ * directly from chunk text or Markdown table rows. Never embeds mechanism labels ("ضابط رقابي وقائي - آلي")
+ * or pipe/page markers inside `description_ar`.
  */
 export function extractControlDetailsFromText(
   chunkText: string,
   sectionHint?: string
 ): ExtractedControlDetails {
+  const tableFields = extractStructuredTableFields(chunkText);
+  const effectiveControlSource = tableFields?.controlDesc || chunkText;
   const n = normAr(`${sectionHint || ''} ${chunkText}`);
   const matchedPattern = BANKING_RISK_PATTERNS.find((p) => p.match.test(n));
 
-  if (matchedPattern) {
+  if (matchedPattern && !tableFields?.controlDesc) {
     return materializePattern(matchedPattern).controls[0];
   }
 
-  const { subject, body } = parseClauseSubjectAndBody(chunkText, sectionHint);
-  const { design, automation, frequency } = classifyControlHeuristically(`${subject} ${body}`);
+  const { subject, body } = parseClauseSubjectAndBody(effectiveControlSource, sectionHint);
+  const { design, automation, frequency } = classifyControlHeuristically(
+    `${effectiveControlSource} ${tableFields?.frequency || ''} ${subject} ${body}`
+  );
   const typeLabel = getControlTypeLabelAr(design);
   const methodLabel = getControlMethodLabelAr(automation);
+  const baseSubject = tableFields?.controlDesc ? tableFields.controlDesc.slice(0, 75).trim() : subject;
   const controlName =
-    subject.startsWith('ضابط') ||
-    subject.startsWith('فحص') ||
-    subject.startsWith('مراجعة') ||
-    subject.startsWith('مطابقة') ||
-    subject.startsWith('التحقق')
-      ? subject
-      : `التحقق من ${subject}`;
+    baseSubject.startsWith('ضابط') ||
+    baseSubject.startsWith('فحص') ||
+    baseSubject.startsWith('مراجعة') ||
+    baseSubject.startsWith('مطابقة') ||
+    baseSubject.startsWith('التحقق')
+      ? baseSubject
+      : `التحقق من ${baseSubject}`;
   const cleanBody = stripControlMechanismFromDescription(
-    body.slice(0, 180).replace(/\s+[^\s]*$/, (m) => (body.length > 180 ? '' : m))
+    (tableFields?.controlDesc || body).slice(0, 220)
   );
 
   return {
@@ -1229,8 +1338,8 @@ export function extractControlDetailsFromText(
     control_type_label_ar: typeLabel,
     automation_level: automation,
     control_method_label_ar: methodLabel,
-    control_frequency_raw: normalizeOfficialControlFrequency(frequency),
-    control_owner_ar: 'السلطة الإشرافية',
+    control_frequency_raw: normalizeOfficialControlFrequency(tableFields?.frequency || frequency),
+    control_owner_ar: tableFields?.owner || 'السلطة الإشرافية',
     effectiveness_raw: 'ضابط رقابي فعال',
     description_ar: cleanBody || controlName,
   };
@@ -1246,21 +1355,30 @@ export function extractRiskDetailsFromText(
   controlInfo: ExtractedControlDetails,
   sectionHint?: string
 ): ExtractedRiskDetails {
+  const tableFields = extractStructuredTableFields(chunkText);
   const n = normAr(`${sectionHint || ''} ${chunkText}`);
   const matchedPattern = BANKING_RISK_PATTERNS.find((p) => p.match.test(n));
 
-  if (matchedPattern) {
+  if (matchedPattern && !tableFields) {
     return materializePattern(matchedPattern);
   }
 
   const { subject, body } = parseClauseSubjectAndBody(chunkText, sectionHint);
-  const processName = subject || `عمليات ${unitNameAr}`;
-  const riskTitle = subject.startsWith('أخطاء') || subject.startsWith('مخاطر')
-    ? subject
-    : `أخطاء أو قصور تشغيلي في ${processName}`;
-  const conciseAction = stripControlMechanismFromDescription(body.slice(0, 160));
+  const processName = (tableFields?.processName || subject || `عمليات ${unitNameAr}`).trim();
+  const rawTitleSource = (tableFields?.riskTitle || processName).trim();
+  const riskTitle =
+    rawTitleSource.startsWith('أخطاء') ||
+    rawTitleSource.startsWith('مخاطر') ||
+    rawTitleSource.startsWith('تعطل') ||
+    rawTitleSource.startsWith('تأخر') ||
+    tableFields?.riskTitle
+      ? rawTitleSource
+      : `أخطاء أو قصور تشغيلي في ${processName}`;
+  const conciseAction = stripControlMechanismFromDescription((tableFields?.riskTitle || body).slice(0, 180));
   const strategicObj = normalizeOfficialStrategicObjective(`${processName} ${body}`);
-  const l1 = OFFICIAL_BASEL_L1_MAP['L1-08'];
+  const l1 = matchedPattern
+    ? OFFICIAL_BASEL_L1_MAP[matchedPattern.taxonomyL1Id] || OFFICIAL_BASEL_L1_MAP['L1-08']
+    : OFFICIAL_BASEL_L1_MAP['L1-08'];
 
   const secondaryControl: ExtractedControlDetails = {
     control_name_ar: `المراجعة الإشرافية الدورية لتقارير ${processName}`,
@@ -1269,7 +1387,7 @@ export function extractRiskDetailsFromText(
     automation_level: 'SEMI_AUTOMATED',
     control_method_label_ar: getControlMethodLabelAr('SEMI_AUTOMATED'),
     control_frequency_raw: 'Daily\nيومياً',
-    control_owner_ar: 'السلطة الإشرافية',
+    control_owner_ar: tableFields?.owner || 'السلطة الإشرافية',
     effectiveness_raw: 'ضابط رقابي فعال',
     description_ar: `استخراج ومراجعة التقارير اليومية للعمليات المنفذة في (${processName}) للتأكد من سلامة التنفيذ ومعالجة أي استثناءات فور رصدها.`,
   };
@@ -1279,25 +1397,25 @@ export function extractRiskDetailsFromText(
     risk_title_ar: riskTitle,
     description_ar: `قصور أو خطأ تنفيذي في إجراء (${processName}) فيما يتعلق بـ (${conciseAction || processName})، مما يؤدي إلى تكبد خسائر مالية وتعطل جودة الخدمة والتعرض لملاحظات رقابية.`,
     strategic_objective_ar: strategicObj,
-    inherent_frequency_text: 'مرة واحدة كل سنة',
-    frequency_multiplier: 1,
-    frequency_justification_ar: `تقدير تكرار سنوي استناداً لطبيعة إجراء (${processName}) وعدم تسجيل حوادث تاريخية متكررة.`,
-    reference_anchor_egp: OFFICIAL_FINANCIAL_ANCHORS_EGP.M,
-    taxonomy_l1_id: 'L1-08',
+    inherent_frequency_text: matchedPattern?.inherentFrequencyText || 'مرة واحدة كل سنة',
+    frequency_multiplier: matchedPattern?.frequencyMultiplier || 1,
+    frequency_justification_ar: `تقدير تكرار استناداً لطبيعة إجراء (${processName}) والأدلة الموثقة في المستند.`,
+    reference_anchor_egp: matchedPattern?.referenceAnchorEgp || OFFICIAL_FINANCIAL_ANCHORS_EGP.M,
+    taxonomy_l1_id: matchedPattern?.taxonomyL1Id || 'L1-08',
     taxonomy_l1_ar: l1.ar,
-    taxonomy_l2_id: 'L2-08-01',
-    taxonomy_l2_ar: 'تسجيل المعاملات وتنفيذها وصيانتها',
-    taxonomy_l3_id: 'L3-08-01-02',
-    taxonomy_l3_ar: 'أخطاء إدخال البيانات أو تحميلها',
-    nfi_service: 'M',
-    nfi_reputation: 'M',
-    nfi_regulatory: 'L',
-    nfi_legal: 'L',
+    taxonomy_l2_id: matchedPattern?.taxonomyL2Id || 'L2-08-01',
+    taxonomy_l2_ar: matchedPattern?.taxonomyL2Ar || 'تسجيل المعاملات وتنفيذها وصيانتها',
+    taxonomy_l3_id: matchedPattern?.taxonomyL3Id || 'L3-08-01-02',
+    taxonomy_l3_ar: matchedPattern?.taxonomyL3Ar || 'أخطاء إدخال البيانات أو تحميلها',
+    nfi_service: matchedPattern?.nfiService || 'M',
+    nfi_reputation: matchedPattern?.nfiReputation || 'M',
+    nfi_regulatory: matchedPattern?.nfiRegulatory || 'L',
+    nfi_legal: matchedPattern?.nfiLegal || 'L',
     service_impact_evidence_ar: `تأثر ملحوظ في مستوى انتظام الخدمة عند تعطل إجراء (${processName}).`,
     reputation_impact_evidence_ar: `تأثر محدود لرضا المتعاملين حال وقوع خطأ تنفيذي في (${processName}).`,
     regulatory_impact_evidence_ar: `ملاحظات رقابية منخفضة مرتبطة بالالتزام بدليل إجراءات (${processName}).`,
     legal_impact_evidence_ar: `مغطى بالنماذج والشروط القانونية المعتمدة في (${unitNameAr}).`,
-    esg: {
+    esg: matchedPattern?.esg || {
       status: 'ASSESSED',
       pillars: ['G'],
       catalogue_ids: [32],
@@ -1307,15 +1425,15 @@ export function extractRiskDetailsFromText(
       pillar_label_ar: 'G (حوكمة العمليات المصرفية والرقابة الداخلية)',
       pathway_ar: '[32] ضعف حوكمة العمليات والرقابة والتقارير الرقابية (L1-08)',
     },
-    acceptance_class: 1,
+    acceptance_class: matchedPattern?.acceptanceClass || 1,
     acceptance_rationale_ar: buildNbeAssessmentRationale({
-      acceptanceClass: 1,
-      frequencyAr: 'مرة واحدة كل سنة',
-      individualImpactEgp: OFFICIAL_FINANCIAL_ANCHORS_EGP.M,
+      acceptanceClass: matchedPattern?.acceptanceClass || 1,
+      frequencyAr: matchedPattern?.inherentFrequencyText || 'مرة واحدة كل سنة',
+      individualImpactEgp: matchedPattern?.referenceAnchorEgp || OFFICIAL_FINANCIAL_ANCHORS_EGP.M,
       residualRating: 'L',
       nfiOverall: 'M',
     }),
-    corrective_action_ar: '',
+    corrective_action_ar: matchedPattern?.acceptanceClass && matchedPattern.acceptanceClass !== 1 ? matchedPattern.correctiveActionAr : '',
     controls: [controlInfo, secondaryControl],
   };
 }

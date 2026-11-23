@@ -260,7 +260,7 @@ export function getWorkflowSession(sessionId: string, user: User): EnrichedWorkf
 
     sessionDocs = sessionDocs.map(d => {
       const docChunks = db.prepare(`
-        SELECT id, chunk_index, section_title, content_text, page_number
+        SELECT id, chunk_index, section_title, content_text, page_number, chunk_kind
         FROM document_chunks
         WHERE document_id = ?
         ORDER BY chunk_index ASC
@@ -273,9 +273,17 @@ export function getWorkflowSession(sessionId: string, user: User): EnrichedWorkf
         title_ar: cleanTitle,
         doc_type: d.file_type,
         uploaded_at_ar: formatArabicDateTime(d.uploaded_at),
+        extraction_method: String(d.extraction_method || 'TEXT'),
+        vision_model: d.vision_model || null,
+        table_count: Number(d.table_count || 0),
+        vision_pages_count: Number(d.vision_pages_count || 0),
+        needs_vision: Boolean(d.needs_vision),
         chunks_count: Number(d.chunks_count || docChunks.length || 0),
         total_chars: totalChars,
-        chunks: docChunks,
+        chunks: docChunks.map(c => ({
+          ...c,
+          chunk_kind: c.chunk_kind || 'PROSE',
+        })),
       };
     });
   }
