@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
+import { HoverTooltip, InfoHint } from '../components/HoverTooltip.js';
 import {
   FileUp,
   HelpCircle,
@@ -566,53 +567,65 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
       {/* Stepper Progress Bar */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#DCDAD5] shadow-xs">
         <div className="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6] p-3 text-xs" data-testid="assessment-source-mode-bar">
-          <span className="font-bold text-[#09331F]">مصدر التقييم:</span>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              data-testid="source-mode-new-docs"
-              checked={sourceMode === 'NEW_DOCS'}
-              onChange={() => {
-                setSourceMode('NEW_DOCS');
-                setWorkflowMode('NEW');
-                setUseHistoricalSources(false);
-                setCandidateRisks([]);
-                setCalcPreview(null);
-                setUploadedInSession([]);
-              }}
+          <span className="font-bold text-[#09331F] flex items-center gap-1">
+            <span>مصدر التقييم:</span>
+            <InfoHint
+              title="اختيار مصدر بيانات التقييم"
+              description="حدد ما إذا كنت تبدأ من مستندات جديدة فقط، أو تحديثاً لدورة سابقة معتمدة، أو الجمع بينهما معاً."
             />
-            مستندات جديدة فقط
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              data-testid="source-mode-historical"
-              checked={sourceMode === 'HISTORICAL'}
-              onChange={() => {
-                setSourceMode('HISTORICAL');
-                setWorkflowMode('UPDATE');
-                setUseHistoricalSources(true);
-                setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
-                setCalcPreview(null);
-              }}
-            />
-            الاستعانة ببيانات الوحدة السابقة
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#006547]">
-            <input
-              type="radio"
-              data-testid="source-mode-combined"
-              checked={sourceMode === 'COMBINED'}
-              onChange={() => {
-                setSourceMode('COMBINED');
-                setWorkflowMode('NEW');
-                setUseHistoricalSources(true);
-                setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
-                setCalcPreview(null);
-              }}
-            />
-            مستندات جديدة + الاستعانة ببيانات الوحدة السابقة معاً
-          </label>
+          </span>
+          <HoverTooltip title="مستندات جديدة فقط" description="بدء تقييم نظيف اعتماداً على الأدلة والملفات المرفوعة في هذه الجلسة دون استيراد مخاطر سابقة." side="bottom">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                data-testid="source-mode-new-docs"
+                checked={sourceMode === 'NEW_DOCS'}
+                onChange={() => {
+                  setSourceMode('NEW_DOCS');
+                  setWorkflowMode('NEW');
+                  setUseHistoricalSources(false);
+                  setCandidateRisks([]);
+                  setCalcPreview(null);
+                  setUploadedInSession([]);
+                }}
+              />
+              مستندات جديدة فقط
+            </label>
+          </HoverTooltip>
+          <HoverTooltip title="بيانات الوحدة السابقة" description="استيراد المخاطر والضوابط من آخر نسخة معتمدة للوحدة مع الحفاظ على النسخة الأصلية دون تعديل." side="bottom">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                data-testid="source-mode-historical"
+                checked={sourceMode === 'HISTORICAL'}
+                onChange={() => {
+                  setSourceMode('HISTORICAL');
+                  setWorkflowMode('UPDATE');
+                  setUseHistoricalSources(true);
+                  setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
+                  setCalcPreview(null);
+                }}
+              />
+              بيانات الوحدة السابقة
+            </label>
+          </HoverTooltip>
+          <HoverTooltip title="المصدر المزدوج معاً" description="دمج المخاطر السابقة وسجلات الحوادث والتفتيش مع المستندات المرفوعة حديثاً في تقييم واحد متكامل." side="bottom">
+            <label className="flex items-center gap-2 cursor-pointer font-bold text-[#006547]">
+              <input
+                type="radio"
+                data-testid="source-mode-combined"
+                checked={sourceMode === 'COMBINED'}
+                onChange={() => {
+                  setSourceMode('COMBINED');
+                  setWorkflowMode('NEW');
+                  setUseHistoricalSources(true);
+                  setCandidateRisks(JSON.parse(JSON.stringify(unitContext?.candidate_risks || [])));
+                  setCalcPreview(null);
+                }}
+              />
+              مستندات جديدة + بيانات سابقة معاً
+            </label>
+          </HoverTooltip>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
@@ -621,38 +634,38 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
             const isCurrent = s.num === currentStep;
 
             return (
-              <div
-                key={s.num}
-                onClick={() => {
-                  setCurrentStep(s.num);
-                  if (s.num === 5 && !calcPreview) {
-                    handleRunPythonPreview();
-                  }
-                }}
-                className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                  isCurrent
-                    ? 'border-[#006547] bg-emerald-50/70 shadow-xs'
-                    : isCompleted
-                      ? 'border-emerald-200 bg-emerald-50/30 text-emerald-950'
-                      : 'border-[#E5E3DE] bg-[#F8F8F6] hover:border-[#006547]/40'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <div
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold tabular-nums shrink-0 ${
-                      isCurrent
-                        ? 'bg-[#006547] text-white'
-                        : isCompleted
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {s.num}
+              <HoverTooltip key={s.num} title={`الخطوة ${s.num}: ${s.title}`} description={s.desc} className="block w-full">
+                <div
+                  onClick={() => {
+                    setCurrentStep(s.num);
+                    if (s.num === 5 && !calcPreview) {
+                      handleRunPythonPreview();
+                    }
+                  }}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all h-full ${
+                    isCurrent
+                      ? 'border-[#006547] bg-emerald-50/70 shadow-xs'
+                      : isCompleted
+                        ? 'border-emerald-200 bg-emerald-50/30 text-emerald-950'
+                        : 'border-[#E5E3DE] bg-[#F8F8F6] hover:border-[#006547]/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold tabular-nums shrink-0 ${
+                        isCurrent
+                          ? 'bg-[#006547] text-white'
+                          : isCompleted
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {s.num}
+                    </div>
+                    <div className="text-xs font-bold text-[#09331F] truncate">{s.title}</div>
                   </div>
-                  <div className="text-xs font-bold text-[#09331F] truncate">{s.title}</div>
                 </div>
-                <div className="text-[10px] text-slate-600">{s.desc}</div>
-              </div>
+              </HoverTooltip>
             );
           })}
         </div>
@@ -675,23 +688,26 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
                 }}
               />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8F8F6] p-3.5 rounded-xl border border-[#E5E3DE]">
-                <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-extrabold text-[#09331F]">
-                    الخطوة 1: حدد الوحدة التنظيمية المصرفية المستهدفة
+                    الخطوة 1: حدد الوحدة التنظيمية المستهدفة
                   </h3>
-                  <p className="text-xs text-slate-600">
-                    اختر من الوحدات المفعّلة أدناه أو أضف أي إدارة / وحدة تنظيمية جديدة للعمل عليها.
-                  </p>
+                  <InfoHint
+                    title="اختيار وحدة العمل"
+                    description="اختر من الإدارات المصرح بها أدناه أو أضف وحدة تنظيمية جديدة لبدء دورة التقييم."
+                  />
                 </div>
-                <button
-                  type="button"
-                  data-testid="wizard-add-unit-btn"
-                  onClick={() => setShowAddUnitModal(true)}
-                  className="min-h-10 px-3.5 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4 text-[#F79C1E]" />
-                  <span>+ إضافة / اختيار وحدة تنظيمية أخرى</span>
-                </button>
+                <HoverTooltip title="إضافة وحدة جديدة" description="تسجيل وحدة تنظيمية أو إدارة جديدة وإتاحتها فوراً لإعداد التقييم.">
+                  <button
+                    type="button"
+                    data-testid="wizard-add-unit-btn"
+                    onClick={() => setShowAddUnitModal(true)}
+                    className="min-h-9 px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4 text-[#F79C1E]" />
+                    <span>+ وحدة أخرى</span>
+                  </button>
+                </HoverTooltip>
               </div>
 
               {unitsLoading ? (
@@ -751,132 +767,141 @@ export const BackendRCSAPage: React.FC<BackendRCSAPageProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Option 1: New RCSA (New Docs Only) */}
-                  <div
-                    data-testid="card-mode-new-docs"
-                    onClick={() => {
-                      setWorkflowMode('NEW');
-                      setSourceMode('NEW_DOCS');
-                      setUseHistoricalSources(false);
-                      handleStartSession('NEW', undefined, 'NEW_DOCS');
-                    }}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      sourceMode === 'NEW_DOCS'
-                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
-                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
-                    }`}
+                  <HoverTooltip
+                    title="تقييم جديد من الصفر"
+                    description="بدء تقييم جديد اعتماداً على المستندات والأدلة المرفوعة حديثاً دون استيراد مخاطر سابقة."
+                    className="block w-full"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {sourceMode === 'NEW_DOCS' && (
-                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
-                          )}
+                    <div
+                      data-testid="card-mode-new-docs"
+                      onClick={() => {
+                        setWorkflowMode('NEW');
+                        setSourceMode('NEW_DOCS');
+                        setUseHistoricalSources(false);
+                        handleStartSession('NEW', undefined, 'NEW_DOCS');
+                      }}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all h-full ${
+                        sourceMode === 'NEW_DOCS'
+                          ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                          : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center shrink-0">
+                            {sourceMode === 'NEW_DOCS' && (
+                              <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-[#09331F]">
+                            مستندات جديدة فقط
+                          </span>
                         </div>
-                        <span className="text-xs font-bold text-[#09331F]">
-                          مستندات جديدة فقط (New RCSA)
-                        </span>
+                        <span className="text-[10px] text-sky-800 font-bold shrink-0">بداية نظيفة</span>
                       </div>
-                      <span className="text-[10px] text-sky-800 font-bold">بداية نظيفة</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
-                      بدء تقييم جديد اعتماداً على المستندات والأدلة المرفوعة حديثاً دون استيراد مخاطر سابقة.
-                    </p>
-                  </div>
+                  </HoverTooltip>
 
                   {/* Option 2: Update Existing Approved RCSA */}
-                  <div
-                    data-testid="card-mode-historical"
-                    onClick={() => {
-                      setWorkflowMode('UPDATE');
-                      setSourceMode('HISTORICAL');
-                      setUseHistoricalSources(true);
-                      handleStartSession('UPDATE', undefined, 'HISTORICAL');
-                    }}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      sourceMode === 'HISTORICAL'
-                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
-                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
-                    }`}
+                  <HoverTooltip
+                    title="تحديث تقييم سابق معتمد"
+                    description="استيراد مخاطر وضوابط النسخة المعتمدة وسجل الحوادث والتفتيش مع إبقاء النسخة الأصلية غير قابلة للتغيير."
+                    className="block w-full"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {sourceMode === 'HISTORICAL' && (
-                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
-                          )}
+                    <div
+                      data-testid="card-mode-historical"
+                      onClick={() => {
+                        setWorkflowMode('UPDATE');
+                        setSourceMode('HISTORICAL');
+                        setUseHistoricalSources(true);
+                        handleStartSession('UPDATE', undefined, 'HISTORICAL');
+                      }}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all h-full ${
+                        sourceMode === 'HISTORICAL'
+                          ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                          : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center shrink-0">
+                            {sourceMode === 'HISTORICAL' && (
+                              <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-[#09331F]">
+                            الاستعانة ببيانات سابقة
+                          </span>
                         </div>
-                        <span className="text-xs font-bold text-[#09331F]">
-                          الاستعانة ببيانات الوحدة السابقة (Update)
-                        </span>
+                        <span className="text-[10px] text-[#006547] font-bold shrink-0">تحديث دوري</span>
                       </div>
-                      <span className="text-[10px] text-[#006547] font-bold">تحديث دوري</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
-                      استيراد مخاطر وضوابط النسخة المعتمدة وسجل الحوادث والتفتيش مع إبقاء النسخة الأصلية غير قابلة للتغيير.
-                    </p>
 
-                    {(sourceMode === 'HISTORICAL' || sourceMode === 'COMBINED') && unitApprovedAssessments.length > 0 && (
-                      <div
-                        className="mt-3 pt-3 border-t border-[#E5E3DE] pr-6"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <label className="block text-[10px] font-bold text-slate-700 mb-1">
-                          حدد التقييم المعتمد المرجعي:
-                        </label>
-                        <select
-                          value={baseAssessmentId}
-                          onChange={(e) => {
-                            if (e.target.value === 'OTHER') return;
-                            const newBaseId = e.target.value;
-                            setBaseAssessmentId(newBaseId);
-                            handleStartSession(sourceMode === 'COMBINED' ? 'NEW' : 'UPDATE', newBaseId, sourceMode);
-                          }}
-                          className="w-full min-h-9 px-2.5 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
+                      {(sourceMode === 'HISTORICAL' || sourceMode === 'COMBINED') && unitApprovedAssessments.length > 0 && (
+                        <div
+                          className="mt-3 pt-2.5 border-t border-[#E5E3DE]"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {unitApprovedAssessments.map((a: any) => (
-                            <option key={a.id} value={a.id}>
-                              {a.timestamps?.primary_version_label_ar || a.title_ar || a.title} (نسخة{' '}
-                              {a.version_number})
-                            </option>
-                          ))}
-                          <option value="OTHER">أخرى</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
+                          <label className="block text-[10px] font-bold text-slate-700 mb-1">
+                            التقييم المعتمد المرجعي:
+                          </label>
+                          <select
+                            value={baseAssessmentId}
+                            onChange={(e) => {
+                              if (e.target.value === 'OTHER') return;
+                              const newBaseId = e.target.value;
+                              setBaseAssessmentId(newBaseId);
+                              handleStartSession(sourceMode === 'COMBINED' ? 'NEW' : 'UPDATE', newBaseId, sourceMode);
+                            }}
+                            className="w-full min-h-9 px-2.5 py-1 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006547]"
+                          >
+                            {unitApprovedAssessments.map((a: any) => (
+                              <option key={a.id} value={a.id}>
+                                {a.timestamps?.primary_version_label_ar || a.title_ar || a.title} (نسخة{' '}
+                                {a.version_number})
+                              </option>
+                            ))}
+                            <option value="OTHER">أخرى</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </HoverTooltip>
 
                   {/* Option 3: Combined Dual-Source (New Documents + Historical Unit Data Together) */}
-                  <div
-                    data-testid="card-mode-combined"
-                    onClick={() => {
-                      setWorkflowMode('NEW');
-                      setSourceMode('COMBINED');
-                      setUseHistoricalSources(true);
-                      handleStartSession('NEW', undefined, 'COMBINED');
-                    }}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      sourceMode === 'COMBINED'
-                        ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
-                        : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
-                    }`}
+                  <HoverTooltip
+                    title="مصدر مزدوج (جديد + سابق)"
+                    description="الجمع بين رفع مستندات جديدة والاستعانة بمخاطر الوحدة السابقة وسجلات الحوادث والتفتيش في تقييم واحد متكامل."
+                    className="block w-full"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center">
-                          {sourceMode === 'COMBINED' && (
-                            <div className="w-2 h-2 rounded-full bg-[#006547]" />
-                          )}
+                    <div
+                      data-testid="card-mode-combined"
+                      onClick={() => {
+                        setWorkflowMode('NEW');
+                        setSourceMode('COMBINED');
+                        setUseHistoricalSources(true);
+                        handleStartSession('NEW', undefined, 'COMBINED');
+                      }}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all h-full ${
+                        sourceMode === 'COMBINED'
+                          ? 'border-[#006547] bg-white ring-1 ring-[#006547]/40 shadow-xs'
+                          : 'border-[#DCDAD5] bg-white hover:border-[#006547]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-[#006547] flex items-center justify-center shrink-0">
+                            {sourceMode === 'COMBINED' && (
+                              <div className="w-2 h-2 rounded-full bg-[#006547]" />
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-[#09331F]">
+                            جديد + بيانات سابقة معاً
+                          </span>
                         </div>
-                        <span className="text-xs font-bold text-[#09331F]">
-                          مستندات جديدة + بيانات الوحدة السابقة معاً
-                        </span>
+                        <span className="text-[10px] text-amber-800 font-bold shrink-0">مصدر مزدوج</span>
                       </div>
-                      <span className="text-[10px] text-amber-800 font-bold">مصدر مزدوج</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 pr-6 leading-relaxed">
-                      الجمع بين رفع مستندات جديدة والاستعانة بمخاطر الوحدة السابقة وسجلات الحوادث والتفتيش في تقييم واحد متكامل.
-                    </p>
-                  </div>
+                  </HoverTooltip>
                 </div>
 
                 {/* Active session resumption banner if exists and not currently selected */}

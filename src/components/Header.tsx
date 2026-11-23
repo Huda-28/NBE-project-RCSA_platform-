@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { PageId } from './Sidebar.js';
+import { HoverTooltip } from './HoverTooltip.js';
 import { LogOut, ChevronLeft, Menu, X } from 'lucide-react';
 
 interface HeaderProps {
@@ -64,19 +65,20 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => onSelectPage?.('dashboard')}
-            className="h-10 flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F79C1E] rounded-lg group"
-            title="العودة إلى لوحة المعلومات التنفيذية"
-          >
-            <img
-              src="/assets/nbe-logo-white.png"
-              alt="البنك الأهلي المصري - National Bank of Egypt"
-              referrerPolicy="no-referrer"
-              className="h-8 sm:h-9 w-auto object-contain max-w-[140px] sm:max-w-[175px] transition-transform duration-150 group-hover:scale-[1.01]"
-            />
-          </button>
+          <HoverTooltip description="العودة إلى لوحة المعلومات التنفيذية" side="bottom">
+            <button
+              type="button"
+              onClick={() => onSelectPage?.('dashboard')}
+              className="h-10 flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F79C1E] rounded-lg group"
+            >
+              <img
+                src="/assets/nbe-logo-white.png"
+                alt="البنك الأهلي المصري - National Bank of Egypt"
+                referrerPolicy="no-referrer"
+                className="h-8 sm:h-9 w-auto object-contain max-w-[140px] sm:max-w-[175px] transition-transform duration-150 group-hover:scale-[1.01]"
+              />
+            </button>
+          </HoverTooltip>
 
           <div className="hidden md:flex flex-col border-r border-white/15 pr-4 min-w-0">
             <h1 className="text-sm font-bold tracking-tight text-white font-['Cairo'] truncate">
@@ -113,41 +115,48 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Zone 3: User Profile & Logout Action */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {user && (
-            <div className="flex items-center gap-2.5 bg-[#062315]/75 px-2.5 sm:px-3 py-1.5 rounded-xl border border-white/15">
-              <div className="w-8 h-8 rounded-lg bg-[#006547] border border-[#F79C1E]/60 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                {primaryRole === 'RISK_ADMIN'
-                  ? 'أ'
-                  : primaryRole === 'AUDITOR'
-                    ? 'ت'
-                    : primaryRole === 'CHECKER'
-                      ? 'م'
-                      : 'ع'}
-              </div>
-              <div className="text-right hidden sm:block">
-                <div className="text-xs font-bold leading-tight text-white whitespace-nowrap">
-                  {user.full_name}
+            <HoverTooltip
+              title={user.full_name}
+              description={`الرقم الوظيفي: ${user.employee_id} · الصلاحية: ${roleLabel[primaryRole || ''] || 'موظف مصرفي'}`}
+              side="bottom"
+            >
+              <div className="flex items-center gap-2.5 bg-[#062315]/75 px-2.5 sm:px-3 py-1.5 rounded-xl border border-white/15">
+                <div className="w-8 h-8 rounded-lg bg-[#006547] border border-[#F79C1E]/60 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  {primaryRole === 'RISK_ADMIN'
+                    ? 'أ'
+                    : primaryRole === 'AUDITOR'
+                      ? 'ت'
+                      : primaryRole === 'CHECKER'
+                        ? 'م'
+                        : 'ع'}
                 </div>
-                <div className="text-[10px] text-emerald-200/90 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
-                  <span className="font-mono tabular-nums text-emerald-100">{user.employee_id}</span>
-                  <span aria-hidden="true" className="text-white/40">·</span>
-                  <span className="font-semibold text-[#F79C1E]">
-                    {roleLabel[primaryRole || ''] || 'موظف مصرفي'}
-                  </span>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-bold leading-tight text-white whitespace-nowrap">
+                    {user.full_name}
+                  </div>
+                  <div className="text-[10px] text-emerald-200/90 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                    <span className="font-mono tabular-nums text-emerald-100">{user.employee_id}</span>
+                    <span aria-hidden="true" className="text-white/40">·</span>
+                    <span className="font-semibold text-[#F79C1E]">
+                      {roleLabel[primaryRole || ''] || 'موظف مصرفي'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </HoverTooltip>
           )}
 
-          <button
-            type="button"
-            onClick={logout}
-            title="تسجيل الخروج"
-            aria-label="تسجيل الخروج"
-            className="min-h-10 px-3 py-2 rounded-xl bg-white/10 hover:bg-rose-900/80 text-slate-100 hover:text-white border border-white/15 transition-colors duration-150 flex items-center gap-1.5 text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F79C1E]"
-          >
-            <LogOut className="w-4 h-4 text-rose-300 shrink-0" />
-            <span className="hidden sm:inline">خروج</span>
-          </button>
+          <HoverTooltip description="إنهاء جلسة العمل الحالية والعودة لشاشة الدخول" side="bottom">
+            <button
+              type="button"
+              onClick={logout}
+              aria-label="تسجيل الخروج"
+              className="min-h-10 px-3 py-2 rounded-xl bg-white/10 hover:bg-rose-900/80 text-slate-100 hover:text-white border border-white/15 transition-colors duration-150 flex items-center gap-1.5 text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F79C1E]"
+            >
+              <LogOut className="w-4 h-4 text-rose-300 shrink-0" />
+              <span className="hidden sm:inline">خروج</span>
+            </button>
+          </HoverTooltip>
         </div>
       </div>
     </header>

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { PageId } from '../components/Sidebar.js';
 import { AppNavigationState } from '../App.js';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
+import { HoverTooltip, InfoHint } from '../components/HoverTooltip.js';
 import {
   Bot as BotIcon,
   Cpu as CpuIcon,
@@ -905,208 +906,243 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
       />
 
       {/* Main Executive Page Header */}
-      <div className="bg-white p-5 rounded-2xl border border-[#DCDAD5] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center shrink-0 shadow-inner border border-[#006547]">
-            <BotIcon className="w-6 h-6" />
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#DCDAD5] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center shrink-0 border border-[#006547]">
+            <BotIcon className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-xl font-extrabold text-[#09331F]">
-                منظومة الوكيل الذكي وقاعدة المعرفة الشاملة (RAG) لإعداد RCSA
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-extrabold text-[#09331F]">
+                الوكيل الذكي وقاعدة المعرفة (RAG)
               </h2>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-50 text-[#006547] font-bold border border-emerald-300">
-                محرك RAG متعدد الصيغ + استدلال شامل (29 عموداً)
-              </span>
+              <InfoHint
+                title="قدرات الوكيل الذكي المصرفي"
+                description="يدعم فهرسة واستخلاص البيانات من PDF وWord وExcel وCSV وJSON وXML وPPTX وZIP وبناء مصفوفة RCSA كاملة من 29 عموداً (C إلى AE)."
+              />
             </div>
-            <p className="text-xs text-slate-600 mt-1">
-              ارفع أي نوع من الملفات أو الجداول (PDF, Word, Excel, CSV, JSON, XML, PPTX, TXT, ZIP)، واسأل أي سؤال عنها، وولّد مصفوفة RCSA عالية الدقة لكافة وحدات العمل.
+            <p className="text-xs text-slate-600 mt-0.5">
+              ارفع المستندات التشغيلية، اطرح أسئلتك، واستنبط مصفوفة المخاطر والضوابط تلقائياً.
             </p>
           </div>
         </div>
 
         {/* Primary Action Header Bar: Upload Documents & Paste Data */}
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          <button
-            type="button"
-            disabled={uploadingDocs || !sessionId}
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-40 transition-all active:scale-98"
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <HoverTooltip
+            title="رفع ملفات للتحليل"
+            description="رفع مستندات الإجراءات (SOP) أو سجل الحوادث أو تقارير التفتيش بأي صيغة وفهرستها فوراً في محرك RAG."
+            side="bottom"
           >
-            <FileUpIcon className="w-4 h-4 text-[#F79C1E]" />
-            <span>{uploadingDocs ? 'جاري رفع وفهرسة الملفات...' : 'رفع ملفات للتحليل (كافة الصيغ)'}</span>
-          </button>
+            <button
+              type="button"
+              disabled={uploadingDocs || !sessionId}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-40 transition-all"
+            >
+              <FileUpIcon className="w-4 h-4 text-[#F79C1E]" />
+              <span>{uploadingDocs ? 'جاري الفهرسة...' : 'رفع ملفات للتحليل'}</span>
+            </button>
+          </HoverTooltip>
 
-          <button
-            type="button"
-            disabled={uploadingDocs || !sessionId}
-            onClick={() => setShowPasteModal(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] border border-[#DCDAD5] text-[#09331F] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+          <HoverTooltip
+            title="لصق نص أو جدول مباشر"
+            description="إدخال نص أو جدول منسوخ من Word أو Excel مباشرة في قاعدة المعرفة دون الحاجة لحفظه كملف."
+            side="bottom"
           >
-            <ClipboardPasteIcon className="w-4 h-4 text-[#006547]" />
-            <span>لصق نص / جدول مباشر</span>
-          </button>
+            <button
+              type="button"
+              disabled={uploadingDocs || !sessionId}
+              onClick={() => setShowPasteModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] border border-[#DCDAD5] text-[#09331F] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <ClipboardPasteIcon className="w-4 h-4 text-[#006547]" />
+              <span>لصق نص / جدول</span>
+            </button>
+          </HoverTooltip>
         </div>
       </div>
 
       {/* Interactive 3-Step RCSA Lifecycle Progress Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white p-3.5 rounded-2xl border border-[#DCDAD5] shadow-xs">
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="p-3 rounded-xl bg-[#F8F8F6] hover:bg-emerald-50/50 border border-[#E5E3DE] hover:border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white p-3 rounded-2xl border border-[#DCDAD5] shadow-xs">
+        <HoverTooltip
+          title="الخطوة 1: تغذية المعرفة"
+          description="انقر لرفع مستندات وحدة العمل أو مراجعة المراجع المرفقة قبل بدء التحليل."
+          className="block w-full"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-[#09331F] text-[#F79C1E] font-mono font-bold text-xs flex items-center justify-center shrink-0">
-              1
-            </span>
-            <div className="min-w-0">
-              <div className="text-xs font-extrabold text-[#09331F] truncate">
-                تغذية المعرفة وفهرسة المستندات
-              </div>
-              <div className="text-[10px] text-slate-600 tabular-nums truncate">
-                {docsList.length > 0
-                  ? `${docsList.length} ملفات مرفقة بالجلسة`
-                  : 'مراجع الوحدة أو استدلال شامل بدون ملفات'}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="p-3 rounded-xl bg-[#F8F8F6] hover:bg-emerald-50/50 border border-[#E5E3DE] hover:border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-7 h-7 rounded-lg bg-[#09331F] text-[#F79C1E] font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                1
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold text-[#09331F] truncate">
+                  فهرسة المستندات
+                </div>
+                <div className="text-[10px] text-slate-600 tabular-nums truncate">
+                  {docsList.length > 0 ? `${docsList.length} ملفات مرفقة` : 'جاهز لرفع الملفات'}
+                </div>
               </div>
             </div>
+            <FileUpIcon className="w-4 h-4 text-[#006547] shrink-0" />
           </div>
-          <FileUpIcon className="w-4 h-4 text-[#006547] shrink-0" />
-        </div>
+        </HoverTooltip>
 
-        <div
-          onClick={() => {
-            if (!sendingMsg) {
-              handleSendMessage(
-                'قم بتحليل كافة المستندات المرفوعة بالجلسة، واقتراح قائمة المخاطر والضوابط بدقة عالية، وحساب الأثر المالي المقدر، والأثر غير المالي (NFI)، وركائز ESG، والتصنيف الهيكلي L1/L2/L3.'
-              );
-            }
-          }}
-          className="p-3 rounded-xl bg-[#F8F8F6] hover:bg-emerald-50/50 border border-[#E5E3DE] hover:border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+        <HoverTooltip
+          title="الخطوة 2: استنباط التوصيات"
+          description="انقر لتشغيل التحليل التلقائي للمستندات واقتراح المخاطر والضوابط وتقييم NFI/ESG."
+          className="block w-full"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-[#006547] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
-              2
-            </span>
-            <div className="min-w-0">
-              <div className="text-xs font-extrabold text-[#09331F] truncate">
-                توليد ومراجعة توصيات RCSA
-              </div>
-              <div className="text-[10px] text-slate-600 tabular-nums truncate">
-                {proposals.length} توصيات مستنبطة • {acceptedProposalsCount} مقبولة
+          <div
+            onClick={() => {
+              if (!sendingMsg) {
+                handleSendMessage(
+                  'قم بتحليل كافة المستندات المرفوعة بالجلسة، واقتراح قائمة المخاطر والضوابط بدقة عالية، وحساب الأثر المالي المقدر، والأثر غير المالي (NFI)، وركائز ESG، والتصنيف الهيكلي L1/L2/L3.'
+                );
+              }
+            }}
+            className="p-3 rounded-xl bg-[#F8F8F6] hover:bg-emerald-50/50 border border-[#E5E3DE] hover:border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-7 h-7 rounded-lg bg-[#006547] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                2
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold text-[#09331F] truncate">
+                  توليد توصيات RCSA
+                </div>
+                <div className="text-[10px] text-slate-600 tabular-nums truncate">
+                  {proposals.length} توصية • {acceptedProposalsCount} مقبولة
+                </div>
               </div>
             </div>
+            <TargetIcon className="w-4 h-4 text-[#F79C1E] shrink-0" />
           </div>
-          <TargetIcon className="w-4 h-4 text-[#F79C1E] shrink-0" />
-        </div>
+        </HoverTooltip>
 
-        <div
-          onClick={handleCreateDraftAndOpenReview}
-          className="p-3 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+        <HoverTooltip
+          title="الخطوة 3: فتح جدول المراجعة"
+          description="تحويل التوصيات المقبولة إلى مسودة RCSA رسمية من 29 عموداً وفتحها في جدول المراجعة."
+          className="block w-full"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-[#F79C1E] text-[#09331F] font-mono font-bold text-xs flex items-center justify-center shrink-0">
-              3
-            </span>
-            <div className="min-w-0">
-              <div className="text-xs font-extrabold text-[#09331F] truncate">
-                اعتماد المصفوفة والتصدير الرسمي
-              </div>
-              <div className="text-[10px] text-[#006547] font-semibold truncate">
-                ملء تلقائي لـ 29 عموداً (C إلى AE) وتصدير Excel
+          <div
+            onClick={handleCreateDraftAndOpenReview}
+            className="p-3 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-[#006547]/40 transition-all cursor-pointer flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-7 h-7 rounded-lg bg-[#F79C1E] text-[#09331F] font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                3
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold text-[#09331F] truncate">
+                  اعتماد المصفوفة والتصدير
+                </div>
+                <div className="text-[10px] text-[#006547] font-semibold truncate">
+                  29 عموداً رسمياً (C إلى AE)
+                </div>
               </div>
             </div>
+            <TablePropertiesIcon className="w-4 h-4 text-[#006547] shrink-0" />
           </div>
-          <TablePropertiesIcon className="w-4 h-4 text-[#006547] shrink-0" />
-        </div>
+        </HoverTooltip>
       </div>
 
       {/* Mode Selector (سريع / دقيق) & RAG Engine Telemetry Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#DCDAD5] shadow-xs space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Selector: سريع vs دقيق */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#09331F] shrink-0">
               <CpuIcon className="w-4 h-4 text-[#006547]" />
               <span>وضع الاستدلال:</span>
             </div>
 
             <div
-              className="grid grid-cols-2 gap-2 bg-[#F3F4F2] p-1.5 rounded-xl border border-[#DCDAD5]"
+              className="inline-flex items-center gap-1 bg-[#F3F4F2] p-1 rounded-xl border border-[#DCDAD5]"
               role="group"
               aria-label="اختيار وضع الاستدلال"
             >
-              <button
-                type="button"
-                disabled={switchingModel}
-                onClick={() => handleSwitchQwenModel('qwen-0.5b')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 text-right ${
-                  selectedModelProfile === 'qwen-0.5b'
-                    ? 'bg-[#006547] text-white shadow-xs ring-2 ring-[#F79C1E]/80'
-                    : 'bg-white text-slate-800 hover:bg-[#EFECE6] hover:text-slate-950 border border-[#DCDAD5]'
-                }`}
+              <HoverTooltip
+                title="الوضع السريع"
+                description="استجابة فورية للأسئلة المباشرة والملخصات السريعة من المستندات."
+                side="bottom"
               >
-                <ZapIcon
-                  className={`w-4 h-4 shrink-0 ${
-                    selectedModelProfile === 'qwen-0.5b' ? 'text-[#F79C1E]' : 'text-amber-600'
+                <button
+                  type="button"
+                  disabled={switchingModel}
+                  onClick={() => handleSwitchQwenModel('qwen-0.5b')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedModelProfile === 'qwen-0.5b'
+                      ? 'bg-[#006547] text-white shadow-xs'
+                      : 'text-slate-700 hover:text-[#09331F]'
                   }`}
-                />
-                <div>
-                  <div className="text-sm font-bold">سريع</div>
-                  <div
-                    className={`text-[10px] font-normal ${
-                      selectedModelProfile === 'qwen-0.5b' ? 'text-emerald-100' : 'text-slate-600'
+                >
+                  <ZapIcon
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      selectedModelProfile === 'qwen-0.5b' ? 'text-[#F79C1E]' : 'text-amber-600'
                     }`}
-                  >
-                    استجابة فورية للأسئلة المباشرة والملخصات السريعة
-                  </div>
-                </div>
-              </button>
+                  />
+                  <span>سريع</span>
+                </button>
+              </HoverTooltip>
 
-              <button
-                type="button"
-                disabled={switchingModel}
-                onClick={() => handleSwitchQwenModel('qwen-4b')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 text-right ${
-                  selectedModelProfile === 'qwen-4b'
-                    ? 'bg-[#09331F] text-white shadow-xs ring-2 ring-[#F79C1E]'
-                    : 'bg-white text-slate-800 hover:bg-[#EFECE6] hover:text-slate-950 border border-[#DCDAD5]'
-                }`}
+              <HoverTooltip
+                title="الوضع الدقيق"
+                description="دقة فائقة لتحليل الملفات المعقدة واستنباط مصفوفة RCSA الشاملة وتصنيفات L1/L2/L3."
+                side="bottom"
               >
-                <TargetIcon
-                  className={`w-4 h-4 shrink-0 ${
-                    selectedModelProfile === 'qwen-4b' ? 'text-[#F79C1E]' : 'text-[#006547]'
+                <button
+                  type="button"
+                  disabled={switchingModel}
+                  onClick={() => handleSwitchQwenModel('qwen-4b')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedModelProfile === 'qwen-4b'
+                      ? 'bg-[#09331F] text-white shadow-xs'
+                      : 'text-slate-700 hover:text-[#09331F]'
                   }`}
-                />
-                <div>
-                  <div className="text-sm font-bold">دقيق</div>
-                  <div
-                    className={`text-[10px] font-normal ${
-                      selectedModelProfile === 'qwen-4b' ? 'text-emerald-100' : 'text-slate-600'
+                >
+                  <TargetIcon
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      selectedModelProfile === 'qwen-4b' ? 'text-[#F79C1E]' : 'text-[#006547]'
                     }`}
-                  >
-                    دقة فائقة لتحليل الملفات وبناء مصفوفة RCSA الشاملة
-                  </div>
-                </div>
-              </button>
+                  />
+                  <span>دقيق</span>
+                </button>
+              </HoverTooltip>
             </div>
           </div>
 
           {/* Live RAG Knowledge Base Stats */}
           <div className="flex items-center gap-2 flex-wrap text-[11px] tabular-nums">
-            <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5">
-              <DatabaseIcon className="w-3.5 h-3.5 text-[#006547]" />
-              <span>فهرس RAG النشط:</span>
-              <strong className="text-[#09331F]">{ragStats?.documents_count ?? docsList.length} ملفات</strong>
-              <span className="text-slate-400">•</span>
-              <strong className="text-[#09331F]">{ragStats?.total_chunks_count ?? 0} مقطع نصي</strong>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5">
-              <ShieldCheckIcon className="w-3.5 h-3.5 text-[#006547]" />
-              <span>مرجع التصنيف:</span>
-              <strong className="text-[#09331F]">{ragStats?.taxonomy_nodes_count ?? 84} بند L1-L3</strong>
-              <span className="text-slate-400">•</span>
-              <strong className="text-[#09331F]">{ragStats?.esg_items_count ?? 34} معيار ESG</strong>
-            </div>
+            <HoverTooltip
+              title="فهرس المستندات (RAG)"
+              description="عدد الملفات والمقاطع النصية المفهرسة حالياً للبحث والاستدلال داخل الجلسة."
+              side="bottom"
+            >
+              <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5 cursor-help">
+                <DatabaseIcon className="w-3.5 h-3.5 text-[#006547]" />
+                <span>فهرس RAG:</span>
+                <strong className="text-[#09331F]">{ragStats?.documents_count ?? docsList.length} ملفات</strong>
+                <span className="text-slate-400">·</span>
+                <strong className="text-[#09331F]">{ragStats?.total_chunks_count ?? 0} مقطع</strong>
+              </div>
+            </HoverTooltip>
+            <HoverTooltip
+              title="مرجعية التصنيف المعتمدة"
+              description="إجمالي عقد تصنيف بازل (L1-L3) وحالات الاستدامة المرجعية (ESG CBE) المتاحة للمطابقة."
+              side="bottom"
+            >
+              <div className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] border border-[#DCDAD5] text-slate-800 flex items-center gap-1.5 cursor-help">
+                <ShieldCheckIcon className="w-3.5 h-3.5 text-[#006547]" />
+                <span>المرجع:</span>
+                <strong className="text-[#09331F]">{ragStats?.taxonomy_nodes_count ?? 84} L1-L3</strong>
+                <span className="text-slate-400">·</span>
+                <strong className="text-[#09331F]">{ragStats?.esg_items_count ?? 34} ESG</strong>
+              </div>
+            </HoverTooltip>
           </div>
         </div>
 
@@ -1116,7 +1152,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <LayersIcon className="w-4 h-4 text-[#006547]" />
             <label htmlFor="agent-bu-select" className="text-xs font-bold text-[#09331F]">
-              الوحدة التنظيمية:
+              الوحدة:
             </label>
             <select
               id="agent-bu-select"
@@ -1128,7 +1164,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
                 }
                 handleUnitChange(e.target.value);
               }}
-              className="px-3.5 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#006547]"
+              className="px-3 py-1.5 text-xs font-bold border border-[#DCDAD5] rounded-xl bg-[#F8F8F6] text-slate-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#006547]"
             >
               {businessUnits.map((bu) => (
                 <option key={bu.id} value={bu.id}>
@@ -1137,56 +1173,64 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
               ))}
               <option value="OTHER">أخرى</option>
             </select>
-            <button
-              type="button"
-              data-testid="agent-add-unit-btn"
-              onClick={() => setShowAddUnitModal(true)}
-              className="px-3 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
-            >
-              <PlusCircleIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>+ وحدة تنظيمية أخرى</span>
-            </button>
+            <HoverTooltip title="إضافة وحدة جديدة" description="إنشاء وحدة أو إدارة جديدة للعمل عليها داخل الوكيل الذكي.">
+              <button
+                type="button"
+                data-testid="agent-add-unit-btn"
+                onClick={() => setShowAddUnitModal(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+              >
+                <PlusCircleIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
+                <span>+ وحدة</span>
+              </button>
+            </HoverTooltip>
           </div>
 
           {/* Workflow Mode Selector Buttons */}
-          <div className="flex items-center gap-2 bg-[#F3F4F2] p-1 rounded-xl border border-[#DCDAD5]">
-            <button
-              type="button"
-              onClick={() => handleSwitchWorkflowMode('NEW')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                workflowMode === 'NEW'
-                  ? 'bg-[#006547] text-white shadow-2xs'
-                  : 'text-slate-700 hover:text-[#09331F]'
-              }`}
-            >
-              <PlusCircleIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>إنشاء RCSA جديدة</span>
-            </button>
+          <div className="flex items-center gap-1 bg-[#F3F4F2] p-1 rounded-xl border border-[#DCDAD5]">
+            <HoverTooltip title="تقييم RCSA جديد" description="إنشاء مصفوفة مخاطر جديدة لهذه الوحدة من الصفر اعتماداً على المستندات المرفوعة.">
+              <button
+                type="button"
+                onClick={() => handleSwitchWorkflowMode('NEW')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  workflowMode === 'NEW'
+                    ? 'bg-[#006547] text-white shadow-2xs'
+                    : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                <PlusCircleIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
+                <span>RCSA جديدة</span>
+              </button>
+            </HoverTooltip>
 
-            <button
-              type="button"
-              onClick={() => handleSwitchWorkflowMode('UPDATE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                workflowMode === 'UPDATE'
-                  ? 'bg-[#006547] text-white shadow-2xs'
-                  : 'text-slate-700 hover:text-[#09331F]'
-              }`}
-            >
-              <RefreshCcwIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>تحديث RCSA سابقة</span>
-            </button>
+            <HoverTooltip title="تحديث تقييم سابق" description="استيراد تقييم معتمد سابق للوحدة وتحديث مخاطره وضوابطه وفق الأدلة الجديدة.">
+              <button
+                type="button"
+                onClick={() => handleSwitchWorkflowMode('UPDATE')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  workflowMode === 'UPDATE'
+                    ? 'bg-[#006547] text-white shadow-2xs'
+                    : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                <RefreshCcwIcon className="w-3.5 h-3.5 text-[#F79C1E]" />
+                <span>تحديث سابقة</span>
+              </button>
+            </HoverTooltip>
           </div>
 
           {/* Active Session Info */}
           {session && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="px-2.5 py-0.5 rounded-md bg-[#09331F] text-[#F79C1E] font-mono tabular-nums font-bold text-[11px]">
-                {session.id}
-              </span>
-              <span className="font-bold text-slate-900 text-[11px] truncate max-w-[220px]">
-                {session.session_title}
-              </span>
-            </div>
+            <HoverTooltip title="معرف الجلسة النشطة" description={session.session_title} side="bottom">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-0.5 rounded-md bg-[#09331F] text-[#F79C1E] font-mono tabular-nums font-bold text-[11px]">
+                  {session.id}
+                </span>
+                <span className="font-bold text-slate-900 text-[11px] truncate max-w-[180px]">
+                  {session.session_title}
+                </span>
+              </div>
+            </HoverTooltip>
           )}
         </div>
       </div>
@@ -1482,7 +1526,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({
             </div>
 
             {/* Quick Prompt Actions for User */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <div className="flex items-center gap-1.5 flex-wrap pb-1">
               <button
                 type="button"
                 disabled={sendingMsg}

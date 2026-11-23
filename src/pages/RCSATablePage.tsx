@@ -6,6 +6,7 @@ import { AppNavigationState } from '../App.js';
 import { Phase2CReviewPanel } from '../components/Phase2CReviewPanel.js';
 import { OfficialRcsaReportModal } from '../components/OfficialRcsaReportModal.js';
 import { CreateBusinessUnitModal } from '../components/CreateBusinessUnitModal.js';
+import { HoverTooltip, InfoHint } from '../components/HoverTooltip.js';
 import { getAssessmentTimestampDetails, formatWorkflowStatusAr } from '../utils/dateFormat.js';
 import {
   Search,
@@ -63,25 +64,35 @@ const CONTROL_METHOD_OPTIONS = [
   { value: 'Manual', label: 'يدوي (Manual)' },
 ];
 
-const PROVENANCE_LABELS_AR: Record<string, { text: string; cls: string }> = {
+const PROVENANCE_LABELS_AR: Record<string, { text: string; code: string; desc: string; cls: string }> = {
   ORIGINAL_SOURCE_VALUE: {
-    text: 'ORIGINAL_SOURCE_VALUE (قيمة المصدر الأصلي)',
-    cls: 'bg-slate-200 text-slate-800 border-slate-300',
+    text: 'مصدر أصلي',
+    code: 'ORIGINAL_SOURCE_VALUE',
+    desc: 'قيمة مستخرجة مباشرة من سجل أو مستند المصدر الأصلي دون تعديل.',
+    cls: 'bg-slate-100 text-slate-700 border-slate-300',
   },
   CURRENT_DRAFT_VALUE: {
-    text: 'CURRENT_DRAFT_VALUE (مدخل مسودة معدل)',
-    cls: 'bg-sky-100 text-sky-900 border-sky-300',
+    text: 'تعديل مسودة',
+    code: 'CURRENT_DRAFT_VALUE',
+    desc: 'قيمة معدلة يدوياً بواسطة معد التقييم (Maker) في المسودة الحالية.',
+    cls: 'bg-sky-50 text-sky-900 border-sky-300',
   },
   CALCULATED_VALUE: {
-    text: 'CALCULATED_VALUE (محسوب بمحرك بايثون)',
-    cls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    text: 'محرك بايثون',
+    code: 'CALCULATED_VALUE',
+    desc: 'مخرج محسوب تلقائياً بمحرك بايثون المعتمد ولا يُعدّل يدوياً.',
+    cls: 'bg-emerald-50 text-emerald-900 border-emerald-300',
   },
   AI_SUGGESTED_VALUE: {
-    text: 'AI_SUGGESTED_VALUE (مقترح التحليل الذكي)',
-    cls: 'bg-amber-100 text-amber-900 border-amber-300',
+    text: 'مقترح ذكي',
+    code: 'AI_SUGGESTED_VALUE',
+    desc: 'صياغة أو تقدير مقترح من الوكيل الذكي ومؤيد بالأدلة لحين قرار المراجع.',
+    cls: 'bg-amber-50 text-amber-900 border-amber-300',
   },
   REVIEWER_APPROVED_VALUE: {
-    text: 'REVIEWER_APPROVED_VALUE (معتمد من المراجع)',
+    text: 'معتمد',
+    code: 'REVIEWER_APPROVED_VALUE',
+    desc: 'قيمة تم اعتمادها رسمياً من المراجع المستقل (Checker).',
     cls: 'bg-[#006547]/15 text-[#09331F] border-[#006547]/40',
   },
 };
@@ -891,9 +902,11 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
   const renderProvenanceBadge = (provKey?: string) => {
     const info = PROVENANCE_LABELS_AR[provKey || 'ORIGINAL_SOURCE_VALUE'] || PROVENANCE_LABELS_AR.ORIGINAL_SOURCE_VALUE;
     return (
-      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${info.cls}`}>
-        {info.text}
-      </span>
+      <HoverTooltip title={info.code} description={info.desc}>
+        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border cursor-help ${info.cls}`}>
+          {info.text}
+        </span>
+      </HoverTooltip>
     );
   };
 
@@ -1010,130 +1023,156 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                 );
               })()}
             </div>
-            <p className="text-xs text-slate-600 mt-1">
-              مراجعة المخاطر والضوابط، واستكمال المدخلات وتوثيق القرارات والتعديلات.
-            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <p className="text-xs text-slate-600">
+                مراجعة المخاطر والضوابط وتوثيق القرارات.
+              </p>
+              <InfoHint
+                title="سجل RCSA الرسمي (29 عموداً)"
+                description="اختر أي مخاطرة من الجدول لاستعراض حساباتها الماليّة، تعديل ضوابطها، أو استكمال الأثر غير المالي (NFI) وESG."
+              />
+            </div>
           </div>
 
           {/* Workflow Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => onNavigate?.({ page: 'business-units', unitId: selectedUnitId })}
-              className="min-h-9 px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <History className="w-3.5 h-3.5 text-[#006547]" />
-              <span>سجل التقييمات والمقارنة للوحدة</span>
-            </button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <HoverTooltip title="سجل التقييمات والمقارنة" description="فتح صفحة وحدات العمل لاستعراض النسخ التاريخية والمقارنة الزمنية لهذه الوحدة." side="bottom">
+              <button
+                type="button"
+                onClick={() => onNavigate?.({ page: 'business-units', unitId: selectedUnitId })}
+                className="min-h-8 px-2.5 py-1 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <History className="w-3.5 h-3.5 text-[#006547]" />
+                <span>سجل الوحدة</span>
+              </button>
+            </HoverTooltip>
 
-            <button
-              type="button"
-              onClick={() => setShowOfficialPreview(prev => !prev)}
-              data-testid="toggle-readiness-preview-btn"
-              className="min-h-9 px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-slate-900 border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-[#006547]" />
-              <span>{showOfficialPreview ? 'إخفاء معاينة النموذج الرسمي' : 'ملخص الجاهزية ومعاينة الأعمدة الرسمية'}</span>
-            </button>
+            <HoverTooltip title="معاينة الأعمدة الرسمية" description="إظهار أو إخفاء جدول القراءة فقط مطابقاً لترتيب أعمدة RCSA الرسمية (من C إلى AE)." side="bottom">
+              <button
+                type="button"
+                onClick={() => setShowOfficialPreview(prev => !prev)}
+                data-testid="toggle-readiness-preview-btn"
+                className="min-h-8 px-2.5 py-1 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-slate-900 border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#006547]" />
+                <span>{showOfficialPreview ? 'إخفاء الأعمدة الرسمية' : 'الأعمدة الرسمية'}</span>
+              </button>
+            </HoverTooltip>
 
             {isEditableDraft && (
               <>
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={handleSaveDraft}
-                  data-testid="save-draft-btn"
-                  className="px-3.5 py-1.5 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-                >
-                  <Save className="w-3.5 h-3.5 text-[#F79C1E]" />
-                  <span>حفظ المسودة</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={handleSubmitForReview}
-                  data-testid="submit-for-review-btn"
-                  className="px-3.5 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>إرسال للمراجعة (Checker)</span>
-                </button>
+                <HoverTooltip title="حفظ المسودة الحالية" description="حفظ كافة التعديلات غير المرسلة على الخادم مع تسجيل أثر التدقيق." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={handleSaveDraft}
+                    data-testid="save-draft-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5 text-[#F79C1E]" />
+                    <span>حفظ المسودة</span>
+                  </button>
+                </HoverTooltip>
+                <HoverTooltip title="إرسال للمراجع المستقل (Checker)" description="تجميد التعديلات وإرسال التقييم للمراجعة والاعتماد الرسمي." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={handleSubmitForReview}
+                    data-testid="submit-for-review-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>إرسال للمراجعة</span>
+                  </button>
+                </HoverTooltip>
               </>
             )}
 
             {workflowStatus === 'IN_REVIEW' && isCheckerOrAdmin && (
               <>
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={() => setShowReturnModal(true)}
-                  data-testid="checker-return-btn"
-                  className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 text-xs font-bold flex items-center gap-1.5"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>إعادة للتعديل (Return)</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={handleCheckerApprove}
-                  data-testid="checker-approve-btn"
-                  className="px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                >
-                  <UserCheck className="w-3.5 h-3.5 text-[#F79C1E]" />
-                  <span>اعتماد التقييم رسمياً (Approve)</span>
-                </button>
+                <HoverTooltip title="إعادة التقييم لمعده (Maker)" description="إرجاع التقييم مع تسجيل الملاحظات الرقابية المطلوب تعديلها." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={() => setShowReturnModal(true)}
+                    data-testid="checker-return-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>إعادة للتعديل</span>
+                  </button>
+                </HoverTooltip>
+                <HoverTooltip title="اعتماد التقييم رسمياً" description="قفل النسخة نهائياً بختم SHA-256 غير قابل للتعديل وإصدار التقارير الرسمية." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={handleCheckerApprove}
+                    data-testid="checker-approve-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-[#F79C1E]" />
+                    <span>اعتماد رسمي</span>
+                  </button>
+                </HoverTooltip>
               </>
             )}
 
             {selectedAssessmentId && (
               <>
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={() => setShowOfficialReportModal(true)}
-                  data-testid="open-official-report-modal-btn"
-                  className="px-3.5 py-1.5 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#F79C1E]/50 text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5 text-[#F79C1E]" />
-                  <span>معاينة التقرير الرسمي (PDF / Excel)</span>
-                </button>
+                <HoverTooltip title="معاينة التقرير الرسمي" description="فتح نافذة معاينة التقرير التنفيذي الكامل للطباعة أو التصدير (PDF / Excel)." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={() => setShowOfficialReportModal(true)}
+                    data-testid="open-official-report-modal-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#F79C1E]/50 text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#F79C1E]" />
+                    <span>معاينة التقرير</span>
+                  </button>
+                </HoverTooltip>
 
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={handleOfficialPdfExport}
-                  data-testid="export-pdf-btn"
-                  className="px-3 py-1.5 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#006547] text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#F79C1E]" />
-                  <span>{workflowStatus === 'APPROVED' ? 'تصدير PDF المعتمد' : 'تصدير PDF (مسودة)'}</span>
-                </button>
+                <HoverTooltip title={workflowStatus === 'APPROVED' ? 'تصدير PDF المعتمد' : 'تصدير PDF (مسودة)'} description="توليد وتنزيل نسخة PDF منسقة للعرض والطباعة." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={handleOfficialPdfExport}
+                    data-testid="export-pdf-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-[#09331F] hover:bg-[#006547] text-white border border-[#006547] text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60 cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#F79C1E]" />
+                    <span>{workflowStatus === 'APPROVED' ? 'PDF المعتمد' : 'PDF مسودة'}</span>
+                  </button>
+                </HoverTooltip>
 
-                <button
-                  type="button"
-                  disabled={isSavingOrRecalculating}
-                  onClick={handleOfficialExport}
-                  data-testid="export-excel-btn"
-                  className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-[#006547]" />{' '}
-                  {workflowStatus === 'APPROVED' ? 'تصدير Excel المعتمد' : 'تنزيل Excel للمراجعة (مسودة)'}
-                </button>
+                <HoverTooltip title={workflowStatus === 'APPROVED' ? 'تصدير Excel المعتمد' : 'تنزيل Excel للمراجعة'} description="تنزيل مصنف Excel رسمي مطابق لنموذج البنك (29 عموداً مع الصيغ)." side="bottom">
+                  <button
+                    type="button"
+                    disabled={isSavingOrRecalculating}
+                    onClick={handleOfficialExport}
+                    data-testid="export-excel-btn"
+                    className="min-h-8 px-3 py-1 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#09331F] border border-[#DCDAD5] text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#006547]" />
+                    <span>{workflowStatus === 'APPROVED' ? 'Excel المعتمد' : 'Excel مسودة'}</span>
+                  </button>
+                </HoverTooltip>
               </>
             )}
 
             {workflowStatus === 'APPROVED' && isMakerOrAdmin && (
-              <button
-                type="button"
-                disabled={isSavingOrRecalculating}
-                onClick={handleCreateDraftFromApproved}
-                data-testid="create-draft-from-approved-btn"
-                className="px-3.5 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
-              >
-                <GitBranch className="w-3.5 h-3.5 text-[#F79C1E]" />
-                <span>إنشاء مسودة جديدة من التقييم المعتمد</span>
-              </button>
+              <HoverTooltip title="إنشاء دورة مراجعة جديدة" description="نسخ هذه النسخة المعتمدة إلى مسودة جديدة قابلة للتعديل مع حفظ الأصل دون تغيير." side="bottom">
+                <button
+                  type="button"
+                  disabled={isSavingOrRecalculating}
+                  onClick={handleCreateDraftFromApproved}
+                  data-testid="create-draft-from-approved-btn"
+                  className="min-h-8 px-3 py-1 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <GitBranch className="w-3.5 h-3.5 text-[#F79C1E]" />
+                  <span>مسودة من المعتمد</span>
+                </button>
+              </HoverTooltip>
             )}
           </div>
         </div>
@@ -1142,7 +1181,7 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           <div className="md:col-span-5 flex items-center gap-2">
             <Building2 className="w-4 h-4 text-[#006547] shrink-0" />
-            <label className="text-xs font-bold text-slate-700 shrink-0">الوحدة التنظيمية:</label>
+            <label className="text-xs font-bold text-slate-700 shrink-0">الوحدة:</label>
             <select
               data-testid="bu-selector"
               value={selectedUnitId}
@@ -1167,20 +1206,22 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               ))}
               <option value="OTHER">أخرى</option>
             </select>
-            <button
-              type="button"
-              data-testid="table-add-unit-btn"
-              onClick={() => setShowAddUnitModal(true)}
-              className="px-2.5 py-1.5 rounded-lg bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 text-[#F79C1E]" />
-              <span>وحدة أخرى</span>
-            </button>
+            <HoverTooltip title="إضافة وحدة جديدة" description="تسجيل وحدة تنظيمية جديدة وإضافتها للقائمة فوراً.">
+              <button
+                type="button"
+                data-testid="table-add-unit-btn"
+                onClick={() => setShowAddUnitModal(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#F79C1E]" />
+                <span>وحدة</span>
+              </button>
+            </HoverTooltip>
           </div>
 
           <div className="md:col-span-5 flex items-center gap-2">
             <Layers className="w-4 h-4 text-[#006547] shrink-0" />
-            <label className="text-xs font-bold text-slate-700 shrink-0">التقييم / المسودة:</label>
+            <label className="text-xs font-bold text-slate-700 shrink-0">التقييم:</label>
             <select
               data-testid="assessment-selector"
               value={selectedAssessmentId}
@@ -1208,15 +1249,17 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
           <div className="md:col-span-2 flex justify-end">
             {isMakerOrAdmin && (
-              <button
-                type="button"
-                onClick={handleCreateManualDraft}
-                data-testid="create-manual-draft-btn"
-                className="w-full px-3 py-1.5 rounded-xl bg-[#E2E6E3] hover:bg-[#D2DCD5] text-[#09331F] border border-[#006547]/40 text-xs font-bold flex items-center justify-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>مسودة يدوية جديدة</span>
-              </button>
+              <HoverTooltip title="مسودة يدوية جديدة" description="فتح مسودة تقييم جديدة فارغة للوحدة المختارة لملئها يدوياً." className="block w-full">
+                <button
+                  type="button"
+                  onClick={handleCreateManualDraft}
+                  data-testid="create-manual-draft-btn"
+                  className="w-full px-3 py-1.5 rounded-xl bg-[#E2E6E3] hover:bg-[#D2DCD5] text-[#09331F] border border-[#006547]/40 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>مسودة جديدة</span>
+                </button>
+              </HoverTooltip>
             )}
           </div>
         </div>
@@ -1296,63 +1339,87 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
 
       {/* 2. Pre-Export Review Readiness Summary Strip (Phase 2D Section 9) */}
       {readiness && (
-        <div className="bg-white p-4 rounded-xl border border-[#DCDAD5] shadow-sm space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-center">
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">إجمالي المخاطر</div>
-              <div className="text-base font-bold font-mono tabular-nums text-slate-900" data-testid="readiness-total-risks">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-[#DCDAD5] shadow-sm space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6]/70 divide-x divide-x-reverse divide-[#E5E3DE] text-center">
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>إجمالي المخاطر</span>
+                <InfoHint title="إجمالي المخاطر" description="العدد الكلي لصفوف المخاطر المسجلة في مسودة التقييم الحالية." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900 mt-0.5" data-testid="readiness-total-risks">
                 {readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#006547]/10 border border-[#006547]/30">
-              <div className="text-[10px] text-slate-700 font-semibold">المخاطر المراجعة</div>
-              <div className="text-base font-bold font-mono tabular-nums text-[#006547]" data-testid="readiness-reviewed-risks">
+            <div className="p-2.5 bg-[#006547]/5">
+              <div className="text-[10px] text-slate-700 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>المراجعة</span>
+                <InfoHint title="المخاطر المراجعة" description="عدد المخاطر التي اعتمد المراجع مراجعتها ضمن المسودة." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-[#006547] mt-0.5" data-testid="readiness-reviewed-risks">
                 {readiness.reviewed_risks} / {readiness.total_risks}
               </div>
             </div>
             <div
-              className={`p-2.5 rounded-lg border ${
+              className={`p-2.5 ${
                 readiness.risks_with_missing_inputs > 0
-                  ? 'bg-amber-50 border-amber-300 text-amber-950'
-                  : 'bg-[#F8F8F6] border-slate-200'
+                  ? 'bg-amber-50/70 text-amber-950'
+                  : ''
               }`}
             >
-              <div className="text-[10px] font-semibold">مدخلات قيد الاستيفاء</div>
-              <div className="text-base font-bold font-mono tabular-nums" data-testid="readiness-missing-inputs">
+              <div className="text-[10px] font-semibold inline-flex items-center gap-1 justify-center">
+                <span>قيد الاستيفاء</span>
+                <InfoHint title="مدخلات ناقصة" description="مخاطر تفتقر لأثر مالي أو تكرار أو تقييم غير مالي مكتمل." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums mt-0.5" data-testid="readiness-missing-inputs">
                 {readiness.risks_with_missing_inputs}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">قرارات بشرية مطلوبة</div>
-              <div className="text-base font-bold font-mono tabular-nums text-amber-800">
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>قرارات بشرية</span>
+                <InfoHint title="قرارات المراجع" description="مخاطر تنتظر قرار القبول النهائي أو مطابقة ESG أو فحص NFI." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-amber-800 mt-0.5">
                 {readiness.risks_requiring_human_decisions}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">اكتمال الحساب المالي</div>
-              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>الحساب المالي</span>
+                <InfoHint title="اكتمال الحساب المالي" description="عدد المخاطر التي اكتمل احتساب الخسارة السنوية والمتبقية لها عبر محرك بايثون." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900 mt-0.5">
                 {readiness.financial_calculation_completeness.completed}/{readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">اكتمال تقييم الضوابط</div>
-              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>تقييم الضوابط</span>
+                <InfoHint title="اكتمال الضوابط" description="المخاطر التي حُسمت فيها فاعلية الضوابط وأهليتها لحساب MAX RRF." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900 mt-0.5">
                 {readiness.control_assessment_completeness.completed}/{readiness.total_risks}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">مقترحات الذكاء المعلقة</div>
-              <div className="text-base font-bold font-mono tabular-nums text-slate-900">
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>مقترحات الذكاء</span>
+                <InfoHint title="مقترحات AI المعلقة" description="عدد التوصيات المقترحة التي لم يبت فيها المراجع بالقبول أو التعديل أو الرفض." />
+              </div>
+              <div className="text-base font-bold font-mono tabular-nums text-slate-900 mt-0.5">
                 {readiness.pending_ai_suggestions_count}
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-[#F8F8F6] border border-slate-200">
-              <div className="text-[10px] text-slate-600 font-semibold">جاهزية الاعتماد</div>
+            <div className="p-2.5">
+              <div className="text-[10px] text-slate-600 font-semibold inline-flex items-center gap-1 justify-center">
+                <span>الجاهزية</span>
+                <InfoHint title="جاهزية الاعتماد والتصدير" description="مؤشر تحقق شروط الاعتماد النهائي وإصدار ملفات RCSA الرسمية." />
+              </div>
               <div className="text-xs font-bold mt-1">
                 {readiness.is_ready_for_final_approval ? (
-                  <span className="text-emerald-800">جاهز للاعتماد ✓</span>
+                  <span className="text-emerald-800">جاهز ✓</span>
                 ) : (
-                  <span className="text-amber-800">يتطلب استكمال مدخلات</span>
+                  <span className="text-amber-800">قيد الاستكمال</span>
                 )}
               </div>
             </div>
@@ -1508,16 +1575,56 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
           <table className="w-full text-right text-[11px]">
             <thead className="bg-[#09331F] text-white">
               <tr>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">المخاطرة</th>
-                <th className="px-2 py-2.5 font-bold">النشاط (D/F)</th>
-                <th className="px-2 py-2.5 font-bold">وصف المخاطرة (G)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">الأثر الفردي (J)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">التكرار (I)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">الخسارة السنوية (K)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">المتلازم (L)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">MAX RRF (S)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">المتبقي (T / U)</th>
-                <th className="px-2 py-2.5 font-bold whitespace-nowrap">الحالة والتنبيهات</th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="معرف المخاطرة (C)" description="الرمز الفريد للمخاطرة وصفوف الضوابط المرتبطة بها في السجل الرسمي." side="bottom">
+                    <span className="cursor-help">المخاطرة</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold">
+                  <HoverTooltip title="النشاط / العملية (D/F)" description="النشاط التشغيلي أو العملية البنكية التي تنشأ ضمنها المخاطرة." side="bottom">
+                    <span className="cursor-help">النشاط (D/F)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold">
+                  <HoverTooltip title="وصف المخاطرة (G)" description="التوصيف الدلالي للسبب والحدث والأثر وفق معايير البنك." side="bottom">
+                    <span className="cursor-help">وصف المخاطرة (G)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="الأثر المالي الفردي (J)" description="قيمة الخسارة المقدرة بالجنيه المصري عند وقوع الحادثة الواحدة." side="bottom">
+                    <span className="cursor-help">الأثر الفردي (J)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="التكرار المتوقع (I)" description="معدل تكرار حدوث المخاطرة سنوياً ومعامل الضرب السنوي." side="bottom">
+                    <span className="cursor-help">التكرار (I)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="الخسارة السنوية المتوقعة (K)" description="حاصل ضرب الأثر الفردي (J) × معامل التكرار السنوي (I) قبل الضوابط." side="bottom">
+                    <span className="cursor-help">الخسارة السنوية (K)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="التقييم المالي الكامن (L)" description="تصنيف شدة الخطر الكامن (L / M / H / VH / C) بناءً على الخسارة السنوية الكامنة." side="bottom">
+                    <span className="cursor-help">المتلازم (L)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="أعلى معامل خفض للضوابط (MAX RRF - S)" description="أكبر نسبة خفض من الضوابط المطبقة والمؤهلة نطاقياً وفق مصفوفة 3×3 المعتمدة." side="bottom">
+                    <span className="cursor-help">MAX RRF (S)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="صافي الخطر المتبقي (T / U)" description="الخسارة المتبقية بالجنيه وتصنيفها بعد خصم معامل MAX RRF من الخسارة الكامنة." side="bottom">
+                    <span className="cursor-help">المتبقي (T / U)</span>
+                  </HoverTooltip>
+                </th>
+                <th className="px-2 py-2.5 font-bold whitespace-nowrap">
+                  <HoverTooltip title="حالة المراجعة والتنبيهات" description="حالة اعتماد المخاطرة والتنبيهات المرجعية أو النطاقية المرتبطة بها." side="bottom">
+                    <span className="cursor-help">الحالة والتنبيهات</span>
+                  </HoverTooltip>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#CECCC9]">
@@ -2013,34 +2120,39 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
               {[
                 {
                   id: 'inputs_and_calc',
-                  label: '1. المدخلات القابلة للتعديل والمخرجات المحسوبة (Financial & Inherent / Residual)',
+                  label: '1. المدخلات والحساب المالي',
+                  hint: 'تعديل الأثر الفردي والتكرار والتصنيف (L1/L2/L3) واستعراض مخرجات محرك بايثون للخطر الكامن والمتبقي.',
                 },
                 {
                   id: 'controls',
-                  label: `2. مراجعة وتعديل الضوابط الرقابية (${(currentRiskObj.current_draft_input?.controls || []).length})`,
+                  label: `2. الضوابط الرقابية (${(currentRiskObj.current_draft_input?.controls || []).length})`,
+                  hint: 'مراجعة فاعلية الضوابط وأهليتها النطاقية لحساب معامل الخفض الأقصى (MAX RRF) أو إضافة ضوابط جديدة.',
                 },
                 {
                   id: 'ai_suggestions',
-                  label: '3. مراجعة مقترحات الذكاء (Accept / Edit / Reject)',
+                  label: '3. مقترحات الذكاء',
+                  hint: 'مقارنة النص الأصلي بالمقترح الذكي واتخاذ قرار القبول أو التعديل أو الرفض.',
                 },
                 {
                   id: 'evidence_and_audit',
-                  label: '4. الأدلة المستندية وسجل التدقيق التفصيلي',
+                  label: '4. الأدلة وسجل التدقيق',
+                  hint: 'فحوصات الاتساق العشرية وسجل التعديلات التفصيلي (قبل/بعد) بالمستخدم والتاريخ.',
                 },
               ].map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  data-testid={`workspace-tab-${t.id}`}
-                  onClick={() => setActiveWorkspaceTab(t.id as any)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeWorkspaceTab === t.id
-                      ? 'bg-[#006547] text-white shadow-xs'
-                      : 'text-slate-700 hover:bg-[#EFECE6] hover:text-slate-950'
-                  }`}
-                >
-                  {t.label}
-                </button>
+                <HoverTooltip key={t.id} title={t.label} description={t.hint} side="bottom">
+                  <button
+                    type="button"
+                    data-testid={`workspace-tab-${t.id}`}
+                    onClick={() => setActiveWorkspaceTab(t.id as any)}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeWorkspaceTab === t.id
+                        ? 'bg-[#006547] text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-[#EFECE6] hover:text-slate-950'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                </HoverTooltip>
               ))}
             </div>
 
@@ -2608,24 +2720,17 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
                   </div>
 
                   {/* 3. Key Risk Rule & Phase 2C Notice */}
-                  <div className="p-3 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] text-[11px] text-slate-700 space-y-1.5">
-                    <div className="font-bold text-[#09331F]">
-                      قاعدة تصنيف المخاطرة الرئيسية (Key Risk) ومتطلبات NFI / ESG:
+                  <div className="p-3 rounded-xl bg-[#E2E1DE] border border-[#C6C4C1] text-[11px] text-slate-700 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 font-bold text-[#09331F]">
+                      <span>قاعدة المخاطرة الرئيسية (Key Risk) وNFI / ESG</span>
+                      <InfoHint
+                        title="قاعدة Key Risk والحساب النهائي"
+                        description={`تُصنّف المخاطرة رئيسية (YES) فقط إذا كان التقييم المالي المتبقي (${calc.continuous_residual_rating || 'PENDING'}) أو أي بُعد غير مالي (NFI) يساوي H أو VH أو C، وتُطبق أعلى درجة وفق مبدأ الأكثر تحوطاً مع مطابقة كتالوج ESG (34 بنداً).`}
+                      />
                     </div>
-                    <div className="text-[11px] text-slate-800 leading-relaxed">
-                      تُصنّف المخاطرة كـ <strong>مخاطرة رئيسية (نعم / YES)</strong> فقط إذا كان <strong>التقييم المتبقي للأثر المالي (Residual Financial: {calc.continuous_residual_rating || 'PENDING'})</strong> أو أي بُعد من أبعاد <strong>الأثر غير المالي (NFI)</strong> يساوي H أو VH أو C، وتُعد (لا / NO) إذا كانت جميع الأبعاد المتبقية M أو أقل.
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        الأثر غير المالي NFI: المعيار الأعلى وفق مبدأ الأكثر تحوطاً
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        قبول المخاطرة (AA): متسق مع فاعلية الضوابط ومصفوفة المخاطر
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px]">
-                        تصنيف ESG: كتالوج CBE المرجعي (34 بنداً)
-                      </span>
-                    </div>
+                    <span className="font-mono font-bold text-[10px] text-[#006547]">
+                      المتبقي الحالي: {calc.continuous_residual_rating || 'PENDING'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2635,23 +2740,26 @@ export const RCSATablePage: React.FC<RCSATablePageProps> = ({
             {activeWorkspaceTab === 'controls' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
+                  <div className="flex items-center gap-1.5">
                     <h4 className="text-sm font-bold text-slate-900">
-                      مراجعة وتعديل الضوابط الرقابية المرتبطة بالمخاطرة ({currentRiskObj.risk_id})
+                      مراجعة وتعديل الضوابط ({currentRiskObj.risk_id})
                     </h4>
-                    <p className="text-xs text-slate-600">
-                      يُطبق محرك بايثون قاعدة (MAX Eligible Implemented RRF) من مصفوفة 3×3 الرسمية، ولا تدخل الضوابط المقترحة (PROPOSED) أو غير المؤهلة نطاقياً في تخفيض الخطر المتبقي.
-                    </p>
+                    <InfoHint
+                      title="قاعدة حساب MAX RRF للضوابط"
+                      description="يُطبق محرك بايثون أعلى معامل خفض مؤهل (MAX Eligible Implemented RRF) من مصفوفة 3×3، ولا تدخل الضوابط المقترحة (PROPOSED) أو المستبعدة نطاقياً في تخفيض الخطر المتبقي."
+                    />
                   </div>
                   {isEditableDraft && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddControl(prev => !prev)}
-                      className="px-3 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>إضافة ضابط رقابي (حالي أو مقترح)</span>
-                    </button>
+                    <HoverTooltip title="إضافة ضابط جديد" description="فتح نموذج إضافة ضابط رقابي حالي أو مقترح لهذه المخاطرة." side="bottom">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddControl(prev => !prev)}
+                        className="px-3 py-1.5 rounded-xl bg-[#006547] hover:bg-[#09331F] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>إضافة ضابط رقابي</span>
+                      </button>
+                    </HoverTooltip>
                   )}
                 </div>
 

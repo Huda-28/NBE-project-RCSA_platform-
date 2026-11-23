@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.js';
+import { HoverTooltip, InfoHint } from './HoverTooltip.js';
 
 const DIMENSIONS = [
   ['service', 'استمرارية الخدمة'],
@@ -77,23 +78,36 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
   return (
     <section className="m-4 bg-white rounded-2xl border border-[#DCDAD5] p-5 space-y-4 shadow-2xs" aria-label="تقييم الأثر غير المالي والاستدامة">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E3DE]">
-        <div>
+        <div className="flex items-center gap-2">
           <h4 className="text-sm font-extrabold text-[#09331F]">الأثر غير المالي والاستدامة وقبول المخاطرة</h4>
-          <p className="text-[11px] text-slate-600 mt-0.5">
-            قاعدة المخاطرة الرئيسية (Key Risk): الأثر المالي المتبقي (Residual Financial) أو أي بُعد غير مالي (NFI) يساوي H أو VH أو C • * يتم الاعتماد على التأثير الأعلى تقييماً وفقاً ومبدأ الأكثر تحوطاً.
-          </p>
+          <InfoHint
+            title="قاعدة المخاطرة الرئيسية (Key Risk)"
+            description="تُعد المخاطرة رئيسية (YES) إذا كان الأثر المالي المتبقي أو أي بُعد غير مالي (NFI) يساوي H أو VH أو C، وفق مبدأ التأثير الأعلى (الأكثر تحوطاً)."
+          />
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowNfiGuide(prev => !prev)}
-            className="px-2.5 py-1 rounded-lg bg-[#F8F8F6] hover:bg-[#EFECE6] border border-[#DCDAD5] text-[11px] font-bold text-[#09331F] cursor-pointer"
+          <HoverTooltip
+            title="مصفوفة الشريحة 4 المعتمدة"
+            description="عرض معايير تقييم الأبعاد الأربعة للأثر غير المالي عبر الدرجات الخمس (L إلى C) ومعنى الرمز (-)."
+            side="bottom"
           >
-            {showNfiGuide ? 'إخفاء مصفوفة NFI المعتمدة (الشريحة 4)' : 'عرض مصفوفة تقييم الأثر غير المالي (الشريحة 4)'}
-          </button>
-          <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${result?.status === 'COMPLETE' ? 'bg-emerald-50 text-[#006547] border-emerald-300' : 'bg-amber-50 text-amber-900 border-amber-300'}`}>
-            {result?.status === 'COMPLETE' ? 'مكتمل ✓' : 'يتطلب استكمالًا'}
-          </span>
+            <button
+              type="button"
+              onClick={() => setShowNfiGuide(prev => !prev)}
+              className="px-2.5 py-1 rounded-lg bg-[#F8F8F6] hover:bg-[#EFECE6] border border-[#DCDAD5] text-[11px] font-bold text-[#09331F] cursor-pointer"
+            >
+              {showNfiGuide ? 'إخفاء مصفوفة NFI' : 'مصفوفة NFI (شريحة 4)'}
+            </button>
+          </HoverTooltip>
+          <HoverTooltip
+            title="حالة استيفاء التقييم غير المالي"
+            description={result?.status === 'COMPLETE' ? 'كافة الأبعاد الأربعة وESG وقرار القبول مستوفاة وجاهزة للتصدير.' : 'يتطلب استكمال تقييم NFI أو ربط الاستدامة أو قرار قبول المخاطرة.'}
+            side="bottom"
+          >
+            <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${result?.status === 'COMPLETE' ? 'bg-emerald-50 text-[#006547] border-emerald-300' : 'bg-amber-50 text-amber-900 border-amber-300'}`}>
+              {result?.status === 'COMPLETE' ? 'مكتمل ✓' : 'يتطلب استكمالًا'}
+            </span>
+          </HoverTooltip>
         </div>
       </div>
 
@@ -158,7 +172,13 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {DIMENSIONS.map(([key, label]) => (
             <div key={key} className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
-              <label className="block text-xs font-bold text-[#09331F]">{label}</label>
+              <div className="flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-[#09331F]">{label}</label>
+                <InfoHint
+                  title={`تقييم بُعد ${label}`}
+                  description="حدد مستوى الأثر غير المالي بعد الضوابط (أو اختر - لعدم وجود تعرض مباشر) مع توثيق الدليل في الخانة أدناه."
+                />
+              </div>
               <select disabled={!editable} aria-label={`تقييم ${label}`} className="w-full bg-white border border-[#DCDAD5] rounded-lg p-2 text-xs font-semibold disabled:opacity-70"
                 value={nfiOtherMode[key] ? 'OTHER' : (form.nfi[key]?.rating || 'PENDING')}
                 onChange={e => {
@@ -193,7 +213,13 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
           ))}
         </div>
         <div className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
-          <label className="text-xs font-bold text-[#09331F] block">تصنيف الاستدامة (ESG)</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-[#09331F] block">تصنيف الاستدامة (ESG)</label>
+            <InfoHint
+              title="الاستدامة (34 حالة CBE)"
+              description="تحديد ما إذا كانت المخاطرة ذات صلة بيئية (E) أو اجتماعية (S) أو حوكمة (G) استناداً إلى كتالوج البنك المركزي المصري والأدلة الموثقة."
+            />
+          </div>
           <select disabled={!editable} value={esgOtherMode ? 'OTHER' : form.esg.status} className="w-full rounded-lg p-2 bg-white border border-[#DCDAD5] text-xs font-semibold"
             onChange={e => {
               const val = e.target.value;
@@ -246,7 +272,13 @@ export function Phase2CReviewPanel({ assessmentId, riskId, editable, riskL1, onS
             className="w-full rounded-lg bg-white border border-[#DCDAD5] p-2 text-xs" />}
         </div>
         <div className="bg-[#F8F8F6] rounded-xl border border-[#E5E3DE] p-3.5 space-y-2">
-          <label className="text-xs font-bold text-[#09331F] block">تصنيف قبول المخاطرة — قرار المراجع</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-[#09331F] block">تصنيف قبول المخاطرة — قرار المراجع</label>
+            <InfoHint
+              title="قرار القبول النهائي (AA)"
+              description="اختر مستوى قبول المخاطرة (1 إلى 4). يتطلب التصنيف 3 أو 4 إدخال خطة عمل تصحيحية إلزامية."
+            />
+          </div>
           <select disabled={!editable} value={accOtherMode ? 'OTHER' : (form.acceptance_class ?? '')} className="w-full bg-white border border-[#DCDAD5] rounded-lg p-2 text-xs font-semibold"
             onChange={e => {
               const val = e.target.value;

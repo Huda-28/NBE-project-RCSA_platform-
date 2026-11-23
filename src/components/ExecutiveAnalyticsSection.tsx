@@ -25,6 +25,7 @@ import {
   IMPACT_BAND_LABELS_AR,
   SeverityTone,
 } from '../utils/dashboardAnalytics.js';
+import { HoverTooltip, InfoHint } from './HoverTooltip.js';
 
 interface ExecutiveAnalyticsSectionProps {
   units: Array<{ id: string; name_ar: string; code: string }>;
@@ -90,6 +91,7 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
 }) => {
   const [scopeMode, setScopeMode] = useState<'ALL' | 'SELECTED'>('ALL');
   const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>('INHERENT');
+  const [activeTab, setActiveTab] = useState<'HEATMAP' | 'CONCENTRATION' | 'REMEDIATION' | 'ALL'>('HEATMAP');
   const [activeCellCoord, setActiveCellCoord] = useState<{ freq: number; impact: number } | null>(null);
 
   const effectiveUnitId = scopeMode === 'SELECTED' ? selectedUnitId : null;
@@ -140,18 +142,22 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
       {/* Toolbar: Scope Filter + Financial Exposure Strip */}
       <div className="bg-white rounded-2xl border border-[#DCDAD5] p-4 sm:p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3.5 border-b border-[#E5E3DE]">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center shrink-0">
-              <BarChart3 className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#09331F] text-[#F79C1E] flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-extrabold text-[#09331F]">
-                تحليلات محفظة المخاطر والرقابة (Risk Intelligence)
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-base font-extrabold text-[#09331F]">
+                  تحليلات المحفظة والمصفوفة الحرارية
+                </h3>
+                <InfoHint
+                  title="مركز ذكاء المخاطر (Risk Intelligence)"
+                  description="لوحة تحليلية مجمّعة لقياس الخسائر المتوقعة قبل وبعد الضوابط على مستوى البنك أو وحدة واحدة وفق مصفوفة 5×5 ومعايرة الحوادث الفعلية."
+                />
+              </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                النطاق المعروض: <span className="font-bold text-[#006547]">{activeUnitLabel}</span>
-                <span className="mx-1.5 text-slate-300" aria-hidden="true">·</span>
-                <span>مصفوفة NBE 5×5 ومعايرة الخسائر الفعلية</span>
+                النطاق: <span className="font-bold text-[#006547]">{activeUnitLabel}</span>
               </p>
             </div>
           </div>
@@ -159,36 +165,48 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
           {/* Interactive Scope Segmented Filter */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center p-1 bg-[#F3F4F2] border border-[#DCDAD5] rounded-xl">
-              <button
-                type="button"
-                data-testid="analytics-scope-all-btn"
-                onClick={() => {
-                  setScopeMode('ALL');
-                  setActiveCellCoord(null);
-                }}
-                className={`min-h-9 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  scopeMode === 'ALL'
-                    ? 'bg-[#09331F] text-white'
-                    : 'text-slate-700 hover:text-[#09331F]'
-                }`}
+              <HoverTooltip
+                title="نطاق المحفظة الكامل"
+                description="عرض إحصاءات ومصفوفة المخاطر المجمعة لجميع وحدات العمل المصرح بها."
+                side="bottom"
               >
-                كافة الوحدات
-              </button>
-              <button
-                type="button"
-                data-testid="analytics-scope-selected-btn"
-                onClick={() => {
-                  setScopeMode('SELECTED');
-                  setActiveCellCoord(null);
-                }}
-                className={`min-h-9 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  scopeMode === 'SELECTED'
-                    ? 'bg-[#09331F] text-white'
-                    : 'text-slate-700 hover:text-[#09331F]'
-                }`}
+                <button
+                  type="button"
+                  data-testid="analytics-scope-all-btn"
+                  onClick={() => {
+                    setScopeMode('ALL');
+                    setActiveCellCoord(null);
+                  }}
+                  className={`min-h-8 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    scopeMode === 'ALL'
+                      ? 'bg-[#09331F] text-white'
+                      : 'text-slate-700 hover:text-[#09331F]'
+                  }`}
+                >
+                  كافة الوحدات
+                </button>
+              </HoverTooltip>
+              <HoverTooltip
+                title="تصفية بوحدة واحدة"
+                description="حصر المصفوفة الحرارية ومؤشرات التعرض المالي في الوحدة المختارة فقط."
+                side="bottom"
               >
-                الوحدة المحددة فقط
-              </button>
+                <button
+                  type="button"
+                  data-testid="analytics-scope-selected-btn"
+                  onClick={() => {
+                    setScopeMode('SELECTED');
+                    setActiveCellCoord(null);
+                  }}
+                  className={`min-h-8 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    scopeMode === 'SELECTED'
+                      ? 'bg-[#09331F] text-white'
+                      : 'text-slate-700 hover:text-[#09331F]'
+                  }`}
+                >
+                  الوحدة المحددة
+                </button>
+              </HoverTooltip>
             </div>
 
             {scopeMode === 'SELECTED' && units.length > 0 && (
@@ -205,7 +223,7 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
                   onSelectUnitFilter(val);
                   setActiveCellCoord(null);
                 }}
-                className="min-h-10 px-3 py-1.5 text-xs font-bold bg-[#F8F8F6] border border-[#DCDAD5] rounded-xl text-[#09331F] focus:outline-none focus:ring-2 focus:ring-[#006547]"
+                className="min-h-9 px-3 py-1 text-xs font-bold bg-[#F8F8F6] border border-[#DCDAD5] rounded-xl text-[#09331F] focus:outline-none focus:ring-2 focus:ring-[#006547]"
               >
                 {units.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -218,57 +236,131 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
           </div>
         </div>
 
-        {/* Financial Exposure & Control Reduction Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE]">
-            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
-              <span>الخسارة السنوية الكامنة (EAL)</span>
-              <Activity className="w-4 h-4 text-[#09331F]" />
+        {/* Hairline Financial Exposure & Control Reduction Strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 rounded-xl border border-[#E5E3DE] bg-[#F8F8F6]/70 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-[#E5E3DE]">
+          <div className="px-4 py-3">
+            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between gap-1">
+              <span className="flex items-center gap-1">
+                <span>الخسارة السنوية الكامنة (EAL)</span>
+                <InfoHint
+                  title="EAL — الخسارة السنوية الكامنة"
+                  description="إجمالي التعرض المالي المتوقع سنوياً (الأثر الفردي × التكرار السنوي) قبل خصم أثر الضوابط الرقابية."
+                />
+              </span>
+              <Activity className="w-3.5 h-3.5 text-[#09331F] shrink-0" />
             </div>
-            <div className="text-xl font-black text-[#09331F] mt-1.5 font-mono tabular-nums">
+            <div className="text-lg sm:text-xl font-black text-[#09331F] mt-1 font-mono tabular-nums">
               {formatCompactEgp(analytics.financialTotals.total_inherent_eal)} <span className="text-xs font-bold">ج.م</span>
             </div>
-            <div className="text-[11px] text-slate-600 mt-0.5">إجمالي التعرض قبل أثر الضوابط</div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE]">
-            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
-              <span>صافي التعرض المتبقي (Residual)</span>
-              <Shield className="w-4 h-4 text-[#006547]" />
+          <div className="px-4 py-3">
+            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between gap-1">
+              <span className="flex items-center gap-1">
+                <span>التعرض المتبقي (Residual)</span>
+                <InfoHint
+                  title="صافي التعرض المتبقي"
+                  description="الخسارة السنوية المتوقعة بعد تطبيق أعلى معامل خفض رقابي مؤهل (MAX RRF) وفق معادلة: الكامن × (1 - RRF)."
+                />
+              </span>
+              <Shield className="w-3.5 h-3.5 text-[#006547] shrink-0" />
             </div>
-            <div className="text-xl font-black text-[#006547] mt-1.5 font-mono tabular-nums">
+            <div className="text-lg sm:text-xl font-black text-[#006547] mt-1 font-mono tabular-nums">
               {formatCompactEgp(analytics.financialTotals.total_residual_eal)} <span className="text-xs font-bold">ج.م</span>
             </div>
-            <div className="text-[11px] text-slate-600 mt-0.5">التعرض الصافي بعد تطبيق RRF</div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE]">
-            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
-              <span>نسبة خفض المخاطر بالضوابط</span>
-              <TrendingDown className="w-4 h-4 text-[#006547]" />
+          <div className="px-4 py-3">
+            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between gap-1">
+              <span className="flex items-center gap-1">
+                <span>نسبة خفض الضوابط</span>
+                <InfoHint
+                  title="كفاءة الخفض بالضوابط"
+                  description={`وفر مالي مقدّر: ${formatCompactEgp(analytics.financialTotals.risk_reduction_amount)} ج.م بفضل الضوابط المطبقة والمؤهلة نطاقياً.`}
+                />
+              </span>
+              <TrendingDown className="w-3.5 h-3.5 text-[#006547] shrink-0" />
             </div>
-            <div className="text-xl font-black text-[#006547] mt-1.5 font-mono tabular-nums">
+            <div className="text-lg sm:text-xl font-black text-[#006547] mt-1 font-mono tabular-nums">
               {analytics.financialTotals.risk_reduction_pct}%
             </div>
-            <div className="text-[11px] text-slate-600 mt-0.5 tabular-nums">
-              وفر رقابي: {formatCompactEgp(analytics.financialTotals.risk_reduction_amount)} ج.م
-            </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F8F8F6] border border-[#E5E3DE]">
-            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
-              <span>الخسائر التاريخية الموثقة</span>
-              <AlertTriangle className="w-4 h-4 text-[#B45309]" />
+          <div className="px-4 py-3">
+            <div className="text-[11px] font-bold text-slate-600 flex items-center justify-between gap-1">
+              <span className="flex items-center gap-1">
+                <span>الخسائر التاريخية</span>
+                <InfoHint
+                  title="سجل الحوادث الفعلية"
+                  description="إجمالي الخسائر التشغيلية الموثقة تاريخياً لمعايرة تقديرات الخطر الفردي ورصد التقديرات الأقل من الواقع."
+                />
+              </span>
+              <AlertTriangle className="w-3.5 h-3.5 text-[#B45309] shrink-0" />
             </div>
-            <div className="text-xl font-black text-slate-900 mt-1.5 font-mono tabular-nums">
+            <div className="text-lg sm:text-xl font-black text-slate-900 mt-1 font-mono tabular-nums">
               {formatCompactEgp(analytics.financialTotals.total_historical_loss)} <span className="text-xs font-bold">ج.م</span>
             </div>
-            <div className="text-[11px] text-slate-600 mt-0.5">حوادث فعلية بسجل الخسائر</div>
           </div>
+        </div>
+
+        {/* Clean Segmented View Switcher to keep UI uncrowded */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-[#F3F4F2] border border-[#DCDAD5] rounded-xl">
+            <HoverTooltip title="المصفوفة الحرارية 5×5" description="خريطة تفاعلية لتوزيع المخاطر حسب التكرار والأثر مع نافذة فحص لكل خلية." side="bottom">
+              <button
+                type="button"
+                data-testid="analytics-tab-heatmap"
+                onClick={() => setActiveTab('HEATMAP')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'HEATMAP' ? 'bg-[#09331F] text-white' : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                المصفوفة الحرارية 5×5
+              </button>
+            </HoverTooltip>
+            <HoverTooltip title="تركز بازل وكفاءة الضوابط" description="توزيع المخاطر عبر فئات بازل II الثمانية وتحليل الضوابط المحورية وأعلى RRF." side="bottom">
+              <button
+                type="button"
+                data-testid="analytics-tab-concentration"
+                onClick={() => setActiveTab('CONCENTRATION')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'CONCENTRATION' ? 'bg-[#09331F] text-white' : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                تصنيفات بازل والضوابط
+              </button>
+            </HoverTooltip>
+            <HoverTooltip title="المعايرة وخطط العمل" description="مقارنة التقديرات مع الخسائر الفعلية ومتابعة مواعيد تنفيذ الخطط التصحيحية." side="bottom">
+              <button
+                type="button"
+                data-testid="analytics-tab-remediation"
+                onClick={() => setActiveTab('REMEDIATION')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'REMEDIATION' ? 'bg-[#09331F] text-white' : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                المعايرة وخطط العمل ({analytics.lossCalibrationAlerts.length + analytics.actionPlansSummary.total})
+              </button>
+            </HoverTooltip>
+            <HoverTooltip title="عرض كافة اللوحات" description="عرض جميع الألواح التحليلية معاً في نفس الصفحة." side="bottom">
+              <button
+                type="button"
+                data-testid="analytics-tab-all"
+                onClick={() => setActiveTab('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'ALL' ? 'bg-[#006547] text-white' : 'text-slate-700 hover:text-[#09331F]'
+                }`}
+              >
+                عرض الكل
+              </button>
+            </HoverTooltip>
+          </div>
+          <span className="text-[11px] text-slate-500">مرّر المؤشر على أي عنصر لمعرفة وظيفته</span>
         </div>
       </div>
 
       {/* Main Row 1: 5x5 Interactive Heatmap + Cell Drill-Down Inspector */}
+      {(activeTab === 'HEATMAP' || activeTab === 'ALL') && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* 5x5 NBE Risk Heatmap */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-[#DCDAD5] p-4 sm:p-5 flex flex-col justify-between">
@@ -276,47 +368,50 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-[#E5E3DE]">
               <div className="flex items-center gap-2">
                 <Grid className="w-4 h-4 text-[#006547] shrink-0" />
-                <div>
-                  <h4 className="text-sm font-extrabold text-[#09331F]">
-                    خريطة المخاطر الحرارية التفاعلية (NBE 5×5)
-                  </h4>
-                  <p className="text-[11px] text-slate-600">
-                    اضغط على أي خلية لعرض تفاصيل المخاطر وانتقل لمصفوفة الوحدة
-                  </p>
-                </div>
+                <h4 className="text-sm font-extrabold text-[#09331F]">
+                  خريطة المخاطر الحرارية (NBE 5×5)
+                </h4>
+                <InfoHint
+                  title="المصفوفة الحرارية التفاعلية"
+                  description="تموضع المخاطر وفق التكرار السنوي (محور عمودي) والأثر المالي (محور أفقي). انقر على أي خلية لفحص مخاطرها بالجانب."
+                />
               </div>
 
               <div className="inline-flex items-center p-1 bg-[#F3F4F2] border border-[#DCDAD5] rounded-xl self-start sm:self-auto">
-                <button
-                  type="button"
-                  data-testid="heatmap-toggle-inherent"
-                  onClick={() => {
-                    setHeatmapMode('INHERENT');
-                    setActiveCellCoord(null);
-                  }}
-                  className={`min-h-9 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                    heatmapMode === 'INHERENT'
-                      ? 'bg-[#09331F] text-white'
-                      : 'text-slate-700 hover:text-[#09331F]'
-                  }`}
-                >
-                  الخطر الكامن (Inherent)
-                </button>
-                <button
-                  type="button"
-                  data-testid="heatmap-toggle-residual"
-                  onClick={() => {
-                    setHeatmapMode('RESIDUAL');
-                    setActiveCellCoord(null);
-                  }}
-                  className={`min-h-9 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                    heatmapMode === 'RESIDUAL'
-                      ? 'bg-[#006547] text-white'
-                      : 'text-slate-700 hover:text-[#006547]'
-                  }`}
-                >
-                  الخطر المتبقي (Residual)
-                </button>
+                <HoverTooltip title="الخطر الكامن (Inherent)" description="تقييم شدة المخاطرة قبل خصم أثر الضوابط الرقابية." side="bottom">
+                  <button
+                    type="button"
+                    data-testid="heatmap-toggle-inherent"
+                    onClick={() => {
+                      setHeatmapMode('INHERENT');
+                      setActiveCellCoord(null);
+                    }}
+                    className={`min-h-8 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      heatmapMode === 'INHERENT'
+                        ? 'bg-[#09331F] text-white'
+                        : 'text-slate-700 hover:text-[#09331F]'
+                    }`}
+                  >
+                    الخطر الكامن
+                  </button>
+                </HoverTooltip>
+                <HoverTooltip title="الخطر المتبقي (Residual)" description="تقييم شدة المخاطرة بعد تطبيق معامل خفض الضوابط (MAX RRF)." side="bottom">
+                  <button
+                    type="button"
+                    data-testid="heatmap-toggle-residual"
+                    onClick={() => {
+                      setHeatmapMode('RESIDUAL');
+                      setActiveCellCoord(null);
+                    }}
+                    className={`min-h-8 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      heatmapMode === 'RESIDUAL'
+                        ? 'bg-[#006547] text-white'
+                        : 'text-slate-700 hover:text-[#006547]'
+                    }`}
+                  >
+                    الخطر المتبقي
+                  </button>
+                </HoverTooltip>
               </div>
             </div>
 
@@ -361,31 +456,37 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
                           const count = cell.risks.length;
 
                           return (
-                            <button
+                            <HoverTooltip
                               key={`cell-${cell.freqLevel}-${cell.impactLevel}`}
-                              type="button"
-                              data-testid={`heatmap-cell-${cell.freqLevel}-${cell.impactLevel}`}
-                              aria-label={`التكرار ${FREQUENCY_BAND_LABELS_AR[cell.freqLevel].short} والأثر ${IMPACT_BAND_LABELS_AR[cell.impactLevel].short}: ${count} مخاطر`}
-                              onClick={() =>
-                                setActiveCellCoord({ freq: cell.freqLevel, impact: cell.impactLevel })
-                              }
-                              className={`min-h-12 sm:min-h-14 rounded-xl border transition-all flex flex-col items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#09331F] ${
-                                isSelectedCell
-                                  ? `${style.activeBg} border-[#09331F] ring-2 ring-[#09331F]/30`
-                                  : `${style.bg} ${style.text} ${style.border}`
-                              }`}
+                              title={`درجة ${style.labelAr} (${cell.tone})`}
+                              description={`التكرار: ${FREQUENCY_BAND_LABELS_AR[cell.freqLevel].short} · الأثر: ${IMPACT_BAND_LABELS_AR[cell.impactLevel].short} — ${count} مخاطر (انقر لعرض التفاصيل)`}
+                              className="block w-full"
                             >
-                              <span
-                                className={`text-sm sm:text-base font-black font-mono tabular-nums ${
-                                  count === 0 && !isSelectedCell ? 'opacity-35' : ''
+                              <button
+                                type="button"
+                                data-testid={`heatmap-cell-${cell.freqLevel}-${cell.impactLevel}`}
+                                aria-label={`التكرار ${FREQUENCY_BAND_LABELS_AR[cell.freqLevel].short} والأثر ${IMPACT_BAND_LABELS_AR[cell.impactLevel].short}: ${count} مخاطر`}
+                                onClick={() =>
+                                  setActiveCellCoord({ freq: cell.freqLevel, impact: cell.impactLevel })
+                                }
+                                className={`w-full min-h-12 sm:min-h-14 rounded-xl border transition-all flex flex-col items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#09331F] ${
+                                  isSelectedCell
+                                    ? `${style.activeBg} border-[#09331F] ring-2 ring-[#09331F]/30`
+                                    : `${style.bg} ${style.text} ${style.border}`
                                 }`}
                               >
-                                {count}
-                              </span>
-                              <span className="text-[9px] font-bold opacity-85">
-                                {cell.tone}
-                              </span>
-                            </button>
+                                <span
+                                  className={`text-sm sm:text-base font-black font-mono tabular-nums ${
+                                    count === 0 && !isSelectedCell ? 'opacity-35' : ''
+                                  }`}
+                                >
+                                  {count}
+                                </span>
+                                <span className="text-[9px] font-bold opacity-85">
+                                  {cell.tone}
+                                </span>
+                              </button>
+                            </HoverTooltip>
                           );
                         })}
                       </React.Fragment>
@@ -462,21 +563,23 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
                           {risk.process_name}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onNavigate?.({
-                            page: 'rcsa-table',
-                            unitId: risk.unit_id,
-                            assessmentId: risk.assessment_id,
-                            riskId: risk.risk_id,
-                          })
-                        }
-                        className="min-h-9 px-2.5 py-1 rounded-lg bg-[#006547] hover:bg-[#09331F] text-white text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap"
-                      >
-                        <span>عرض</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
+                      <HoverTooltip title="انتقال مباشر للمخاطرة" description="فتح هذه المخاطرة في جدول RCSA التفاعلي لتعديلها أو اعتماد ضوابطها.">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onNavigate?.({
+                              page: 'rcsa-table',
+                              unitId: risk.unit_id,
+                              assessmentId: risk.assessment_id,
+                              riskId: risk.risk_id,
+                            })
+                          }
+                          className="min-h-8 px-2.5 py-1 rounded-lg bg-[#006547] hover:bg-[#09331F] text-white text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap"
+                        >
+                          <span>عرض</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </HoverTooltip>
                     </div>
 
                     <p className="text-[11px] text-slate-700 leading-relaxed line-clamp-2">
@@ -503,8 +606,10 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Row 2: Basel II Category Concentration & Control Effectiveness / SPOF Controls */}
+      {(activeTab === 'CONCENTRATION' || activeTab === 'ALL') && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Basel II Category Breakdown */}
         <div className="lg:col-span-6 bg-white rounded-2xl border border-[#DCDAD5] p-4 sm:p-5 space-y-4">
@@ -671,8 +776,10 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Row 3: Loss Calibration Alerts & Remediation Action Plans Tracker */}
+      {(activeTab === 'REMEDIATION' || activeTab === 'ALL') && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Statistical Loss Calibration Alerts */}
         <div className="lg:col-span-5 bg-white rounded-2xl border border-[#DCDAD5] p-4 sm:p-5 space-y-3">
@@ -818,6 +925,7 @@ export const ExecutiveAnalyticsSection: React.FC<ExecutiveAnalyticsSectionProps>
           )}
         </div>
       </div>
+      )}
     </section>
   );
 };
